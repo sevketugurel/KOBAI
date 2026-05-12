@@ -14,6 +14,39 @@ from google.api_core.exceptions import ResourceExhausted
 from config import settings
 from schemas.invoice import InvoiceData
 
+_ITEM_FIELDS = ("description", "quantity", "unit_price", "total", "kdv_rate")
+
+
+def _fraction_or_percent_to_kdv(value: float) -> float:
+    """0–1 arası kesir (ör. 0.2) veya yüzde (ör. 20) → kdv_rate (%)."""
+    v = float(value)
+    if 0 <= v <= 1:
+        return round(v * 100, 6)
+    return v
+
+
+def _normalize_invoice_item(item: object) -> dict:
+    """Gemini'nin total_price / tax_rate gibi alternatif alanlarını şemaya uyarlar."""
+    if not isinstance(item, dict):
+        raise TypeError("items elemanı nesne olmalı")
+    d = dict(item)
+    if "total" not in d and "total_price" in d:
+        d["total"] = d["total_price"]
+    if "kdv_rate" not in d:
+        raw = d.get("tax_rate", d.get("vat_rate"))
+        if raw is not None:
+            d["kdv_rate"] = _fraction_or_percent_to_kdv(raw)
+    return {k: d[k] for k in _ITEM_FIELDS if k in d}
+
+
+def _normalize_parsed_invoice(data: dict) -> dict:
+    items = data.get("items")
+    if not isinstance(items, list):
+        return data
+    out = dict(data)
+    out["items"] = [_normalize_invoice_item(it) for it in items]
+    return out
+
 
 class GeminiParseError(Exception):
     """Gemini Vision çıktısı InvoiceData'ya dönüşmedi."""
@@ -32,8 +65,10 @@ _VISION_SYSTEM_TR = (
     "Sen bir Türkçe fatura okuma asistanısın. Verilen PDF'ten faturayı oku ve "
     "SADECE şu JSON şemasına uyan bir nesne döndür: invoice_id, vendor_name, "
     "vendor_tax_no (yoksa 'NOT_MENTIONED'), date (YYYY-MM-DD), due_date (yoksa null), "
-    "items[], subtotal, kdv_amount, total_amount, currency, category, raw_text. "
-    "Açıklama metni ekleme, sadece JSON."
+    "items[] (her kalem: description, quantity, unit_price, total=KDV hariç satır toplamı, "
+    "kdv_rate=KDV yüzdesi 0–100 arası sayı, örn. 20), "
+    "subtotal, kdv_amount, total_amount, currency, category, raw_text. "
+    "total_price, tax_rate gibi ek alan kullanma. Açıklama metni ekleme, sadece JSON."
 )
 
 
@@ -69,6 +104,8 @@ class GeminiService:
             raise GeminiParseError("Gemini boş yanıt döndü; PDF okunamadı veya güvenlik engeli olabilir.")
         try:
             data = json.loads(raw)
+            if isinstance(data, dict):
+                data = _normalize_parsed_invoice(data)
             return InvoiceData(**data)
         except (json.JSONDecodeError, TypeError, ValidationError) as e:
             raise GeminiParseError(f"Fatura ayrıştırılamadı: {e}") from e

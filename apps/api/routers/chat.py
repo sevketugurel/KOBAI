@@ -12,6 +12,18 @@ log = logging.getLogger(__name__)
 router = APIRouter(tags=["chat"])
 _gemini = GeminiService()
 
+_SSE_HEADERS = {
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+}
+
+
+def _sse_event(payload: str) -> str:
+    """Tek satırlık data: alanı (içerideki satır sonları boşluğa indirgenir)."""
+    safe = " ".join(payload.splitlines()) if payload else ""
+    return f"data: {safe}\n\n"
+
 
 async def _stream_answer(message: str, context: str):
     """Streaming yerine basit chunk-split — Gemini stream API ilerde swap edilir."""
@@ -34,8 +46,19 @@ async def chat(req: ChatRequest) -> StreamingResponse:
     )
 
     async def event_stream():
-        async for chunk in _stream_answer(req.message, ctx):
-            yield f"data: {chunk}\n\n"
-        yield "data: [DONE]\n\n"
+        # Hemen bir bayt gönder: uzun Gemini beklemesinde vekil/proxy zaman aşımı riskini azaltır.
+        yield ": keepalive\n\n"
+        try:
+            async for chunk in _stream_answer(req.message, ctx):
+                yield _sse_event(chunk)
+            yield _sse_event("[DONE]")
+        except Exception as e:  # noqa: BLE001 — SSE üzerinden hatayı iletip chunked kapanışını garanti ederiz
+            log.exception("chat stream hatası job_id=%s", req.job_id)
+            yield _sse_event(f"[HATA] {e!s}")
+            yield _sse_event("[DONE]")
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers=_SSE_HEADERS,
+    )
