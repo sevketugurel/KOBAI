@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Env
+.env
+.env.local
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# ChromaDB persist
+.chroma/
+chroma_data/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# PDF (data/ hariç)
+*.pdf
+!data/**/*.pdf
+!apps/api/data/**/*.pdf
