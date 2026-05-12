@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git -c \"user.name=KOBAI\" -c \"user.email=dev@kobai.local\" commit -m \"feat\\(api\\): POST /upload endpoint\" -- apps/api/routers/upload.py apps/api/tests/routers/__init__.py apps/api/tests/routers/test_upload.py)",
+      "Bash(git commit *)",
+      "Bash(git *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(tmutil latestbackup *)",
+      "Bash(brew list *)",
+      "Bash(brew install *)"
+    ]
+  }
+}

@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     gemini_vision_model: str = "gemini-2.5-flash"
     gemini_text_model: str = "gemini-2.5-pro"
-    gemini_embed_model: str = "gemini-embedding-2"
+    gemini_embed_model: str = "gemini-embedding-001"
     gemini_embed_dim: int = 1536
 
     @field_validator("gemini_vision_model", "gemini_text_model", "gemini_embed_model")
@@ -33,6 +33,15 @@ class Settings(BaseSettings):
         if v in FORBIDDEN_MODELS:
             raise ValueError(f"yasak model: {v}")
         return v
+
+    @field_validator("gemini_embed_model")
+    @classmethod
+    def _normalize_gemini_embed_model(cls, v: str) -> str:
+        """google.generativeai.embed_content tam model yolu ister (models/...)."""
+        v = v.strip()
+        if v.startswith("models/") or v.startswith("tunedModels/"):
+            return v
+        return f"models/{v}"
 
     @property
     def allowed_origins_list(self) -> list[str]:

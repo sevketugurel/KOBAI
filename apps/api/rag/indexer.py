@@ -9,6 +9,11 @@ from rag.embeddings import GeminiEmbedder
 log = logging.getLogger(__name__)
 
 
+def _chroma_metadata(meta: dict) -> dict:
+    """ChromaDB metadata yalnızca str/int/float/bool kabul eder."""
+    return {k: v for k, v in meta.items() if v is not None}
+
+
 def chunk_text(text: str, *, chunk_size: int = 500, overlap: int = 50) -> list[str]:
     """Whitespace-bazlı token chunking; deterministik."""
     words = text.split()
@@ -45,7 +50,7 @@ class RagIndexer:
             ids.append(cid)
             embeds.append(vec)
             docs.append(chunk)
-            metas.append({**metadata, "chunk_id": cid})
+            metas.append(_chroma_metadata({**metadata, "chunk_id": cid}))
         if ids:
             self._collection.add(
                 ids=ids, embeddings=embeds, documents=docs, metadatas=metas
