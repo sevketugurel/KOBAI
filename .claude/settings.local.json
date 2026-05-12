@@ -10,7 +10,10 @@
       "Bash(npm test *)",
       "Bash(tmutil latestbackup *)",
       "Bash(brew list *)",
-      "Bash(brew install *)"
+      "Bash(brew install *)",
+      "Bash(npm view *)",
+      "Bash(python3 *)",
+      "Bash(npx vitest *)"
     ]
   }
 }

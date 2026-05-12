@@ -1,4 +1,75 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource/plus-jakarta-sans/800.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-body { font-family: ui-sans-serif, system-ui, sans-serif; background: #F7F3EE; }
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply font-sans bg-background text-navy-900;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "tnum" 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+  * {
+    @apply border-border;
+  }
+  ::selection {
+    @apply bg-navy-100 text-navy-900;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-navy-200 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-navy-300; }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface rounded-xl border border-border shadow-card;
+  }
+  .skeleton {
+    @apply bg-navy-100 rounded overflow-hidden relative;
+    background: linear-gradient(90deg, #e2e7f0 25%, #eef2f9 50%, #e2e7f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 bg-navy-600 text-white font-medium text-sm rounded-lg
+           hover:bg-navy-700 active:bg-navy-800
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2.5 bg-surface text-navy-700 font-medium text-sm rounded-lg
+           border border-border hover:bg-navy-50 active:bg-navy-100
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-200;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-2 text-navy-600 font-medium text-sm rounded-lg
+           hover:bg-navy-50 active:bg-navy-100
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500 focus-visible:ring-offset-2
+           transition-all duration-200;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-2xs font-semibold rounded-full;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .animate-in { animation: slideUp 0.3s ease-out; }
+}
