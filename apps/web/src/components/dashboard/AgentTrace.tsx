@@ -1,27 +1,133 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Search,
+  TrendingUp,
+  Receipt,
+  FileText,
+  Activity,
+  ChevronDown,
+  type LucideIcon,
+} from "lucide-react";
+import { Skeleton } from "../shared/Skeleton";
+import { cn } from "../../lib/utils";
 import type { AgentStep } from "../../api/types";
 
-export default function AgentTrace({ trace, isLoading = false }: { trace: AgentStep[]; isLoading?: boolean }) {
+const AGENT_STYLES: Record<string, { bg: string; badge: string; icon: LucideIcon }> = {
+  rag_agent: { bg: "bg-navy-500", badge: "bg-navy-50 text-navy-700", icon: Search },
+  cashflow_agent: { bg: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", icon: TrendingUp },
+  tax_optimization_agent: { bg: "bg-amber-500", badge: "bg-amber-50 text-amber-700", icon: Receipt },
+  report_agent: { bg: "bg-red-400", badge: "bg-red-50 text-red-700", icon: FileText },
+};
+
+function stylesFor(name: string): { bg: string; badge: string; icon: LucideIcon } {
+  return AGENT_STYLES[name] ?? { bg: "bg-navy-300", badge: "bg-navy-50 text-navy-700", icon: Activity };
+}
+
+function ConfidenceDots({ value }: { value: number }) {
+  const filled = Math.max(0, Math.min(5, Math.round(value)));
   return (
-    <div className="border border-stone-200 rounded p-4 bg-white/60">
-      <h3 className="font-semibold mb-2">Ajan ne yapıyor?</h3>
-      {isLoading && <div className="text-sm text-stone-600 animate-pulse">Ajanlar çalışıyor…</div>}
-      <ul className="space-y-1">
-        {trace.map((s, i) => <StepRow key={i} step={s} />)}
-      </ul>
-    </div>
+    <span className="inline-flex gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span
+          key={i}
+          className={cn("w-1.5 h-1.5 rounded-full", i < filled ? "bg-emerald-500" : "bg-navy-100")}
+        />
+      ))}
+    </span>
   );
 }
 
-function StepRow({ step }: { step: AgentStep }) {
-  const [open, setOpen] = useState(false);
+export default function AgentTrace({
+  trace,
+  isLoading = false,
+}: {
+  trace: AgentStep[];
+  isLoading?: boolean;
+}) {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const toggle = (i: number) => setOpenIndex((prev) => (prev === i ? null : i));
+
   return (
-    <li className="border-b border-stone-100 last:border-0">
-      <button onClick={() => setOpen(o => !o)} className="w-full flex justify-between py-2 text-left text-sm">
-        <span><span className="inline-block px-2 py-0.5 rounded bg-stone-200 mr-2">{step.agent_name}</span>{step.action}</span>
-        <span className="text-stone-500">{step.duration_ms} ms · ★{step.confidence.toFixed(1)}</span>
-      </button>
-      {open && <pre className="text-xs bg-stone-50 p-2 rounded overflow-auto">{JSON.stringify(step.output, null, 2)}</pre>}
-    </li>
+    <div className="card p-6">
+      <h3 className="font-display font-semibold text-lg text-navy-900 mb-4">Ajan Akışı</h3>
+
+      {isLoading ? (
+        <ul className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <Skeleton className="w-6 h-6 rounded-full" />
+              <div className="flex-1 space-y-2 pt-1">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-40" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ol className="relative space-y-3">
+          <div className="absolute left-3 top-2 bottom-2 w-px bg-border" aria-hidden="true" />
+          {trace.map((step, index) => {
+            const styles = stylesFor(step.agent_name);
+            const Icon = styles.icon;
+            return (
+              <motion.li
+                key={index}
+                className="relative pl-10"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: index * 0.12 }}
+              >
+                <span
+                  className={cn(
+                    "absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white",
+                    styles.bg,
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => toggle(index)}
+                  className="w-full flex items-start justify-between gap-3 text-left rounded-lg px-2 py-1 hover:bg-navy-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy-500"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={cn("badge", styles.badge)}>{step.agent_name}</span>
+                      <span className="font-medium text-navy-900 text-sm">{step.action}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-navy-500 whitespace-nowrap">
+                    <span>{step.duration_ms} ms</span>
+                    <ConfidenceDots value={step.confidence} />
+                    <ChevronDown
+                      className={cn("w-4 h-4 transition-transform", openIndex === index && "rotate-180")}
+                    />
+                  </div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {openIndex === index && (
+                    <motion.div
+                      key="details"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <pre className="font-mono text-xs bg-navy-50 text-navy-800 p-3 rounded-lg overflow-x-auto mt-2 mx-2">
+                        {JSON.stringify(step.output, null, 2)}
+                      </pre>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
   );
 }
