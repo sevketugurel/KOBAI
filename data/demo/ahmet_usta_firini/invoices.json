@@ -1,0 +1,530 @@
+[
+  {
+    "invoice_id": "sale-202506-drinks",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-06-15",
+    "due_date": null,
+    "items": [
+      {
+        "description": "İçecek satışları",
+        "quantity": 1,
+        "unit_price": 12000.0,
+        "total": 12000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 12000.0,
+    "kdv_amount": 2400.0,
+    "total_amount": 14400.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202506-bread",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-06-20",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Ekmek satışları",
+        "quantity": 1,
+        "unit_price": 34653.46534653466,
+        "total": 34653.46534653466,
+        "kdv_rate": 1
+      }
+    ],
+    "subtotal": 34653.46534653466,
+    "kdv_amount": 346.5346534653436,
+    "total_amount": 35000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202506-flour",
+    "vendor_name": "Un Tedarikçisi A.Ş.",
+    "vendor_tax_no": "9876543210",
+    "date": "2025-06-05",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Un alımı",
+        "quantity": 1,
+        "unit_price": 20833.333333333336,
+        "total": 20833.333333333336,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 20833.333333333336,
+    "kdv_amount": 4166.666666666664,
+    "total_amount": 25000.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202506-heating",
+    "vendor_name": "Doğalgaz Dağıtım",
+    "vendor_tax_no": "1112223334",
+    "date": "2025-06-10",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Doğalgaz",
+        "quantity": 1,
+        "unit_price": 2000.0,
+        "total": 2000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 2000.0,
+    "kdv_amount": 400.0,
+    "total_amount": 2400.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202507-drinks",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-07-15",
+    "due_date": null,
+    "items": [
+      {
+        "description": "İçecek satışları",
+        "quantity": 1,
+        "unit_price": 12000.0,
+        "total": 12000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 12000.0,
+    "kdv_amount": 2400.0,
+    "total_amount": 14400.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202507-bread",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-07-20",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Ekmek satışları",
+        "quantity": 1,
+        "unit_price": 34653.46534653466,
+        "total": 34653.46534653466,
+        "kdv_rate": 1
+      }
+    ],
+    "subtotal": 34653.46534653466,
+    "kdv_amount": 346.5346534653436,
+    "total_amount": 35000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202507-flour",
+    "vendor_name": "Un Tedarikçisi A.Ş.",
+    "vendor_tax_no": "9876543210",
+    "date": "2025-07-05",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Un alımı",
+        "quantity": 1,
+        "unit_price": 20833.333333333336,
+        "total": 20833.333333333336,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 20833.333333333336,
+    "kdv_amount": 4166.666666666664,
+    "total_amount": 25000.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202507-heating",
+    "vendor_name": "Doğalgaz Dağıtım",
+    "vendor_tax_no": "1112223334",
+    "date": "2025-07-10",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Doğalgaz",
+        "quantity": 1,
+        "unit_price": 2000.0,
+        "total": 2000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 2000.0,
+    "kdv_amount": 400.0,
+    "total_amount": 2400.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202508-drinks",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-08-15",
+    "due_date": null,
+    "items": [
+      {
+        "description": "İçecek satışları",
+        "quantity": 1,
+        "unit_price": 12000.0,
+        "total": 12000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 12000.0,
+    "kdv_amount": 2400.0,
+    "total_amount": 14400.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202508-bread",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-08-20",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Ekmek satışları",
+        "quantity": 1,
+        "unit_price": 34653.46534653466,
+        "total": 34653.46534653466,
+        "kdv_rate": 1
+      }
+    ],
+    "subtotal": 34653.46534653466,
+    "kdv_amount": 346.5346534653436,
+    "total_amount": 35000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202508-flour",
+    "vendor_name": "Un Tedarikçisi A.Ş.",
+    "vendor_tax_no": "9876543210",
+    "date": "2025-08-05",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Un alımı",
+        "quantity": 1,
+        "unit_price": 20833.333333333336,
+        "total": 20833.333333333336,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 20833.333333333336,
+    "kdv_amount": 4166.666666666664,
+    "total_amount": 25000.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202508-heating",
+    "vendor_name": "Doğalgaz Dağıtım",
+    "vendor_tax_no": "1112223334",
+    "date": "2025-08-10",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Doğalgaz",
+        "quantity": 1,
+        "unit_price": 2000.0,
+        "total": 2000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 2000.0,
+    "kdv_amount": 400.0,
+    "total_amount": 2400.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202509-drinks",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-09-15",
+    "due_date": null,
+    "items": [
+      {
+        "description": "İçecek satışları",
+        "quantity": 1,
+        "unit_price": 10000.0,
+        "total": 10000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 10000.0,
+    "kdv_amount": 2000.0,
+    "total_amount": 12000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202509-bread",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-09-20",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Ekmek satışları",
+        "quantity": 1,
+        "unit_price": 34653.46534653466,
+        "total": 34653.46534653466,
+        "kdv_rate": 1
+      }
+    ],
+    "subtotal": 34653.46534653466,
+    "kdv_amount": 346.5346534653436,
+    "total_amount": 35000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202509-flour",
+    "vendor_name": "Un Tedarikçisi A.Ş.",
+    "vendor_tax_no": "9876543210",
+    "date": "2025-09-05",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Un alımı",
+        "quantity": 1,
+        "unit_price": 20833.333333333336,
+        "total": 20833.333333333336,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 20833.333333333336,
+    "kdv_amount": 4166.666666666664,
+    "total_amount": 25000.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202509-heating",
+    "vendor_name": "Doğalgaz Dağıtım",
+    "vendor_tax_no": "1112223334",
+    "date": "2025-09-10",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Doğalgaz",
+        "quantity": 1,
+        "unit_price": 2000.0,
+        "total": 2000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 2000.0,
+    "kdv_amount": 400.0,
+    "total_amount": 2400.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202510-drinks",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-10-15",
+    "due_date": null,
+    "items": [
+      {
+        "description": "İçecek satışları",
+        "quantity": 1,
+        "unit_price": 10000.0,
+        "total": 10000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 10000.0,
+    "kdv_amount": 2000.0,
+    "total_amount": 12000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202510-bread",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-10-20",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Ekmek satışları",
+        "quantity": 1,
+        "unit_price": 34653.46534653466,
+        "total": 34653.46534653466,
+        "kdv_rate": 1
+      }
+    ],
+    "subtotal": 34653.46534653466,
+    "kdv_amount": 346.5346534653436,
+    "total_amount": 35000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202510-flour",
+    "vendor_name": "Un Tedarikçisi A.Ş.",
+    "vendor_tax_no": "9876543210",
+    "date": "2025-10-05",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Un alımı",
+        "quantity": 1,
+        "unit_price": 20833.333333333336,
+        "total": 20833.333333333336,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 20833.333333333336,
+    "kdv_amount": 4166.666666666664,
+    "total_amount": 25000.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202510-heating",
+    "vendor_name": "Doğalgaz Dağıtım",
+    "vendor_tax_no": "1112223334",
+    "date": "2025-10-10",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Doğalgaz",
+        "quantity": 1,
+        "unit_price": 2000.0,
+        "total": 2000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 2000.0,
+    "kdv_amount": 400.0,
+    "total_amount": 2400.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202511-drinks",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-11-15",
+    "due_date": null,
+    "items": [
+      {
+        "description": "İçecek satışları",
+        "quantity": 1,
+        "unit_price": 10000.0,
+        "total": 10000.0,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 10000.0,
+    "kdv_amount": 2000.0,
+    "total_amount": 12000.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "sale-202511-bread",
+    "vendor_name": "Ahmet Usta Fırını",
+    "vendor_tax_no": "1234567890",
+    "date": "2025-11-20",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Ekmek satışları",
+        "quantity": 1,
+        "unit_price": 29455.445544554455,
+        "total": 29455.445544554455,
+        "kdv_rate": 1
+      }
+    ],
+    "subtotal": 29455.445544554455,
+    "kdv_amount": 294.5544554455446,
+    "total_amount": 29750.0,
+    "currency": "TRY",
+    "category": "gelir",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202511-flour",
+    "vendor_name": "Un Tedarikçisi A.Ş.",
+    "vendor_tax_no": "9876543210",
+    "date": "2025-11-05",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Un alımı",
+        "quantity": 1,
+        "unit_price": 41666.66666666667,
+        "total": 41666.66666666667,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 41666.66666666667,
+    "kdv_amount": 8333.333333333328,
+    "total_amount": 50000.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  },
+  {
+    "invoice_id": "buy-202511-heating",
+    "vendor_name": "Doğalgaz Dağıtım",
+    "vendor_tax_no": "1112223334",
+    "date": "2025-11-10",
+    "due_date": null,
+    "items": [
+      {
+        "description": "Doğalgaz",
+        "quantity": 1,
+        "unit_price": 7666.666666666667,
+        "total": 7666.666666666667,
+        "kdv_rate": 20
+      }
+    ],
+    "subtotal": 7666.666666666667,
+    "kdv_amount": 1533.333333333333,
+    "total_amount": 9200.0,
+    "currency": "TRY",
+    "category": "gider",
+    "raw_text": null
+  }
+]
