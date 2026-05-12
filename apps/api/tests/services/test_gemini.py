@@ -18,6 +18,18 @@ async def test_parse_invoice_pdf_success(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_parse_invoice_pdf_empty_text_raises(monkeypatch):
+    fake_resp = MagicMock()
+    fake_resp.text = None
+    fake_model = MagicMock()
+    fake_model.generate_content_async = AsyncMock(return_value=fake_resp)
+    svc = GeminiService(api_key="k")
+    monkeypatch.setattr(svc, "_vision_model", fake_model)
+    with pytest.raises(GeminiParseError, match="boş"):
+        await svc.parse_invoice_pdf(b"%PDF-fake")
+
+
+@pytest.mark.asyncio
 async def test_parse_invoice_pdf_bad_json_raises(monkeypatch):
     fake_resp = MagicMock(); fake_resp.text = "not json"
     fake_model = MagicMock()

@@ -1,23 +1,51 @@
 """FastAPI app — KOBİ Advisor API girişi."""
 import logging
+import re
 import chromadb
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from config import settings
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=settings.log_level)
 
+# Vite / yerel test: localhost ve 127.0.0.1 (tüm portlar)
+_DEV_ORIGIN_RE = re.compile(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$")
+
 app = FastAPI(title="KOBİ Advisor API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _cors_headers(request: Request) -> dict[str, str]:
+    origin = request.headers.get("origin")
+    if not origin:
+        return {}
+    if origin in settings.allowed_origins_list or _DEV_ORIGIN_RE.match(origin):
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        }
+    return {}
+
+
+@app.exception_handler(HTTPException)
+async def _http_exc_cors(request: Request, exc: HTTPException) -> JSONResponse:
+    """Hata yanıtlarında da tarayıcının görebileceği CORS başlıkları (özellikle 4xx/5xx)."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=_cors_headers(request),
+    )
 
 
 @app.on_event("startup")

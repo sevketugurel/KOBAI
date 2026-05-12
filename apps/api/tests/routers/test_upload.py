@@ -37,3 +37,20 @@ async def test_upload_rejects_non_pdf(monkeypatch):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
         r = await c.post("/upload", files={"file": ("a.txt", b"hello", "text/plain")})
     assert r.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_upload_accepts_octet_stream_with_pdf_magic(monkeypatch, fake_inv):
+    """Safari / bazı ortamlar PDF için application/octet-stream gönderir."""
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    from routers import upload as ur
+    fake_svc = AsyncMock()
+    fake_svc.parse_invoice_pdf = AsyncMock(return_value=fake_inv)
+    monkeypatch.setattr(ur, "_service", fake_svc)
+    from main import app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
+        r = await c.post(
+            "/upload",
+            files={"file": ("a.pdf", b"%PDF-1.4 minimal", "application/octet-stream")},
+        )
+    assert r.status_code == 200
