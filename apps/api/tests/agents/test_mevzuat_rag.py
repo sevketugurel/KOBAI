@@ -13,7 +13,7 @@ async def test_analyze_returns_recommendations_with_source(six_month_invoices):
     ])
     fake_gemini = MagicMock()
     fake_gemini.generate_text = AsyncMock(return_value="KDV beyannamesini düzenli verin.")
-    agent = MevzuatRagAgent(retriever=fake_retriever, gemini=fake_gemini)
+    agent = MevzuatRagAgent(retrievers=[fake_retriever], gemini=fake_gemini)
     recs = await agent.analyze(six_month_invoices)
     assert len(recs) >= 1
     r = recs[0]

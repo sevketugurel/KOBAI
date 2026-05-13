@@ -32,13 +32,25 @@ def chunk_text(text: str, *, chunk_size: int = 500, overlap: int = 50) -> list[s
 
 
 class RagIndexer:
-    def __init__(self, client=None, embedder: GeminiEmbedder | None = None) -> None:
+    def __init__(
+        self,
+        client=None,
+        embedder: GeminiEmbedder | None = None,
+        *,
+        collection_name: str | None = None,
+    ) -> None:
+        """v2: `collection_name` ile farklı koleksiyona yazılabilir.
+
+        Geriye uyumluluk: parametre verilmezse `settings.chroma_collection`
+        (genel mevzuat) kullanılır. Tenant'a özel index için
+        `rag.collections.tenant_docs_collection(tenant_id)` ver.
+        """
         self._client = client or chromadb.HttpClient(
             host=settings.chroma_host, port=settings.chroma_port,
         )
         self._embedder = embedder or GeminiEmbedder()
         self._collection = self._client.get_or_create_collection(
-            name=settings.chroma_collection
+            name=collection_name or settings.chroma_collection
         )
 
     async def index_document(self, text: str, metadata: dict) -> int:
