@@ -33,8 +33,8 @@ export default function TenantLayout() {
           <span className="ml-3 text-xs text-neutral-500">/{tenant.slug}</span>
         </div>
         <nav className="flex gap-4 text-sm">
-          <NavTab to={`/${tenant.slug}/dashboard`} label="Dashboard" />
-          <NavTab to={`/${tenant.slug}/tax-calendar`} label="Vergi Takvimi" />
+          <SidebarLink to={`/${tenant.slug}/dashboard`} label="Dashboard" />
+          <SidebarLink to={`/${tenant.slug}/integrations`} label="Entegrasyonlar" />
         </nav>
       </header>
       <main className="p-6">
@@ -44,7 +44,7 @@ export default function TenantLayout() {
   );
 }
 
-function NavTab({ to, label }: { to: string; label: string }) {
+function SidebarLink({ to, label }: { to: string; label: string }) {
   return (
     <NavLink
       to={to}

@@ -21,9 +21,9 @@ export default function TenantLayout() {
     }
     if (!tenant)
         return _jsx(FullPage, { tone: "error", children: "Beklenmeyen hata." });
-    return (_jsxs("div", { className: "min-h-screen bg-background", children: [_jsxs("header", { className: "flex items-center justify-between border-b border-border bg-surface px-6 py-3", children: [_jsxs("div", { children: [_jsx("span", { className: "font-display text-lg", children: tenant.display_name }), _jsxs("span", { className: "ml-3 text-xs text-neutral-500", children: ["/", tenant.slug] })] }), _jsxs("nav", { className: "flex gap-4 text-sm", children: [_jsx(NavTab, { to: `/${tenant.slug}/dashboard`, label: "Dashboard" }), _jsx(NavTab, { to: `/${tenant.slug}/tax-calendar`, label: "Vergi Takvimi" })] })] }), _jsx("main", { className: "p-6", children: _jsx(Outlet, {}) })] }));
+    return (_jsxs("div", { className: "min-h-screen bg-background", children: [_jsxs("header", { className: "flex items-center justify-between border-b border-border bg-surface px-6 py-3", children: [_jsxs("div", { children: [_jsx("span", { className: "font-display text-lg", children: tenant.display_name }), _jsxs("span", { className: "ml-3 text-xs text-neutral-500", children: ["/", tenant.slug] })] }), _jsxs("nav", { className: "flex gap-4 text-sm", children: [_jsx(SidebarLink, { to: `/${tenant.slug}/dashboard`, label: "Dashboard" }), _jsx(SidebarLink, { to: `/${tenant.slug}/integrations`, label: "Entegrasyonlar" })] })] }), _jsx("main", { className: "p-6", children: _jsx(Outlet, {}) })] }));
 }
-function NavTab({ to, label }) {
+function SidebarLink({ to, label }) {
     return (_jsx(NavLink, { to: to, className: ({ isActive }) => isActive ? "font-medium text-navy-900" : "text-neutral-600 hover:text-navy-900", children: label }));
 }
 function FullPage({ children, tone = "info" }) {
