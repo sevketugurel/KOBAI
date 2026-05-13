@@ -123,6 +123,27 @@ async def test_analyze_injects_invoice_context_into_generation_call(six_month_in
 
 
 @pytest.mark.asyncio
+async def test_analyze_adds_cautious_gvk_generation_guidance(six_month_invoices):
+    fake_retriever = MagicMock()
+    fake_retriever.search = AsyncMock(side_effect=[
+        [],
+        [{"text": "GVK Md. 103 gelir vergisi tarifesini düzenler.", "metadata": {"law_name": "GVK"},
+          "source_citation": "GVK Md. 103", "confidence": 4.6, "scope": "global"}],
+        [],
+    ])
+    fake_gemini = MagicMock()
+    fake_gemini.generate_text = AsyncMock(return_value="Gelir vergisi diliminizi yıl sonunda gözden geçirin.")
+    agent = MevzuatRagAgent(retrievers=[fake_retriever], gemini=fake_gemini)
+
+    await agent.analyze(six_month_invoices)
+
+    kwargs = fake_gemini.generate_text.await_args.kwargs
+    assert "GVK alanında" in kwargs["prompt"]
+    assert "Kesin vergi tasarrufu hesabı verme" in kwargs["context"]
+    assert "mali müşavirle teyit edilmesini öner" in kwargs["context"]
+
+
+@pytest.mark.asyncio
 async def test_analyze_returns_empty_for_empty_invoice_list():
     fake_retriever = MagicMock()
     fake_retriever.search = AsyncMock()

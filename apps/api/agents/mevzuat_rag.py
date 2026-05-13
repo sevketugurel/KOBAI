@@ -120,8 +120,8 @@ def _build_tax_queries(context: dict[str, float | int | str]) -> list[tuple[str,
     ]
 
 
-def _build_generation_context(context: dict[str, float | int | str]) -> str:
-    return (
+def _build_generation_context(law: str, context: dict[str, float | int | str]) -> str:
+    base = (
         "Türkçe yaz. 1-2 cümle ile uygulanabilir tek öneri ver. "
         "Mümkünse tarih veya tutar belirt. "
         f"İşletme bağlamı: {context['date_range']} döneminde {context['invoice_count']} fatura, "
@@ -131,6 +131,14 @@ def _build_generation_context(context: dict[str, float | int | str]) -> str:
         f"gider KDV'si {_format_try(float(context['expense_kdv_total']))}, "
         f"net KDV tahmini {_format_try(abs(float(context['net_kdv_estimate'])))}."
     )
+    if law == "GVK":
+        return (
+            f"{base} Kesin vergi tasarrufu hesabı verme. "
+            "Yalnızca gelir dilimi, beyan zamanı ve belgelenebilir giderlerin etkisi hakkında "
+            "ihtiyatlı, kısa ve yönlendirici bir öneri ver. "
+            "Gerekirse mali müşavirle teyit edilmesini öner."
+        )
+    return base
 
 
 def _build_generation_prompt(law: str, hit_text: str) -> str:
@@ -181,7 +189,7 @@ class MevzuatRagAgent:
             top = hits[0]
             advice = await self._gemini.generate_text(
                 prompt=_build_generation_prompt(law, top["text"]),
-                context=_build_generation_context(context),
+                context=_build_generation_context(law, context),
             )
             recommendations.append({
                 "recommendation": advice.strip(),
