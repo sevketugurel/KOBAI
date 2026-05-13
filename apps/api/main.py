@@ -82,7 +82,13 @@ app.include_router(report_router.router)
 from routers.v2 import tenants as v2_tenants_router
 from routers.v2 import chat as v2_chat_router
 from routers.v2 import integrations as v2_integrations_router
+from routers.v2 import tax_calendar as v2_tax_router  # Faz 4 — register düşmüştü, restore
+from routers.v2 import pos as v2_pos_router
 
 app.include_router(v2_tenants_router.router)
 app.include_router(v2_chat_router.router)
 app.include_router(v2_integrations_router.router)
+app.include_router(v2_tax_router.tenant_router)
+app.include_router(v2_tax_router.cron_router)
+app.include_router(v2_pos_router.tenant_router)
+app.include_router(v2_pos_router.public_router)
