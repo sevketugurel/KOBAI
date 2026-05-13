@@ -17,7 +17,13 @@
       "Bash(python -m pytest tests/ -q)",
       "Bash(npm ls *)",
       "Bash(gh pr *)",
-      "Bash(grep -E \"\\\\.tsx$\")"
+      "Bash(grep -E \"\\\\.tsx$\")",
+      "Bash(node *)",
+      "Bash(npx tsc *)",
+      "Bash(python -m pytest tests/routers/test_v2_dashboard.py -v)",
+      "Bash(pytest tests/routers/test_v2_dashboard.py -v)",
+      "Bash(pytest tests/routers/test_v2_pos.py -x --no-header)",
+      "Bash(pytest tests/routers/ tests/services/ -x --no-header -q)"
     ]
   }
 }

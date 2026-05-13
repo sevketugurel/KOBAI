@@ -8,7 +8,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import POSPage from "./pages/POSPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import TaxCalendarPage from "./pages/TaxCalendarPage";
-import TenantDashboardStub from "./pages/TenantDashboardStub";
+import TenantDashboard from "./pages/TenantDashboard";
 
 export default function App() {
   return (
@@ -25,7 +25,7 @@ export default function App() {
       {/* v2 tenant-bound rotalar */}
       <Route path=":slug" element={<TenantLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<TenantDashboardStub />} />
+        <Route path="dashboard" element={<TenantDashboard />} />
         <Route path="integrations" element={<IntegrationsPage />} />
         {/* Faz 4 — route düşmüştü, restore */}
         <Route path="tax-calendar" element={<TaxCalendarPage />} />
