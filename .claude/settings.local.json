@@ -15,7 +15,9 @@
       "Bash(python3 *)",
       "Bash(npx vitest *)",
       "Bash(python -m pytest tests/ -q)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(gh pr *)",
+      "Bash(grep -E \"\\\\.tsx$\")"
     ]
   }
 }
