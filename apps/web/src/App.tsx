@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import TaxCalendarPage from "./pages/TaxCalendarPage";
 import TenantDashboardStub from "./pages/TenantDashboardStub";
 
 export default function App() {
