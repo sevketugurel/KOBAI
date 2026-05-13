@@ -89,4 +89,6 @@ export const v2 = {
         const qs = targetDate ? `?target_date=${encodeURIComponent(targetDate)}` : "";
         return _json(`/v2/${encodeURIComponent(slug)}/pos/summary${qs}`);
     },
+    // Sprint B — tenant dashboard özeti
+    getDashboardSummary: (slug) => _json(`/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`),
 };

@@ -173,6 +173,12 @@ export const v2 = {
     const qs = targetDate ? `?target_date=${encodeURIComponent(targetDate)}` : "";
     return _json<PosDailySummary>(`/v2/${encodeURIComponent(slug)}/pos/summary${qs}`);
   },
+
+  // Sprint B — tenant dashboard özeti
+  getDashboardSummary: (slug: string) =>
+    _json<DashboardSummary>(
+      `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
+    ),
 };
 
 // ── Faz 4 tipleri (vergi takvimi) ────────────────────────────────────
@@ -250,4 +256,29 @@ export interface PosDailySummary {
   sale_count: number;
   refund_count: number;
   avg_ticket: string | null;
+}
+
+// ── Sprint B — dashboard ─────────────────────────────────────────────
+
+export type DashboardActivityType = "bank" | "pos" | "tax";
+
+export interface DashboardActivity {
+  id: string;
+  type: DashboardActivityType;
+  title: string;
+  amount: string | null;
+  currency: string;
+  timestamp: string;
+}
+
+export interface DashboardSummary {
+  period_start: string;
+  period_end: string;
+  net_flow_this_month: string;
+  pos_sales_this_month: string;
+  upcoming_tax_count: number;
+  integration_count: number;
+  upcoming_taxes: TaxCalendarItem[];
+  recent_activities: DashboardActivity[];
+  updated_at: string;
 }
