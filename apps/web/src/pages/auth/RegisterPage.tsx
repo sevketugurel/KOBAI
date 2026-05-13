@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { v2 } from "../../api/v2";
 import { useAuth } from "../../auth/AuthContext";
-import { isSupabaseConfigured } from "../../auth/supabaseClient";
+import { isSupabaseConfigured, supabase } from "../../auth/supabaseClient";
+
+const PENDING_TENANT_KEY = "kobai_pending_tenant";
 
 const SECTORS = [
   ["gida_perakende", "Gıda Perakende"],
@@ -50,22 +52,28 @@ export default function RegisterPage() {
       setError(signUpErr);
       return;
     }
-    // Supabase mail doğrulama açıksa session henüz hazır olmayabilir.
-    // O zaman kullanıcıyı login sayfasına yönlendirelim.
+
+    const tenantPayload = { slug, display_name: displayName, sector, company_type: companyType };
+
+    // Supabase mail doğrulama kapalıysa session hemen hazır olur; açıksa null gelir.
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    if (!sessionData.session) {
+      // E-posta doğrulama gerekiyor → tenant verisini sakla, giriş sonrasında işle.
+      localStorage.setItem(PENDING_TENANT_KEY, JSON.stringify(tenantPayload));
+      setBusy(false);
+      setError(
+        "Hesabın oluşturuldu! E-postana bir doğrulama bağlantısı gönderdik. " +
+        "Doğruladıktan sonra giriş yap, işletme kaydın otomatik tamamlanacak.",
+      );
+      return;
+    }
+
     try {
-      await v2.registerTenant({
-        slug,
-        display_name: displayName,
-        sector,
-        company_type: companyType,
-      });
+      await v2.registerTenant(tenantPayload);
       navigate(`/${slug}/dashboard`);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? `Kayıt başarılı; tenant oluşturma sırasında hata: ${err.message}. Lütfen e-postanı doğrula ve tekrar dene.`
-          : "Bilinmeyen hata",
-      );
+      setError(err instanceof Error ? err.message : "Bilinmeyen hata");
     } finally {
       setBusy(false);
     }
@@ -144,7 +152,11 @@ export default function RegisterPage() {
             ))}
           </select>
         </fieldset>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p className={`text-sm ${error.startsWith("Hesabın oluşturuldu") ? "text-blue-700" : "text-red-600"}`}>
+            {error}
+          </p>
+        )}
         <button
           type="submit"
           disabled={busy}

@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from typing import Annotated
 
 import jwt
+from jwt import PyJWKClient, PyJWKClientError
 from fastapi import Depends, Header, HTTPException, Path, status
 
 from config import settings
@@ -28,6 +29,17 @@ from schemas.tenant import TenantContext
 
 # JWT içinde Supabase'in koyduğu sabit audience.
 _SUPABASE_AUD = "authenticated"
+
+# Lazy JWKS istemcisi — ilk çağrıda oluşturulur, anahtarları önbellekler.
+_jwks_client: PyJWKClient | None = None
+
+
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        url = f"{settings.supabase_url}/auth/v1/.well-known/jwks.json"
+        _jwks_client = PyJWKClient(url, cache_keys=True)
+    return _jwks_client
 
 
 @dataclass(frozen=True)
@@ -50,6 +62,27 @@ def _extract_bearer(authorization: str | None) -> str:
 
 
 def _decode_jwt(token: str) -> dict:
+    # JWKS yolu: SUPABASE_URL varsa ES256/RS256 ile dene (modern Supabase projeler).
+    if settings.supabase_url:
+        try:
+            signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
+            return jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["ES256", "RS256"],
+                audience=_SUPABASE_AUD,
+            )
+        except (PyJWKClientError, jwt.InvalidAlgorithmError):
+            # Eşleşen anahtar yok veya algoritma uyuşmuyor → HS256 fallback.
+            pass
+        except jwt.ExpiredSignatureError as e:
+            raise _AuthError("token süresi dolmuş") from e
+        except jwt.InvalidAudienceError as e:
+            raise _AuthError("geçersiz token (audience)") from e
+        except jwt.InvalidTokenError as e:
+            raise _AuthError(f"geçersiz token: {e}") from e
+
+    # Fallback: HS256 + JWT secret (eski Supabase / test ortamı).
     if not settings.supabase_jwt_secret:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
