@@ -1,5 +1,5 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { Navigate, Outlet, useParams } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useParams } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useTenant } from "../../hooks/useTenant";
 /** /:slug/* altındaki tüm v2 rotaları için guard + tenant context. */
@@ -21,7 +21,10 @@ export default function TenantLayout() {
     }
     if (!tenant)
         return _jsx(FullPage, { tone: "error", children: "Beklenmeyen hata." });
-    return (_jsxs("div", { className: "min-h-screen bg-background", children: [_jsxs("header", { className: "border-b border-border bg-surface px-6 py-3", children: [_jsx("span", { className: "font-display text-lg", children: tenant.display_name }), _jsxs("span", { className: "ml-3 text-xs text-neutral-500", children: ["/", tenant.slug] })] }), _jsx("main", { className: "p-6", children: _jsx(Outlet, {}) })] }));
+    return (_jsxs("div", { className: "min-h-screen bg-background", children: [_jsxs("header", { className: "flex items-center justify-between border-b border-border bg-surface px-6 py-3", children: [_jsxs("div", { children: [_jsx("span", { className: "font-display text-lg", children: tenant.display_name }), _jsxs("span", { className: "ml-3 text-xs text-neutral-500", children: ["/", tenant.slug] })] }), _jsxs("nav", { className: "flex gap-4 text-sm", children: [_jsx(SidebarLink, { to: `/${tenant.slug}/dashboard`, label: "Dashboard" }), _jsx(SidebarLink, { to: `/${tenant.slug}/integrations`, label: "Entegrasyonlar" })] })] }), _jsx("main", { className: "p-6", children: _jsx(Outlet, {}) })] }));
+}
+function SidebarLink({ to, label }) {
+    return (_jsx(NavLink, { to: to, className: ({ isActive }) => isActive ? "font-medium text-navy-900" : "text-neutral-600 hover:text-navy-900", children: label }));
 }
 function FullPage({ children, tone = "info" }) {
     const color = tone === "error" ? "text-red-700" : "text-neutral-600";
