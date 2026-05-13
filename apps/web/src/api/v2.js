@@ -67,4 +67,26 @@ export const v2 = {
     uploadBankStatement: (slug, file) => _multipart(`/v2/${encodeURIComponent(slug)}/integrations/bank-statement`, file),
     listIntegrations: (slug) => _json(`/v2/${encodeURIComponent(slug)}/integrations`),
     listBankTransactions: (slug, limit = 100) => _json(`/v2/${encodeURIComponent(slug)}/bank-transactions?limit=${limit}`),
+    // Faz 4 — vergi takvimi (PR'da v2 client'a eklenmemişti; restore)
+    listTaxCalendar: (slug, opts) => {
+        const q = new URLSearchParams();
+        if (opts?.upcomingDays)
+            q.set("upcoming_days", String(opts.upcomingDays));
+        if (opts?.status)
+            q.set("status_filter", opts.status);
+        const qs = q.toString();
+        return _json(`/v2/${encodeURIComponent(slug)}/tax-calendar${qs ? "?" + qs : ""}`);
+    },
+    patchTaxCalendarItem: (slug, itemId, patch) => _json(`/v2/${encodeURIComponent(slug)}/tax-calendar/${encodeURIComponent(itemId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+    // Faz 6 — sanal POS
+    getPosConfig: (slug) => _json(`/v2/${encodeURIComponent(slug)}/integrations/pos`),
+    putPosConfig: (slug, payload) => _json(`/v2/${encodeURIComponent(slug)}/integrations/pos`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    }),
+    listPosTransactions: (slug, limit = 100) => _json(`/v2/${encodeURIComponent(slug)}/pos/transactions?limit=${limit}`),
+    getPosSummary: (slug, targetDate) => {
+        const qs = targetDate ? `?target_date=${encodeURIComponent(targetDate)}` : "";
+        return _json(`/v2/${encodeURIComponent(slug)}/pos/summary${qs}`);
+    },
 };
