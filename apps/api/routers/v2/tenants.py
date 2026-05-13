@@ -21,8 +21,29 @@ from schemas.tenant import (
     TenantOut,
     TenantUpdate,
 )
+from services.tax_calendar import build_initial_calendar
 
+import logging
+
+log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v2/tenants", tags=["v2-tenants"])
+
+
+async def _seed_tax_calendar_best_effort(tenant_id: str, slug: str, company_type: str) -> None:
+    """Tenant kayıt sonrası 12 aylık takvimi yaz. Hata olursa log düş, akışı bozma.
+
+    Dependency-injection yerine doğrudan factory'yi çağırıyoruz; testte tax_repo
+    Supabase'e gitmesin diye `get_tax_repo` monkeypatch'lenir veya factory
+    `SupabaseNotConfigured` raise edip swallow edilir.
+    """
+    try:
+        from repositories.tax_repo import get_tax_repo
+
+        items = build_initial_calendar(company_type=company_type)
+        seeded = await get_tax_repo().bulk_seed(tenant_id=tenant_id, items=items)
+        log.info("tenant=%s için %d vergi takvimi kalemi seed edildi", slug, seeded)
+    except Exception:  # noqa: BLE001
+        log.exception("tax calendar seed başarısız (tenant=%s)", slug)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=TenantOut)
@@ -31,9 +52,13 @@ async def register_tenant(
     principal: Annotated[AuthPrincipal, Depends(require_auth)],
     repo: Annotated[TenantRepo, Depends(get_tenant_repo)],
 ) -> TenantOut:
-    """Yeni KOBİ kaydı. Caller otomatik 'owner' üye olur."""
+    """Yeni KOBİ kaydı. Caller otomatik 'owner' üye olur.
+
+    Faz 4: tenant kaydından hemen sonra 12 aylık vergi takvimi seed edilir
+    (best-effort, başarısız olursa tenant yine de oluşur).
+    """
     try:
-        return await repo.create_tenant_with_owner(payload, owner_user_id=principal.user_id)
+        tenant = await repo.create_tenant_with_owner(payload, owner_user_id=principal.user_id)
     except APIError as e:
         # 23505 unique_violation = slug çakışması
         if getattr(e, "code", None) == "23505" or "duplicate" in str(e).lower():
@@ -42,6 +67,11 @@ async def register_tenant(
                 detail=f"slug zaten kullanımda: {payload.slug}",
             ) from e
         raise
+
+    await _seed_tax_calendar_best_effort(
+        tenant_id=tenant.id, slug=tenant.slug, company_type=payload.company_type,
+    )
+    return tenant
 
 
 @router.get("/me", response_model=list[TenantOut])

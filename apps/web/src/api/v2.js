@@ -43,4 +43,15 @@ export const v2 = {
         body: JSON.stringify(patch),
     }),
     listMembers: (slug) => _json(`/v2/tenants/${encodeURIComponent(slug)}/members`),
+    // Faz 4 — vergi takvimi
+    listTaxCalendar: (slug, opts) => {
+        const q = new URLSearchParams();
+        if (opts?.upcomingDays)
+            q.set("upcoming_days", String(opts.upcomingDays));
+        if (opts?.status)
+            q.set("status_filter", opts.status);
+        const qs = q.toString();
+        return _json(`/v2/${encodeURIComponent(slug)}/tax-calendar${qs ? "?" + qs : ""}`);
+    },
+    patchTaxCalendarItem: (slug, itemId, patch) => _json(`/v2/${encodeURIComponent(slug)}/tax-calendar/${encodeURIComponent(itemId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
 };

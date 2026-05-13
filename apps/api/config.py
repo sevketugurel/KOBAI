@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
     encryption_key: str | None = None
 
+    # Faz 4 cron auth: Cloud Scheduler bu header'la tetikler.
+    cron_secret: str | None = None
+    reminder_window_days: int = 7
+
     @field_validator("gemini_vision_model", "gemini_text_model", "gemini_embed_model")
     @classmethod
     def _block_forbidden(cls, v: str) -> str:

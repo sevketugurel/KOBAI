@@ -61,6 +61,36 @@ async function _json<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await r.json()) as T;
 }
 
+// ── Faz 4 — Vergi Takvimi ────────────────────────────────────────────
+
+export type TaxType =
+  | "kdv" | "muhtasar" | "gecici_vergi" | "sgk"
+  | "gelir_vergisi" | "kurumlar_vergisi";
+
+export type TaxStatus = "pending" | "paid" | "overdue";
+
+export interface TaxCalendarItem {
+  id: string;
+  tenant_id: string;
+  title: string;
+  description: string | null;
+  tax_type: TaxType;
+  due_date: string;             // ISO date
+  amount: string | null;
+  currency: string;
+  status: TaxStatus;
+  period: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaxCalendarPatch {
+  status?: TaxStatus;
+  amount?: string;
+  notes?: string;
+}
+
 export const v2 = {
   registerTenant: (payload: TenantCreate) =>
     _json<TenantOut>("/v2/tenants", { method: "POST", body: JSON.stringify(payload) }),
@@ -73,4 +103,20 @@ export const v2 = {
     }),
   listMembers: (slug: string) =>
     _json<MembershipOut[]>(`/v2/tenants/${encodeURIComponent(slug)}/members`),
+
+  // Faz 4 — vergi takvimi
+  listTaxCalendar: (slug: string, opts?: { upcomingDays?: number; status?: TaxStatus }) => {
+    const q = new URLSearchParams();
+    if (opts?.upcomingDays) q.set("upcoming_days", String(opts.upcomingDays));
+    if (opts?.status) q.set("status_filter", opts.status);
+    const qs = q.toString();
+    return _json<TaxCalendarItem[]>(
+      `/v2/${encodeURIComponent(slug)}/tax-calendar${qs ? "?" + qs : ""}`,
+    );
+  },
+  patchTaxCalendarItem: (slug: string, itemId: string, patch: TaxCalendarPatch) =>
+    _json<TaxCalendarItem>(
+      `/v2/${encodeURIComponent(slug)}/tax-calendar/${encodeURIComponent(itemId)}`,
+      { method: "PATCH", body: JSON.stringify(patch) },
+    ),
 };

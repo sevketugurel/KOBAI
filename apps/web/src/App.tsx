@@ -5,6 +5,7 @@ import DashboardPage from "./pages/DashboardPage";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import TaxCalendarPage from "./pages/TaxCalendarPage";
 import TenantDashboardStub from "./pages/TenantDashboardStub";
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
       <Route path=":slug" element={<TenantLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TenantDashboardStub />} />
+        <Route path="tax-calendar" element={<TaxCalendarPage />} />
       </Route>
     </Routes>
   );
