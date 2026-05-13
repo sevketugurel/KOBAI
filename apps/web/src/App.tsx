@@ -5,6 +5,7 @@ import DashboardPage from "./pages/DashboardPage";
 import HomePage from "./pages/HomePage";
 import IntegrationsPage from "./pages/IntegrationsPage";
 import LoginPage from "./pages/auth/LoginPage";
+import POSPage from "./pages/POSPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import TaxCalendarPage from "./pages/TaxCalendarPage";
 import TenantDashboardStub from "./pages/TenantDashboardStub";
@@ -26,6 +27,10 @@ export default function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TenantDashboardStub />} />
         <Route path="integrations" element={<IntegrationsPage />} />
+        {/* Faz 4 — route düşmüştü, restore */}
+        <Route path="tax-calendar" element={<TaxCalendarPage />} />
+        {/* Faz 6 */}
+        <Route path="pos" element={<POSPage />} />
       </Route>
     </Routes>
   );

@@ -35,6 +35,8 @@ export default function TenantLayout() {
         <nav className="flex gap-4 text-sm">
           <SidebarLink to={`/${tenant.slug}/dashboard`} label="Dashboard" />
           <SidebarLink to={`/${tenant.slug}/integrations`} label="Entegrasyonlar" />
+          <SidebarLink to={`/${tenant.slug}/tax-calendar`} label="Vergi Takvimi" />
+          <SidebarLink to={`/${tenant.slug}/pos`} label="POS" />
         </nav>
       </header>
       <main className="p-6">
