@@ -42,3 +42,21 @@ async def test_search_uses_non_blank_fallback_when_metadata_missing():
 
     assert results[0]["source_citation"] == "Kaynak belirtilmedi"
     assert 1.0 <= results[0]["confidence"] <= 5.0
+
+
+@pytest.mark.asyncio
+async def test_search_formats_multi_article_citation():
+    fake_collection = MagicMock()
+    fake_collection.query.return_value = {
+        "documents": [["KDV Kanunu Madde 28 ve Madde 41'e göre..."]],
+        "metadatas": [[{"law_name": "KDV", "article_no": "28, 41", "source": "kdv.txt"}]],
+        "distances": [[0.3]],
+    }
+    fake_embedder = MagicMock()
+    fake_embedder.embed_for_query = AsyncMock(return_value=[0.0] * 1536)
+    r = RagRetriever(collection=fake_collection, embedder=fake_embedder)
+
+    results = await r.search("KDV beyanı ve oranları?")
+
+    assert results[0]["source_citation"] == "KDV Md. 28, 41"
+    assert 1.0 <= results[0]["confidence"] <= 5.0
