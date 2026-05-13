@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "apps" / "api"))
 
+from rag.citations import extract_article_nos  # noqa: E402
 from rag.indexer import RagIndexer  # noqa: E402
 
 
@@ -23,14 +24,16 @@ async def main() -> None:
         return
     for path in files:
         text = path.read_text(encoding="utf-8")
+        article_nos = extract_article_nos(text)
         meta = {
             "source": path.name,
             "law_name": path.stem.split("_")[0].upper(),
-            "article_no": None,
+            "article_no": ", ".join(article_nos) if article_nos else None,
             "date": "2026-01-01",
         }
         n = await indexer.index_document(text, meta)
-        print(f"Yüklendi: {path.name} — {n} chunk")
+        article_info = f" — Md. {meta['article_no']}" if meta["article_no"] else ""
+        print(f"Yüklendi: {path.name} — {n} chunk{article_info}")
 
 
 if __name__ == "__main__":

@@ -24,3 +24,21 @@ async def test_search_formats_citation():
     results = await r.search("Gelir vergisi dilimi?")
     assert results[0]["source_citation"] == "GVK Md. 103"
     assert results[0]["confidence"] >= 4.0
+
+
+@pytest.mark.asyncio
+async def test_search_uses_non_blank_fallback_when_metadata_missing():
+    fake_collection = MagicMock()
+    fake_collection.query.return_value = {
+        "documents": [["Belirsiz kaynaklı içerik"]],
+        "metadatas": [[{}]],
+        "distances": [[0.4]],
+    }
+    fake_embedder = MagicMock()
+    fake_embedder.embed_for_query = AsyncMock(return_value=[0.0] * 1536)
+    r = RagRetriever(collection=fake_collection, embedder=fake_embedder)
+
+    results = await r.search("Belirsiz mevzuat?")
+
+    assert results[0]["source_citation"] == "Kaynak belirtilmedi"
+    assert 1.0 <= results[0]["confidence"] <= 5.0

@@ -2,6 +2,7 @@
 import chromadb
 
 from config import settings
+from rag.citations import build_source_citation
 from rag.embeddings import GeminiEmbedder
 
 
@@ -50,9 +51,7 @@ class RagRetriever:
             return []
         out: list[dict] = []
         for doc, meta, dist in zip(documents[0], metadatas[0], distances[0]):
-            law = (meta or {}).get("law_name", "?")
-            art = (meta or {}).get("article_no")
-            citation = f"{law} Md. {art}" if art else law
+            citation = build_source_citation(meta or {})
             out.append(
                 {
                     "text": doc,
