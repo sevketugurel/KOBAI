@@ -15,32 +15,52 @@ def distance_to_confidence(distance: float) -> float:
 
 
 class RagRetriever:
-    def __init__(self, collection=None, embedder: GeminiEmbedder | None = None) -> None:
+    def __init__(
+        self,
+        collection=None,
+        embedder: GeminiEmbedder | None = None,
+        *,
+        collection_name: str | None = None,
+        scope: str = "global",
+    ) -> None:
+        """v2: `collection_name` veya `scope` ile farklı koleksiyondan oku.
+
+        `scope` salt etiket; sonuçlara `scope="global"|"private"` olarak
+        eklenir, MevzuatRagAgent skor-birleştirme yaparken kullanır.
+        """
         if collection is None:
             client = chromadb.HttpClient(
                 host=settings.chroma_host, port=settings.chroma_port
             )
-            collection = client.get_or_create_collection(name=settings.chroma_collection)
+            collection = client.get_or_create_collection(
+                name=collection_name or settings.chroma_collection
+            )
         self._collection = collection
         self._embedder = embedder or GeminiEmbedder()
+        self._scope = scope
 
     async def search(self, query: str, n_results: int = 5) -> list[dict]:
         vec = await self._embedder.embed_for_query(query)
         raw = self._collection.query(query_embeddings=[vec], n_results=n_results)
+        # Boş koleksiyon → documents=[[]]
+        documents = raw.get("documents") or [[]]
+        metadatas = raw.get("metadatas") or [[]]
+        distances = raw.get("distances") or [[]]
+        if not documents or not documents[0]:
+            return []
         out: list[dict] = []
-        for doc, meta, dist in zip(
-            raw["documents"][0], raw["metadatas"][0], raw["distances"][0]
-        ):
-            law = meta.get("law_name", "?")
-            art = meta.get("article_no")
+        for doc, meta, dist in zip(documents[0], metadatas[0], distances[0]):
+            law = (meta or {}).get("law_name", "?")
+            art = (meta or {}).get("article_no")
             citation = f"{law} Md. {art}" if art else law
             out.append(
                 {
                     "text": doc,
-                    "metadata": meta,
+                    "metadata": meta or {},
                     "distance": dist,
                     "source_citation": citation,
                     "confidence": distance_to_confidence(dist),
+                    "scope": self._scope,
                 }
             )
         return out

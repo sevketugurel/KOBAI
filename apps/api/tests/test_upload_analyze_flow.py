@@ -31,7 +31,7 @@ async def test_upload_then_analyze_uses_invoice(monkeypatch):
     fake_mevzuat.analyze = AsyncMock(return_value=[])
     monkeypatch.setattr(orchestrator, "NakitAkisiAgent", lambda: fake_cash)
     monkeypatch.setattr(orchestrator, "RiskAgent", lambda: fake_risk)
-    monkeypatch.setattr(orchestrator, "MevzuatRagAgent", lambda: fake_mevzuat)
+    monkeypatch.setattr(orchestrator, "MevzuatRagAgent", lambda **_kw: fake_mevzuat)
     from main import app
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://t") as c:
         u = await c.post("/upload", files={"file":("a.pdf", b"%PDF-1.4", "application/pdf")})

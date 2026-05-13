@@ -15,6 +15,8 @@ from agents.kosgeb import suggest_kosgeb
 
 class AgentState(TypedDict, total=False):
     job_id: str
+    # v2: tenant bağlamı. None → v1 demo modu (yalnızca global RAG).
+    tenant_id: str | None
     invoices: list[InvoiceData]
     company_type: str
     sector: str
@@ -55,7 +57,9 @@ async def _risk_node(state: AgentState) -> dict:
 
 async def _tax_node(state: AgentState) -> dict:
     t0 = time.perf_counter()
-    out = await MevzuatRagAgent().analyze(state["invoices"])
+    # v2: tenant_id varsa private + global RAG; yoksa salt global (v1 demo).
+    agent = MevzuatRagAgent(tenant_id=state.get("tenant_id"))
+    out = await agent.analyze(state["invoices"])
     return {
         "tax_recs": out,
         "trace": [_step(agent="mevzuat_rag", action=f"{len(out)} öneri", t0=t0, output=len(out))],
@@ -100,11 +104,12 @@ _graph = _build_graph()
 
 async def run_pipeline(
     *, invoices: list[InvoiceData], company_type: str, sector: str, period: str,
-    job_id: str, auto_approve: bool = True,
+    job_id: str, auto_approve: bool = True, tenant_id: str | None = None,
 ) -> AnalysisResult:
     init: AgentState = {
-        "job_id": job_id, "invoices": invoices, "company_type": company_type,
-        "sector": sector, "period": period, "trace": [], "human_approved": auto_approve,
+        "job_id": job_id, "tenant_id": tenant_id, "invoices": invoices,
+        "company_type": company_type, "sector": sector, "period": period,
+        "trace": [], "human_approved": auto_approve,
     }
     final = await _graph.ainvoke(init)
     risk = final.get("risk", {"risk_score": 1, "risk_label": "green", "explanation": "n/a"})

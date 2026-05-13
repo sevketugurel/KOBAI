@@ -24,7 +24,8 @@ async def test_pipeline_completes(six_month_invoices, monkeypatch):
     ])
     monkeypatch.setattr(orchestrator, "NakitAkisiAgent", lambda: fake_cash)
     monkeypatch.setattr(orchestrator, "RiskAgent", lambda: fake_risk)
-    monkeypatch.setattr(orchestrator, "MevzuatRagAgent", lambda: fake_mevzuat)
+    # v2: orchestrator artık MevzuatRagAgent(tenant_id=…) çağırıyor.
+    monkeypatch.setattr(orchestrator, "MevzuatRagAgent", lambda **_kw: fake_mevzuat)
 
     result = await run_pipeline(
         invoices=six_month_invoices, company_type="Şahıs Şirketi", sector="Gıda & İçecek",

@@ -1,8 +1,10 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { v2 } from "../../api/v2";
 import { useAuth } from "../../auth/AuthContext";
 import { isSupabaseConfigured } from "../../auth/supabaseClient";
+const PENDING_TENANT_KEY = "kobai_pending_tenant";
 export default function LoginPage() {
     const { signIn } = useAuth();
     const navigate = useNavigate();
@@ -15,11 +17,27 @@ export default function LoginPage() {
         setBusy(true);
         setError(null);
         const { error: err } = await signIn(email, password);
-        setBusy(false);
         if (err) {
+            setBusy(false);
             setError(err);
             return;
         }
+        // Kayıt sırasında e-posta doğrulama bekleyen tenant varsa tamamla.
+        const raw = localStorage.getItem(PENDING_TENANT_KEY);
+        if (raw) {
+            localStorage.removeItem(PENDING_TENANT_KEY);
+            try {
+                const payload = JSON.parse(raw);
+                await v2.registerTenant(payload);
+                setBusy(false);
+                navigate(`/${payload.slug}/dashboard`);
+                return;
+            }
+            catch {
+                // Tenant zaten oluşmuş olabilir; ana sayfaya geç.
+            }
+        }
+        setBusy(false);
         navigate("/");
     }
     if (!isSupabaseConfigured()) {
