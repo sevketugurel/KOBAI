@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useParams } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useParams } from "react-router-dom";
 
 import { useAuth } from "../../auth/AuthContext";
 import { useTenant } from "../../hooks/useTenant";
@@ -27,14 +27,33 @@ export default function TenantLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-surface px-6 py-3">
-        <span className="font-display text-lg">{tenant.display_name}</span>
-        <span className="ml-3 text-xs text-neutral-500">/{tenant.slug}</span>
+      <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
+        <div>
+          <span className="font-display text-lg">{tenant.display_name}</span>
+          <span className="ml-3 text-xs text-neutral-500">/{tenant.slug}</span>
+        </div>
+        <nav className="flex gap-4 text-sm">
+          <SidebarLink to={`/${tenant.slug}/dashboard`} label="Dashboard" />
+          <SidebarLink to={`/${tenant.slug}/integrations`} label="Entegrasyonlar" />
+        </nav>
       </header>
       <main className="p-6">
         <Outlet />
       </main>
     </div>
+  );
+}
+
+function SidebarLink({ to, label }: { to: string; label: string }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        isActive ? "font-medium text-navy-900" : "text-neutral-600 hover:text-navy-900"
+      }
+    >
+      {label}
+    </NavLink>
   );
 }
 

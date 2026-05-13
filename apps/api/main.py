@@ -81,6 +81,8 @@ app.include_router(report_router.router)
 # Router'lar — v2 (multi-tenant, JWT-bound)
 from routers.v2 import tenants as v2_tenants_router
 from routers.v2 import chat as v2_chat_router
+from routers.v2 import integrations as v2_integrations_router
 
 app.include_router(v2_tenants_router.router)
 app.include_router(v2_chat_router.router)
+app.include_router(v2_integrations_router.router)

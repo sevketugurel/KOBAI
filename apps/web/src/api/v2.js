@@ -34,6 +34,26 @@ async function _json(path, init = {}) {
     }
     return (await r.json());
 }
+async function _multipart(path, file) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const r = await fetch(`${BASE_URL}${path}`, {
+        method: "POST",
+        headers: await authHeader(),
+        body: fd,
+    });
+    if (!r.ok) {
+        let detail = null;
+        try {
+            detail = await r.json();
+        }
+        catch {
+            /* ignore */
+        }
+        throw new V2ApiError(r.status, `HTTP ${r.status}`, detail);
+    }
+    return (await r.json());
+}
 export const v2 = {
     registerTenant: (payload) => _json("/v2/tenants", { method: "POST", body: JSON.stringify(payload) }),
     listMyTenants: () => _json("/v2/tenants/me"),
@@ -43,4 +63,8 @@ export const v2 = {
         body: JSON.stringify(patch),
     }),
     listMembers: (slug) => _json(`/v2/tenants/${encodeURIComponent(slug)}/members`),
+    // Faz 3 — entegrasyonlar
+    uploadBankStatement: (slug, file) => _multipart(`/v2/${encodeURIComponent(slug)}/integrations/bank-statement`, file),
+    listIntegrations: (slug) => _json(`/v2/${encodeURIComponent(slug)}/integrations`),
+    listBankTransactions: (slug, limit = 100) => _json(`/v2/${encodeURIComponent(slug)}/bank-transactions?limit=${limit}`),
 };

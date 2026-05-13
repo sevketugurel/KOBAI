@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import TenantLayout from "./components/layout/TenantLayout";
 import DashboardPage from "./pages/DashboardPage";
 import HomePage from "./pages/HomePage";
+import IntegrationsPage from "./pages/IntegrationsPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import TenantDashboardStub from "./pages/TenantDashboardStub";
@@ -23,6 +24,7 @@ export default function App() {
       <Route path=":slug" element={<TenantLayout />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TenantDashboardStub />} />
+        <Route path="integrations" element={<IntegrationsPage />} />
       </Route>
     </Routes>
   );
