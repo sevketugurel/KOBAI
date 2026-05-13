@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     gemini_embed_model: str = "gemini-embedding-001"
     gemini_embed_dim: int = 1536
 
+    # ── v2 (multi-tenant) ──
+    # Supabase wiring; eksikse v1 endpoint'leri çalışır, v2 endpoint'leri 503 döner.
+    supabase_url: str | None = None
+    supabase_anon_key: str | None = None
+    supabase_service_role_key: str | None = None
+    supabase_jwt_secret: str | None = None
+    encryption_key: str | None = None
+
     @field_validator("gemini_vision_model", "gemini_text_model", "gemini_embed_model")
     @classmethod
     def _block_forbidden(cls, v: str) -> str:

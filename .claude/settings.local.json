@@ -13,7 +13,9 @@
       "Bash(brew install *)",
       "Bash(npm view *)",
       "Bash(python3 *)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(python -m pytest tests/ -q)",
+      "Bash(npm ls *)"
     ]
   }
 }

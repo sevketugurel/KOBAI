@@ -67,7 +67,7 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "version": "0.1.0"}
 
 
-# Router'lar — Faz 4
+# Router'lar — v1 (auth-suz, demo data)
 from routers import upload as upload_router
 from routers import analyze as analyze_router
 from routers import chat as chat_router
@@ -77,3 +77,8 @@ app.include_router(upload_router.router)
 app.include_router(analyze_router.router)
 app.include_router(chat_router.router)
 app.include_router(report_router.router)
+
+# Router'lar — v2 (multi-tenant, JWT-bound)
+from routers.v2 import tenants as v2_tenants_router
+
+app.include_router(v2_tenants_router.router)
