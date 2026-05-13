@@ -12,12 +12,17 @@ async def test_analyze_returns_recommendations_with_source(six_month_invoices):
          "distance": 0.3, "source_citation": "KDV Md. 28", "confidence": 4.2}
     ])
     fake_gemini = MagicMock()
-    fake_gemini.generate_text = AsyncMock(return_value="KDV beyannamesini düzenli verin.")
+    fake_gemini.generate_text = AsyncMock(return_value="  KDV beyannamesini düzenli verin.  ")
     agent = MevzuatRagAgent(retrievers=[fake_retriever], gemini=fake_gemini)
     recs = await agent.analyze(six_month_invoices)
     assert len(recs) >= 1
     r = recs[0]
     assert set(r.keys()) >= {"recommendation", "source", "article", "confidence", "action"}
+    assert r["recommendation"] == "KDV beyannamesini düzenli verin."
+    assert r["source"]
+    assert r["article"]
+    assert r["action"] == "review"
+    assert 1.0 <= r["confidence"] <= 5.0
 
 
 @pytest.mark.asyncio
@@ -129,4 +134,19 @@ async def test_analyze_returns_empty_for_empty_invoice_list():
 
     assert recs == []
     fake_retriever.search.assert_not_awaited()
+    fake_gemini.generate_text.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_analyze_returns_empty_when_all_retrieval_hits_are_empty(six_month_invoices):
+    fake_retriever = MagicMock()
+    fake_retriever.search = AsyncMock(side_effect=[[], [], []])
+    fake_gemini = MagicMock()
+    fake_gemini.generate_text = AsyncMock()
+    agent = MevzuatRagAgent(retrievers=[fake_retriever], gemini=fake_gemini)
+
+    recs = await agent.analyze(six_month_invoices)
+
+    assert recs == []
+    assert fake_retriever.search.await_count == 3
     fake_gemini.generate_text.assert_not_awaited()
