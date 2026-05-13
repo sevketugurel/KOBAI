@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 
+import { formatAuthError, normalizeAuthEmail } from "./authErrors";
 import { supabase } from "./supabaseClient";
 
 interface AuthState {
@@ -35,12 +36,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       loading,
       async signIn(email, password) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error: error?.message ?? null };
+        const normalized = normalizeAuthEmail(email);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalized,
+          password,
+        });
+        return { error: formatAuthError(error) };
       },
       async signUp(email, password) {
-        const { error } = await supabase.auth.signUp({ email, password });
-        return { error: error?.message ?? null };
+        const normalized = normalizeAuthEmail(email);
+        const { error } = await supabase.auth.signUp({ email: normalized, password });
+        return { error: formatAuthError(error) };
       },
       async signOut() {
         await supabase.auth.signOut();

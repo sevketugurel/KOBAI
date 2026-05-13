@@ -1,5 +1,6 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { formatAuthError, normalizeAuthEmail } from "./authErrors";
 import { supabase } from "./supabaseClient";
 const AuthCtx = createContext(undefined);
 export function AuthProvider({ children }) {
@@ -20,12 +21,17 @@ export function AuthProvider({ children }) {
         session,
         loading,
         async signIn(email, password) {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            return { error: error?.message ?? null };
+            const normalized = normalizeAuthEmail(email);
+            const { error } = await supabase.auth.signInWithPassword({
+                email: normalized,
+                password,
+            });
+            return { error: formatAuthError(error) };
         },
         async signUp(email, password) {
-            const { error } = await supabase.auth.signUp({ email, password });
-            return { error: error?.message ?? null };
+            const normalized = normalizeAuthEmail(email);
+            const { error } = await supabase.auth.signUp({ email: normalized, password });
+            return { error: formatAuthError(error) };
         },
         async signOut() {
             await supabase.auth.signOut();
