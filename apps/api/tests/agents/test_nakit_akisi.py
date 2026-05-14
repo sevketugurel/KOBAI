@@ -19,7 +19,7 @@ async def test_kdv_payment_quarterly(six_month_invoices):
     out = await agent.forecast(six_month_invoices, start_year=2026, start_month=4)
     months = {row["month"]: row for row in out}
     assert months["2026-04"]["kdv_payment"] == 0
-    assert months["2026-06"]["kdv_payment"] > 0
+    assert months["2026-06"]["kdv_payment"] == 14166.67
 
 
 @pytest.mark.asyncio
@@ -62,3 +62,25 @@ async def test_forecast_uses_neutral_factors_for_sparse_history(sparse_cashflow_
     expenses = [row["expense"] for row in out]
     assert len(set(incomes)) == 1
     assert len(set(expenses)) == 1
+
+
+@pytest.mark.asyncio
+async def test_kdv_payment_uses_historical_kdv_series_not_flat_20pct_formula(mixed_kdv_invoices):
+    agent = NakitAkisiAgent()
+
+    out = await agent.forecast(mixed_kdv_invoices, start_year=2026, start_month=4)
+    months = {row["month"]: row for row in out}
+
+    assert months["2026-04"]["kdv_payment"] == 0
+    assert months["2026-05"]["kdv_payment"] == 0
+    assert months["2026-06"]["kdv_payment"] == 50.0
+
+
+@pytest.mark.asyncio
+async def test_kdv_payment_clamps_to_zero_when_historical_paid_exceeds_collected(kdv_credit_invoices):
+    agent = NakitAkisiAgent()
+
+    out = await agent.forecast(kdv_credit_invoices, start_year=2026, start_month=4)
+
+    assert out[-1]["month"] == "2026-06"
+    assert out[-1]["kdv_payment"] == 0.0

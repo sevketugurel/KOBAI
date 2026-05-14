@@ -29,3 +29,5 @@ chroma_data/
 *.pdf
 !data/**/*.pdf
 !apps/api/data/**/*.pdf
+
+.tmp-test-venv/

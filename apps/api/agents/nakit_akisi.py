@@ -79,8 +79,12 @@ class NakitAkisiAgent:
 
         recent_incomes = [by_month[k]["income"] for k in sorted_keys[-3:]]
         recent_expenses = [by_month[k]["expense"] for k in sorted_keys[-3:]]
+        recent_kdv_collected = [by_month[k]["kdv_collected"] for k in sorted_keys[-3:]]
+        recent_kdv_paid = [by_month[k]["kdv_paid"] for k in sorted_keys[-3:]]
         avg_income = mean(recent_incomes) if recent_incomes else 0
         avg_expense = mean(recent_expenses) if recent_expenses else 0
+        avg_kdv_collected = mean(recent_kdv_collected) if recent_kdv_collected else 0
+        avg_kdv_paid = mean(recent_kdv_paid) if recent_kdv_paid else 0
         income_series = [by_month[k]["income"] for k in sorted_keys]
         expense_series = [by_month[k]["expense"] for k in sorted_keys]
         income_factors = _seasonal_factors(income_series)
@@ -94,7 +98,7 @@ class NakitAkisiAgent:
             year = start_year + (start_month - 1 + i) // 12
             adjusted_income = round(avg_income * income_factors[i], 2)
             adjusted_expense = round(avg_expense * expense_factors[i], 2)
-            kdv_balance_accumulator += (adjusted_income / 1.2 * 0.2) - (adjusted_expense / 1.2 * 0.2)
+            kdv_balance_accumulator += avg_kdv_collected - avg_kdv_paid
             kdv_payment = max(kdv_balance_accumulator, 0.0) if month in KDV_QUARTER_MONTHS else 0.0
             if month in KDV_QUARTER_MONTHS:
                 kdv_balance_accumulator = 0.0

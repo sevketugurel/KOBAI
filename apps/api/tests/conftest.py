@@ -7,6 +7,41 @@ import pytest
 from schemas.invoice import InvoiceData, InvoiceItem
 
 
+def _inv_kdv(
+    idx: int,
+    vendor: str,
+    year: int,
+    month: int,
+    total: float,
+    cat: str,
+    *,
+    kdv_amount: float,
+    kdv_rate: float,
+) -> InvoiceData:
+    subtotal = total - kdv_amount
+    item = InvoiceItem(
+        description=f"{vendor} kalem",
+        quantity=1,
+        unit_price=subtotal,
+        total=subtotal,
+        kdv_rate=kdv_rate,
+    )
+    return InvoiceData(
+        invoice_id=f"inv-kdv-{idx}",
+        vendor_name=vendor,
+        vendor_tax_no="NOT_MENTIONED",
+        date=date(year, month, 15),
+        due_date=None,
+        items=[item],
+        subtotal=subtotal,
+        kdv_amount=kdv_amount,
+        total_amount=total,
+        currency="TRY",
+        category=cat,
+        raw_text=None,
+    )
+
+
 def _inv_ym(idx: int, vendor: str, year: int, month: int, total: float, cat: str) -> InvoiceData:
     item = InvoiceItem(
         description=f"{vendor} kalem",
@@ -70,4 +105,29 @@ def sparse_cashflow_invoices() -> list[InvoiceData]:
     return [
         _inv_ym(30, "Müşteri Tek", 2026, 2, 42000, "gelir"),
         _inv_ym(31, "Tedarikçi Tek", 2026, 2, 18000, "gider"),
+    ]
+
+
+@pytest.fixture
+def mixed_kdv_invoices() -> list[InvoiceData]:
+    return [
+        _inv_kdv(40, "Gelir Oca", 2026, 1, 10100, "gelir", kdv_amount=100, kdv_rate=1),
+        _inv_kdv(41, "Gider Oca", 2026, 1, 6000, "gider", kdv_amount=1000, kdv_rate=20),
+        _inv_kdv(42, "Gelir Şub", 2026, 2, 12000, "gelir", kdv_amount=2000, kdv_rate=20),
+        _inv_kdv(46, "Gelir Şub Ek", 2026, 2, 10100, "gelir", kdv_amount=100, kdv_rate=1),
+        _inv_kdv(43, "Gider Şub", 2026, 2, 5050, "gider", kdv_amount=50, kdv_rate=1),
+        _inv_kdv(44, "Gelir Mar", 2026, 3, 12100, "gelir", kdv_amount=100, kdv_rate=1),
+        _inv_kdv(45, "Gider Mar", 2026, 3, 7200, "gider", kdv_amount=1200, kdv_rate=20),
+    ]
+
+
+@pytest.fixture
+def kdv_credit_invoices() -> list[InvoiceData]:
+    return [
+        _inv_kdv(50, "Gelir Oca", 2026, 1, 10100, "gelir", kdv_amount=100, kdv_rate=1),
+        _inv_kdv(51, "Gider Oca", 2026, 1, 8400, "gider", kdv_amount=1400, kdv_rate=20),
+        _inv_kdv(52, "Gelir Şub", 2026, 2, 10100, "gelir", kdv_amount=100, kdv_rate=1),
+        _inv_kdv(53, "Gider Şub", 2026, 2, 7200, "gider", kdv_amount=1200, kdv_rate=20),
+        _inv_kdv(54, "Gelir Mar", 2026, 3, 10100, "gelir", kdv_amount=100, kdv_rate=1),
+        _inv_kdv(55, "Gider Mar", 2026, 3, 7800, "gider", kdv_amount=1300, kdv_rate=20),
     ]
