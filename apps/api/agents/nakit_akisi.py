@@ -6,6 +6,11 @@ from schemas.invoice import InvoiceData
 
 SGK_RATE = 0.225
 KDV_QUARTER_MONTHS = {3, 6, 9, 12}
+SEASONAL_LOOKBACK = 6
+SEASONAL_FORECAST_HORIZON = 3
+SEASONAL_DAMPING = 0.35
+SEASONAL_MIN_FACTOR = 0.9
+SEASONAL_MAX_FACTOR = 1.1
 
 
 def _group_by_month(invoices: list[InvoiceData]) -> dict[str, dict[str, float]]:
@@ -20,6 +25,38 @@ def _group_by_month(invoices: list[InvoiceData]) -> dict[str, dict[str, float]]:
             bucket["expense"] += inv.total_amount
             bucket["kdv_paid"] += inv.kdv_amount
     return by_month
+
+
+def _clamp(value: float, lower: float, upper: float) -> float:
+    return max(lower, min(upper, value))
+
+
+def _seasonal_factors(
+    series: list[float],
+    *,
+    base_window: int = 3,
+    lookback: int = SEASONAL_LOOKBACK,
+    forecast_periods: int = SEASONAL_FORECAST_HORIZON,
+) -> list[float]:
+    if not series:
+        return [1.0] * forecast_periods
+
+    recent = series[-base_window:]
+    base = mean(recent) if recent else 0.0
+    if base <= 0:
+        return [1.0] * forecast_periods
+
+    history = series[-lookback:]
+    pattern = history[-min(len(history), forecast_periods):]
+    if not pattern:
+        return [1.0] * forecast_periods
+
+    factors: list[float] = []
+    for idx in range(forecast_periods):
+        raw_ratio = pattern[idx % len(pattern)] / base
+        damped = 1.0 + (raw_ratio - 1.0) * SEASONAL_DAMPING
+        factors.append(round(_clamp(damped, SEASONAL_MIN_FACTOR, SEASONAL_MAX_FACTOR), 4))
+    return factors
 
 
 class NakitAkisiAgent:
@@ -42,8 +79,16 @@ class NakitAkisiAgent:
 
         recent_incomes = [by_month[k]["income"] for k in sorted_keys[-3:]]
         recent_expenses = [by_month[k]["expense"] for k in sorted_keys[-3:]]
+        recent_kdv_collected = [by_month[k]["kdv_collected"] for k in sorted_keys[-3:]]
+        recent_kdv_paid = [by_month[k]["kdv_paid"] for k in sorted_keys[-3:]]
         avg_income = mean(recent_incomes) if recent_incomes else 0
         avg_expense = mean(recent_expenses) if recent_expenses else 0
+        avg_kdv_collected = mean(recent_kdv_collected) if recent_kdv_collected else 0
+        avg_kdv_paid = mean(recent_kdv_paid) if recent_kdv_paid else 0
+        income_series = [by_month[k]["income"] for k in sorted_keys]
+        expense_series = [by_month[k]["expense"] for k in sorted_keys]
+        income_factors = _seasonal_factors(income_series)
+        expense_factors = _seasonal_factors(expense_series)
 
         kdv_balance_accumulator = 0.0
         cumulative = 0.0
@@ -51,17 +96,19 @@ class NakitAkisiAgent:
         for i in range(3):
             month = ((start_month - 1 + i) % 12) + 1
             year = start_year + (start_month - 1 + i) // 12
-            kdv_balance_accumulator += (avg_income / 1.2 * 0.2) - (avg_expense / 1.2 * 0.2)
+            adjusted_income = round(avg_income * income_factors[i], 2)
+            adjusted_expense = round(avg_expense * expense_factors[i], 2)
+            kdv_balance_accumulator += avg_kdv_collected - avg_kdv_paid
             kdv_payment = max(kdv_balance_accumulator, 0.0) if month in KDV_QUARTER_MONTHS else 0.0
             if month in KDV_QUARTER_MONTHS:
                 kdv_balance_accumulator = 0.0
-            sgk_payment = round(avg_expense * SGK_RATE * 0.1, 2)
-            net = avg_income - avg_expense - kdv_payment - sgk_payment
+            sgk_payment = round(adjusted_expense * SGK_RATE * 0.1, 2)
+            net = adjusted_income - adjusted_expense - kdv_payment - sgk_payment
             cumulative += net
             rows.append({
                 "month": f"{year:04d}-{month:02d}",
-                "income": round(avg_income, 2),
-                "expense": round(avg_expense, 2),
+                "income": adjusted_income,
+                "expense": adjusted_expense,
                 "net": round(net, 2),
                 "kdv_payment": round(kdv_payment, 2),
                 "sgk_payment": sgk_payment,
