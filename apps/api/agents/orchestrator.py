@@ -30,10 +30,14 @@ class AgentState(TypedDict, total=False):
     human_approved: bool
 
 
-def _step(*, agent: str, action: str, t0: float, output: Any, confidence: float = 4.0) -> AgentStep:
+def _step(*, agent: str, action: str, t0: float, input_data: dict | None = None, output: Any, confidence: float = 4.0) -> AgentStep:
     return AgentStep(
-        agent_name=agent, action=action, input={}, output={"summary": str(output)[:200]},
-        duration_ms=int((time.perf_counter() - t0) * 1000), confidence=confidence,
+        agent_name=agent,
+        action=action,
+        input=input_data or {},
+        output={"summary": str(output)[:200]},
+        duration_ms=int((time.perf_counter() - t0) * 1000),
+        confidence=confidence,
     )
 
 
@@ -42,7 +46,15 @@ async def _cashflow_node(state: AgentState) -> dict:
     out = await NakitAkisiAgent().forecast(state["invoices"])
     return {
         "forecast": out,
-        "trace": [_step(agent="nakit_akisi", action="forecast 3ay", t0=t0, output=f"{len(out)} ay")],
+        "trace": [
+            _step(
+                agent="nakit_akisi",
+                action="3 aylık nakit akışı projeksiyonu oluşturuluyor",
+                t0=t0,
+                input_data={"invoice_count": len(state["invoices"])},
+                output=f"{len(out)} aylık tahmin üretildi",
+            )
+        ],
     }
 
 
@@ -51,7 +63,15 @@ async def _risk_node(state: AgentState) -> dict:
     out = await RiskAgent().assess(state["invoices"], state["forecast"])
     return {
         "risk": out,
-        "trace": [_step(agent="risk", action="assess", t0=t0, output=out["risk_label"])],
+        "trace": [
+            _step(
+                agent="risk",
+                action="Finansal anomaliler ve eşik değerleri kontrol ediliyor",
+                t0=t0,
+                input_data={"trend_months": len(state["invoices"])},
+                output=f"Risk Seviyesi: {out['risk_label'].upper()}",
+            )
+        ],
     }
 
 
@@ -62,7 +82,15 @@ async def _tax_node(state: AgentState) -> dict:
     out = await agent.analyze(state["invoices"])
     return {
         "tax_recs": out,
-        "trace": [_step(agent="mevzuat_rag", action=f"{len(out)} öneri", t0=t0, output=len(out))],
+        "trace": [
+            _step(
+                agent="mevzuat_rag",
+                action="Güncel vergi mevzuatı ve teşvikler taranıyor",
+                t0=t0,
+                input_data={"query": "vergi istisnaları ve KDV avantajları"},
+                output=f"{len(out)} adet mevzuat önerisi bulundu",
+            )
+        ],
     }
 
 
@@ -71,7 +99,15 @@ async def _kosgeb_node(state: AgentState) -> dict:
     out = suggest_kosgeb(sector=state["sector"], company_type=state["company_type"])
     return {
         "kosgeb": out,
-        "trace": [_step(agent="kosgeb", action="öneri kuralı", t0=t0, output=len(out))],
+        "trace": [
+            _step(
+                agent="kosgeb",
+                action="Sektörel KOSGEB destekleri ve hibe kriterleri inceleniyor",
+                t0=t0,
+                input_data={"sector": state["sector"], "type": state["company_type"]},
+                output=f"{len(out)} adet uygun destek programı eşleşti",
+            )
+        ],
     }
 
 
