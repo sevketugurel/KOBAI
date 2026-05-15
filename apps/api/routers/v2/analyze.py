@@ -29,6 +29,7 @@ from repositories.tenant_repo import TenantRepo, get_tenant_repo
 from schemas.invoice import InvoiceData
 from schemas.tenant import TenantContext
 from services.gemini import GeminiParseError, GeminiService
+from services.storage import StorageError, StorageService, get_storage_service
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v2/{slug}", tags=["v2-analyze"])
@@ -80,6 +81,7 @@ def _looks_like_pdf(file: UploadFile, data: bytes) -> bool:
 async def upload_invoice(
     ctx: Annotated[TenantContext, Depends(require_tenant)],
     repo: Annotated[JobRepo, Depends(get_job_repo)],
+    storage: Annotated[StorageService, Depends(get_storage_service)],
     file: UploadFile = File(...),
 ) -> InvoiceUploadOut:
     data = await file.read()
@@ -106,10 +108,18 @@ async def upload_invoice(
     invoice = invoice.model_copy(
         update={"invoice_id": invoice.invoice_id or str(uuid.uuid4())}
     )
+    file_name = file.filename or "invoice.pdf"
+    try:
+        file_url = await storage.upload_pdf(
+            tenant_id=ctx.tenant_id, doc_type="invoice",
+            file_name=file_name, data=data,
+        )
+    except StorageError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
     document_id = await repo.save_invoice(
         tenant_id=ctx.tenant_id,
-        file_name=file.filename or "invoice.pdf",
-        file_url=f"memory://{ctx.tenant_id}/invoice",
+        file_name=file_name,
+        file_url=file_url,
         invoice=invoice,
     )
     return InvoiceUploadOut(document_id=document_id, invoice=invoice)

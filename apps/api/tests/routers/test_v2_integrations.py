@@ -17,6 +17,21 @@ from repositories.tenant_repo import MembershipOut, TenantOut, get_tenant_repo
 from routers.v2 import integrations as v2_int
 from schemas.bank import BankTransactionOut, BankTransactionParsed
 from services.bank_statement_parser import ParsedStatement
+from services.storage import get_storage_service
+
+
+class FakeStorage:
+    def __init__(self) -> None:
+        self.uploads: list[dict] = []
+
+    async def upload_pdf(self, *, tenant_id, doc_type, file_name, data):
+        path = f"{tenant_id}/{doc_type}/{file_name}"
+        self.uploads.append({"tenant_id": tenant_id, "doc_type": doc_type,
+                              "file_name": file_name, "size": len(data)})
+        return f"supabase://test-bucket/{path}"
+
+    async def signed_url(self, *, path, expires_in=None):
+        return f"https://signed.invalid/{path}"
 
 
 # ── Fakes ─────────────────────────────────────────────────────────────
@@ -180,11 +195,17 @@ def mock_parser(monkeypatch):
 
 
 @pytest.fixture
-def client_for(bank_repo, tenant_repo, mock_parser):
+def storage() -> FakeStorage:
+    return FakeStorage()
+
+
+@pytest.fixture
+def client_for(bank_repo, tenant_repo, mock_parser, storage):
     def _make(user_id: str) -> TestClient:
         app.dependency_overrides[require_auth] = lambda: AuthPrincipal(user_id=user_id, email="x@y")
         app.dependency_overrides[get_bank_repo] = lambda: bank_repo
         app.dependency_overrides[get_tenant_repo] = lambda: tenant_repo
+        app.dependency_overrides[get_storage_service] = lambda: storage
         return TestClient(app)
     yield _make
     app.dependency_overrides.clear()

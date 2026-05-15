@@ -2,9 +2,8 @@
 GET  /v2/{slug}/integrations                       — tenant'ın entegrasyonları.
 GET  /v2/{slug}/bank-transactions                  — son banka hareketleri.
 
-Storage NOT eklenmedi: PDF bytes Gemini Vision'a stream'lenir, kalıcı saklanmaz.
-documents satırının `file_url` alanı şimdilik `memory://{document_id}` placeholder'ı.
-Faz 4+: Supabase Storage entegrasyonu ile gerçek URL.
+PDF bytes önce Gemini Vision'a parse için gönderilir, sonra Supabase Storage'a
+yüklenir ve `documents.file_url` `supabase://bucket/path` formatında saklanır.
 """
 
 from __future__ import annotations
@@ -20,6 +19,7 @@ from repositories.bank_repo import BankRepo, get_bank_repo
 from schemas.bank import BankStatementImportResult, BankTransactionOut
 from schemas.tenant import TenantContext
 from services.bank_statement_parser import BankParseError, BankStatementParser
+from services.storage import StorageError, StorageService, get_storage_service
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v2/{slug}", tags=["v2-integrations"])
@@ -48,6 +48,7 @@ def _reset_parser_for_tests() -> None:
 async def upload_bank_statement(
     ctx: Annotated[TenantContext, Depends(require_tenant)],
     repo: Annotated[BankRepo, Depends(get_bank_repo)],
+    storage: Annotated[StorageService, Depends(get_storage_service)],
     file: UploadFile = File(...),
 ) -> BankStatementImportResult:
     if file.content_type != "application/pdf":
@@ -67,10 +68,17 @@ async def upload_bank_statement(
     except BankParseError as e:
         raise HTTPException(status_code=422, detail=f"ekstre okunamadı: {e}") from e
 
+    file_name = file.filename or "bank_statement.pdf"
+    try:
+        file_url = await storage.upload_pdf(
+            tenant_id=ctx.tenant_id, doc_type="bank_statement",
+            file_name=file_name, data=pdf_bytes,
+        )
+    except StorageError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
     document_id = await repo.create_document(
-        tenant_id=ctx.tenant_id,
-        file_name=file.filename or "bank_statement.pdf",
-        file_url=f"memory://{ctx.tenant_id}/pending",
+        tenant_id=ctx.tenant_id, file_name=file_name, file_url=file_url,
     )
 
     inserted, skipped = await repo.bulk_insert_transactions(
