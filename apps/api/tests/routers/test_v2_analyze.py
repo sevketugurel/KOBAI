@@ -16,6 +16,20 @@ from repositories.tenant_repo import MembershipOut, TenantOut, get_tenant_repo
 from routers.v2 import analyze as v2_analyze
 from schemas.analysis import AnalysisResult
 from schemas.invoice import InvoiceData, InvoiceItem
+from services.storage import get_storage_service
+
+
+class FakeStorage:
+    def __init__(self) -> None:
+        self.uploads: list[dict] = []
+
+    async def upload_pdf(self, *, tenant_id, doc_type, file_name, data):
+        self.uploads.append({"tenant_id": tenant_id, "doc_type": doc_type,
+                              "file_name": file_name, "size": len(data)})
+        return f"supabase://test-bucket/{tenant_id}/{doc_type}/{file_name}"
+
+    async def signed_url(self, *, path, expires_in=None):
+        return f"https://signed.invalid/{path}"
 
 
 # ── Fakes ─────────────────────────────────────────────────────────────
@@ -153,11 +167,17 @@ def mock_pipeline(monkeypatch):
 
 
 @pytest.fixture
-def client_for(job_repo, tenant_repo, mock_gemini):
+def storage() -> FakeStorage:
+    return FakeStorage()
+
+
+@pytest.fixture
+def client_for(job_repo, tenant_repo, mock_gemini, storage):
     def _make(user_id: str) -> TestClient:
         app.dependency_overrides[require_auth] = lambda: AuthPrincipal(user_id=user_id, email="x@y")
         app.dependency_overrides[get_job_repo] = lambda: job_repo
         app.dependency_overrides[get_tenant_repo] = lambda: tenant_repo
+        app.dependency_overrides[get_storage_service] = lambda: storage
         return TestClient(app)
     yield _make
     app.dependency_overrides.clear()
@@ -170,7 +190,7 @@ def _pdf_file():
     return {"file": ("fatura.pdf", b"%PDF-1.4 fake", "application/pdf")}
 
 
-def test_upload_invoice_happy_path(client_for, job_repo: FakeJobRepo) -> None:
+def test_upload_invoice_happy_path(client_for, job_repo: FakeJobRepo, storage: FakeStorage) -> None:
     r = client_for(USER_A).post("/v2/acme-co/invoices", files=_pdf_file())
     assert r.status_code == 201, r.text
     body = r.json()
@@ -180,6 +200,10 @@ def test_upload_invoice_happy_path(client_for, job_repo: FakeJobRepo) -> None:
     # tenant izolasyonu — invoice TENANT_A altında kayıtlı
     rec = next(iter(job_repo.invoices.values()))
     assert rec["tenant_id"] == TENANT_A
+    # storage'a yüklendi, file_url supabase:// formatında saklandı
+    assert len(storage.uploads) == 1
+    assert storage.uploads[0]["tenant_id"] == TENANT_A
+    assert storage.uploads[0]["doc_type"] == "invoice"
 
 
 def test_upload_non_pdf_rejected(client_for) -> None:

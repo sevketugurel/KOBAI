@@ -39,6 +39,11 @@ class Settings(BaseSettings):
     cron_secret: str | None = None
     reminder_window_days: int = 7
 
+    # Supabase Storage — yüklenen PDF'leri saklamak için.
+    # Bucket'ı Supabase dashboard'tan ya da SQL ile oluşturun (private, RLS açık).
+    storage_bucket: str = "tenant-documents"
+    storage_signed_url_ttl: int = 3600  # saniye
+
     @field_validator("gemini_vision_model", "gemini_text_model", "gemini_embed_model")
     @classmethod
     def _block_forbidden(cls, v: str) -> str:
