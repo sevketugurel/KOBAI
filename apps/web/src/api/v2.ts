@@ -179,6 +179,51 @@ export const v2 = {
     _json<DashboardSummary>(
       `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
     ),
+
+  // v2 chat — tenant + session-scoped, SSE
+  getChatHistory: (slug: string, sessionId: string, limit = 50) =>
+    _json<ChatMessageV2[]>(
+      `/v2/${encodeURIComponent(slug)}/chat/${encodeURIComponent(sessionId)}/history?limit=${limit}`,
+    ),
+  streamChatV2: async (
+    slug: string,
+    payload: ChatRequestV2,
+    onChunk: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<void> => {
+    const r = await fetch(`${BASE_URL}/v2/${encodeURIComponent(slug)}/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(await authHeader()),
+      },
+      body: JSON.stringify(payload),
+      signal,
+    });
+    if (!r.ok || !r.body) {
+      let detail: unknown = null;
+      try { detail = await r.json(); } catch { /* ignore */ }
+      throw new V2ApiError(r.status, `HTTP ${r.status}`, detail);
+    }
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split("\n\n");
+      buf = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          const chunk = line.slice(6);
+          if (chunk === "[DONE]") return;
+          if (chunk.startsWith("[HATA]")) throw new V2ApiError(0, chunk);
+          onChunk(chunk);
+        }
+      }
+    }
+  },
 };
 
 // ── Faz 4 tipleri (vergi takvimi) ────────────────────────────────────
@@ -256,6 +301,21 @@ export interface PosDailySummary {
   sale_count: number;
   refund_count: number;
   avg_ticket: string | null;
+}
+
+// ── v2 chat tipleri ──────────────────────────────────────────────────
+
+export interface ChatMessageV2 {
+  id?: string | null;
+  role: "user" | "assistant";
+  content: string;
+  created_at?: string | null;
+}
+
+export interface ChatRequestV2 {
+  message: string;
+  session_id: string;
+  job_id?: string | null;
 }
 
 // ── Sprint B — dashboard ─────────────────────────────────────────────
