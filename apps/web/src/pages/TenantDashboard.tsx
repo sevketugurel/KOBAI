@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import {
   Building2,
@@ -15,6 +16,7 @@ import {
   PageHeader,
   StatusBadge,
 } from "../components/ui";
+import ChatPanelV2 from "../components/chat/ChatPanelV2";
 import { useTenantDashboard } from "../hooks/useTenantDashboard";
 import {
   formatDate,
@@ -46,6 +48,17 @@ function activityIcon(type: DashboardActivity["type"]) {
   return <Calendar size={16} />;
 }
 
+function getOrCreateSessionId(slug: string): string {
+  if (typeof window === "undefined" || !slug) return "default";
+  const key = `kobai.chat.session.${slug}`;
+  let id = window.localStorage.getItem(key);
+  if (!id) {
+    id = (window.crypto?.randomUUID?.() ?? `s-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    window.localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 export default function TenantDashboard() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { data, isLoading, isError } = useTenantDashboard(slug);
@@ -53,6 +66,7 @@ export default function TenantDashboard() {
 
   const netFlow = toNumber(summary?.net_flow_this_month);
   const posSales = toNumber(summary?.pos_sales_this_month);
+  const sessionId = useMemo(() => getOrCreateSessionId(slug), [slug]);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-8 animate-fade-in">
@@ -65,7 +79,9 @@ export default function TenantDashboard() {
         }
       />
 
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-8 min-w-0">
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard
           label="Bu Ay Net Akış"
           value={formatTRY(netFlow)}
@@ -201,6 +217,12 @@ export default function TenantDashboard() {
           Dashboard verisi yüklenemedi. Lütfen sayfayı yenileyin.
         </p>
       ) : null}
+        </div>
+
+        <aside className="hidden lg:block">
+          {slug ? <ChatPanelV2 slug={slug} sessionId={sessionId} /> : null}
+        </aside>
+      </div>
     </div>
   );
 }
