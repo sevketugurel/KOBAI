@@ -1,0 +1,22 @@
+KDV ve Elektronik Ticaret Islemleri 2026
+Kaynak: KDV Kanunu; GIB e-ticaret ve e-belge duyurulari; elektronik ticaret odeme ve belgelendirme resmi aciklamalari.
+
+Madde 1 - E-ticarette KDV'nin konusu
+Internet uzerinden yapilan mal satisi veya hizmet ifasi, fiziki magaza satisindan farkli bir KDV rejimine sahip degildir. Teslim veya hizmet turu KDV'yi dogurur; siparisin web sitesi, pazaryeri veya sosyal medya uzerinden alinmasi sonucu degistirmez.
+
+Madde 10 - Vergiyi doguran olay
+Mal teslimi veya hizmet ifasi gerceklestiginde KDV dogar. E-ticarette odeme once alinmis olsa bile, teslim ve iade surecleri ayrica izlenmelidir. Siparis iptali, kargo iadesi ve pazaryeri komisyonlari donemsel KDV hesabini etkiler.
+
+Madde 29 - Indirim
+Pazaryeri komisyon faturasi, kargo faturasi ve reklam giderleri uzerindeki KDV uygun belge ve faaliyet ilgisi varsa indirilebilir. Ancak komisyonu net tahsilattan dusup belgeyi kayda almamak, hem gider hem KDV indirimi kaybina neden olur.
+
+Belge duzeni
+E-ticaret satislarinda e-fatura veya e-arsiv fatura yukumlulugu ciro ve faaliyet bazli esiklere gore devreye girebilir. Kargo cikisi, iade faturasi ve pazaryeri mutabakati ayni rapor setinde izlenmelidir. Satisin POS'tan gecmesi ya da araci platformdan tahsil edilmesi belge duzenini ortadan kaldirmaz.
+
+2026 uygulama notlari
+- Brut satis hasilati 3 milyon TL esigine yaklasan online saticilar e-fatura planini kontrol etmelidir.
+- Pazaryeri komisyonlari genellikle ay sonu toplu faturalandirilir; KDV indirimi icin bu belgeler kayda alinmalidir.
+- Iade ve iptal orani yuksek isletmelerde devreden KDV hizla buyuyebilir.
+- Satis belgesi tarihi ile kargo/teslim tarihi farkli ise muhasebe ve operasyon ekipleri ayni kural setiyle calismalidir.
+
+KOBI notu: 2026'da e-ticarette KDV riski oran karmasasindan cok veri daginikligindan cikar. Pazaryeri raporu, banka tahsilati, kargo kaydi ve e-belge ayni ay kapanisinda birlestirilmezse yanlis net KDV sonucu dogar.

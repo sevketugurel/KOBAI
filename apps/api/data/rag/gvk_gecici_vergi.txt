@@ -1,27 +1,27 @@
-Gelir Vergisi Kanunu (GVK) — Geçici Vergi 2026
-Kaynak: GVK md. 120; GİB vergi takvimi; 332 Seri No.lu Gelir Vergisi Genel Tebliği.
+193 Sayili Gelir Vergisi Kanunu - Gecici Vergi 2026
+Kaynak: GVK Madde 120; GIB vergi takvimi; e-Beyanname sistemi 2026 beyan takvimi.
 
-Madde 120 — Geçici vergi
-Ticari, zirai veya mesleki kazanç sahipleri, kazançları üzerinden yıl içinde üçer aylık dönemlerde geçici vergi öder. Geçici vergi, yıllık gelir vergisinin peşin ödemesi niteliğindedir; yıllık beyanname ile mahsup edilir, fazla ödenen iade alınabilir.
+Madde 120 - Gecici verginin konusu
+Ticari kazanc sahipleri, serbest meslek erbabi ve kurumlar vergisi mukellefleri yil icinde hesaplanan kazanc uzerinden gecici vergi oder. Bu vergi, yil sonunda hesaplanacak gelir veya kurumlar vergisinin pesin odenmis kismi niteligindedir. Gecici vergi yillik vergiden ayri bir vergi turu degil, mahsup edilen bir ara odemedir.
 
-2026 GEÇİCİ VERGİ TAKVİMİ (ticari / mesleki kazanç)
+2026 beyan ve odeme takvimi:
+- 1. donem (Ocak-Mart 2026): kanuni son gun 17 Mayis 2026, hafta sonu nedeniyle fiili son gun 18 Mayis 2026 Pazartesi
+- 2. donem (Ocak-Haziran 2026): 17 Agustos 2026
+- 3. donem (Ocak-Eylul 2026): 16 Kasim 2026
+- 4. donem: ayri gecici vergi beyani yoktur; yillik gelir veya kurumlar vergisi beyaniyla mahsup edilir
 
-| Dönem | Kapsadığı aylar | Beyan son tarihi | Ödeme son tarihi |
-| 1. dönem | Ocak – Mart 2026 | 17 Mayıs 2026 | 17 Mayıs 2026 |
-| 2. dönem | Ocak – Haziran 2026 | 17 Ağustos 2026 | 17 Ağustos 2026 |
-| 3. dönem | Ocak – Eylül 2026 | 16 Kasım 2026 | 16 Kasım 2026 |
-| 4. dönem | Ocak – Aralık 2026 | Yıllık gelir vergisi beyanı ile | Mart 2027 beyanı ile |
+Hesaplama mantigi
+Gecici vergi matrahi, ilgili doneme kadar olusan ticari kazanc veya kurum kazanci uzerinden hesaplanir. Donem sonu envanter duzeltmeleri, gider kabulu, amortisman ayrimi ve gecmis yil zararlari gibi unsurlar matrahi dogrudan etkiler. Sahis isletmelerinde gelir vergisi tarifesindeki dilim yapisi dikkate alinir; sirketlerde ise ilgili kurumlar vergisi orani esas alinir.
 
-HESAPLAMA (özet)
-- Geçici vergi matrahı = dönem kazancı − indirimler − geçmiş dönem zarar mahsubu (şartlarla).
-- Ödenecek geçici vergi = matrah × gelir vergisi oranı (kurumlar için KVK oranı) − önceki dönemlerde ödenen geçici vergi.
-- Şahıs işletmelerinde gelir vergisi tarifesi (md. 103) yıllık matraha göre dilimli uygulanır; geçici vergide genellikle önceki yıl oranı veya beyan edilen oran esas alınır.
+Madde 92 ve Madde 120 birlikte okundugunda, yil sonunda verilen yillik beyannamede daha once odenen gecici vergiler mahsup edilir. Fazla odeme varsa iade veya diger vergi borclarina mahsup yolu aciktir. Eksik odeme varsa kalan fark yillik beyan doneminde tahsil edilir.
 
-MUAFİYET VE İSTİSNALAR
-- Belirli had altındaki mükellefler geçici vergiden muaf olabilir (GVK ve tebliğler).
-- Serbest bölge, teşvik belgesi kapsamı kazançlarda özel düzenlemeler uygulanabilir.
+2026 icin dikkat edilmesi gereken pratik konular
+- Ilk donem son gunu olan 17 Mayis 2026 pazar gunune denk geldigi icin sure 18 Mayis 2026'ya uzar.
+- Gecici vergiye esas kazancin sadece tahsil edilen faturalardan ibaret oldugu dusunulmemelidir; tahakkuk esasi korunur.
+- Sahis isletmelerinde yil icinde artis gosteren satislar vergi dilimini hizla yukari cekebilir; gecici vergi hesabinda buna uygun karsilik ayrilmalidir.
+- KDV, SGK ve muhtasar odemeleriyle ayni haftaya yigilma riski vardir; Mayis, Agustos ve Kasim aylarinda nakit takvimi onceden kurulmalidir.
 
-GECİKME
-Beyan veya ödeme süresinin geçirilmesi gecikme faizi ve usulsüzlük cezası doğurur (213 sayılı VUK).
+VUK baglantisi
+Beyanname suresinde verilmez veya odeme zamaninda yapilmazsa usulsuzluk ve gecikme faizi dogabilir. Bu nedenle gecici vergi sadece oran hesabindan ibaret gorulmemeli; e-defter, envanter ve donem kapama disiplininin bir parcasi sayilmalidir.
 
-KOBİ notu: Nakit planlamasında Mayıs, Ağustos ve Kasım ayları geçici vergi ödeme dönemleridir. 4. dönem ödemesi yıllık beyanla birleşir.
+KOBI notu: Gecici vergi, "yil sonunda bakariz" denecek bir kalem degildir. Ozellikle ilk iki ceyrekte hizli buyuyen isletmeler icin Mayis ve Agustos 2026 tarihlerine daha ilk ay basinda nakit rezerv ayrilmasi gerekir.

@@ -17,3 +17,13 @@ def test_build_source_citation_formats_multi_article_metadata():
 
 def test_build_source_citation_falls_back_to_non_blank_string():
     assert build_source_citation({}) == "Kaynak belirtilmedi"
+
+
+def test_extract_article_nos_supports_new_rag_documents():
+    text = (
+        "Madde 94 stopajı açıklar. Madde 48 basit usul hadlerini belirler. "
+        "Madde 29 indirim hakkını düzenler. Madde 32 oranları açıklar. "
+        "Madde 81 SGK işveren indirimlerini düzenler. Md. 94 tekrar eder."
+    )
+
+    assert extract_article_nos(text) == ["94", "48", "29", "32", "81"]

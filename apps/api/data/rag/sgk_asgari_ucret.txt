@@ -1,29 +1,38 @@
-2026 Yılı Asgari Ücret ve SGK Parametreleri
-Kaynak: Çalışma ve Sosyal Güvenlik Bakanlığı — Asgari Ücret Tespit Komisyonu Kararı 2025/1; Resmî Gazete 26.12.2025 (Sayı: 33119); SGK; GİB asgari ücret kesinti tablosu.
+2026 Yili Asgari Ucret ve SGK Parametreleri
+Kaynak: Asgari Ucret Tespit Komisyonu Karari 2025/1; 26.12.2025 tarihli Resmi Gazete; SGK isveren hesaplama duyurulari.
 
-ASGARİ ÜCRET (01.01.2026 – 31.12.2026)
-- Brüt aylık: 33.030,00 TL (%27,01 artış; 2025 brüt: 26.005,50 TL)
-- Net aylık: 28.075,50 TL
-- Brüt günlük: 1.101,00 TL
+Madde 39 - Asgari ucretin taban etkisi
+Asgari ucret, sadece calisana odenecek alt siniri degil; SGK prim tabani, issizlik primi tabani ve pek cok parasal hesaplamanin da referansidir. 2026 boyunca tek donem uygulanmaktadir; yil ortasi ara artis aciklanmadigi surece ayni tutarlar kullanilir.
 
-ÇALIŞAN KESİNTİLERİ (brüt 33.030 TL üzerinden)
-- SGK işçi payı (%14): 4.624,20 TL
-- İşsizlik sigortası işçi payı (%1): 330,30 TL
-- Gelir vergisi: 0 TL (ücret istisnası — GVK md. 86)
-- Damga vergisi: 0 TL (istisna)
-- Toplam kesinti: 4.954,50 TL → Net: 28.075,50 TL
+2026 asgari ucret tutarlari:
+- Brut aylik: 33.030,00 TL
+- Net aylik: 28.075,50 TL
+- Brut gunluk: 1.101,00 TL
 
-İŞVERENE MALİYET (aylık, brüt 33.030 TL)
-- İmalat sektörü (5 puan SGK indirimi): 39.223,13 TL
-- Diğer sektörler (2 puan indirim): 40.214,03 TL
-- İndirim uygulanmazsa: 40.874,63 TL
+Calisan kesintileri:
+- SGK isc i payi %14: 4.624,20 TL
+- Issizlik sigortasi isc i payi %1: 330,30 TL
+- Gelir vergisi: asgari ucrete isabet eden kisim icin istisna
+- Damga vergisi: istisna uygulamasi nedeniyle 0 TL
 
-SGK PRİM TABAN VE TAVAN (2026)
-- Taban (aylık): 33.030 TL
-- Tavan (aylık): 297.270 TL (brüt asgari ücretin 9 katı)
-- Tavan hesabı: 01.01.2026 itibarıyla günlük kazanç alt sınırının 9 katı esas alınır (önceki 7,5 kat uygulaması sona erdi).
+Isverene toplam maliyet
+2026'da SGK tesvikinin niteligine gore ayni brut ucret farkli toplam maliyet yaratir. 5 puanlik MYO indirimi olan imalat sektorunde aylik maliyet daha dusuktur. Indirimsiz durumda isveren maliyeti 40 bin TL bandini gecmektedir. Bu fark, birden cok personeli olan kucuk isletmelerde aylik nakit ihtiyacini belirgin sekilde artirir.
 
-2026 ASGARİ ÜCRET DESTEĞİ (5510 geçici md. 112)
-Özel sektör işverenlerine, şartları sağlayan işyerlerinde sigortalı başına aylık 1.270,00 TL destek öngörülmüştür (Resmî Gazete ile yürürlük). Kayıt dışı istihdam tespitinde destek 1 yıl geri alınır ve yasaklama uygulanır.
+Prime esas kazanc sinirlari:
+- Aylik taban: 33.030 TL
+- Aylik tavan: 297.270 TL
+- Gunluk taban: 1.101 TL
+- Gunluk tavan: 9.909 TL
 
-KOBİ notu: Asgari ücretin altında ücret ödenemez. Kısmi süreli çalışmada günlük asgari ücret (1.101 TL) esas alınır. Prime esas kazanç, brüt ücret ile sınırlıdır; tavan aşımında prim tavan üzerinden hesaplanır.
+Madde 81 ve tesvik baglantisi
+SGK tesvikleri isveren maliyetini dusurur; ancak tesvikten yararlanmak icin yasal bildirimlerin sureinde yapilmasi ve primlerin duzenli odenmesi gerekir. Kayit disi istihdam veya sahte sigortalilik tespitinde tesvikler geri alinabilir.
+
+2026 asgari ucret destegi
+5510 sayili Kanun'un gecici 112. maddesi kapsaminda sartlari saglayan ozel sektor isverenlerine sigortali basina aylik 1.270 TL destek odenmesi ongorulmustur. Destek, bordro ve bildirge duzeninin bozulmamasi sartina baglidir.
+
+Pratik etkiler
+- Kismi sureli calisanlarda gunluk brut 1.101 TL esas alinir.
+- Tavan ucreti asan personelde prim, tavan uzerinden hesaplanir.
+- Ucret artis kararlarinda sadece net maas degil, SGK ve tesvik durumu birlikte hesaplanmalidir.
+
+KOBI notu: 2026'da tek bir asgari ucretli personelin aylik toplam maliyeti yaklasik 39 ila 41 bin TL bandindadir. Personel sayisi arttikca, maas gununden once SGK ve vergi takvimiyle bagli toplam nakit yukune gore plan yapmak gerekir.

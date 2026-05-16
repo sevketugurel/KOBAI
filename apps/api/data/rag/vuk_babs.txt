@@ -1,0 +1,22 @@
+Vergi Usul Kanunu - Form BA ve Form BS 2026
+Kaynak: 396 ve 543 Sira No.lu VUK Genel Tebligleri; GIB BA/BS aciklamalari.
+
+Madde 148 ve mukerrer 257 - Bilgi verme yukumlulugu
+Vergi idaresi, mukelleflerden ticari islemlerine iliskin bilgi isteme yetkisine sahiptir. Form BA ve Form BS bildirimleri, mukellefler arasi mal ve hizmet alim-satim hareketlerinin capraz kontrolu amaciyla duzenlenir.
+
+Form BA nedir
+Mukellefin bir kisi veya kurumdan yaptigi mal ve/veya hizmet alislarini belirli had uzerinde toplu olarak bildirdigi formdur. Form BS ise ayni mantikla satis tarafidir. 2026'da elektronik belge duzeninin yayginlasmasi nedeniyle kapsama giren islemler icin GIB aciklamalari dikkatle okunmalidir.
+
+Bildirim haddi ve belge turu
+Tarihsel temel had 5.000 TL ve uzeri belge bazli toplamlardir; ancak e-fatura ve e-arsiv kullanimindaki genisleme nedeniyle hangi belgelerin BA/BS'ye dahil edilecegi her donemde GIB duyurulari ile teyit edilmelidir. Elektronik belge verisi idareye zaten ulasiyorsa, ayrica BA/BS bildirimi gerekip gerekmedigi duzenlemeye gore degisir.
+
+2026 pratik takvim
+Bildirim gerekliligi dogan hallerde izleyen ayin son gunu esas alinmalidir. Son gun resmi tatile denk gelirse VUK Madde 18 uyarinca uzama olur. Aylik mutabakat yapilmayan isletmeler BA/BS farklarini genelde yil sonunda degil, ilk inceleme talebinde fark eder.
+
+Kontrol basliklari
+- Kagit ve elektronik belge ayrimi
+- Ayni tedarikciye ait birden cok belgenin aylik toplami
+- Iade ve iptal faturalarinin netlestirilmesi
+- KDV dahil veya haric tutar mantiginin teblige uygun okunmasi
+
+KOBI notu: BA/BS artik bircok KOBI'de "otomatik kalkti" zannedilen bir alan. Oysa 2026'da belge turu ve esik kombinasyonu yanlis okunursa, sistemde gorulen islemle verilen bildirim arasinda capraz kontrol farki olusur.

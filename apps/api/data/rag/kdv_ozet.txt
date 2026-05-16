@@ -1,39 +1,36 @@
-3065 Sayılı Katma Değer Vergisi Kanunu (KDV) — Oranlar ve Beyan Yükümlülükleri
-Kaynak: 3065 sayılı KDV Kanunu; 7346 sayılı Cumhurbaşkanı Kararı (10.07.2023 yürürlük); GİB 149 Seri No.lu VUK Sirküleri (beyan süresi uzatımı).
+3065 Sayili Katma Deger Vergisi Kanunu - Oranlar, Indirim ve Beyan 2026
+Kaynak: 3065 sayili KDV Kanunu; KDV Genel Uygulama Tebligi; GIB KDV beyan sureleri duyurulari.
 
-Madde 1 (7346 sayılı Karar ile güncel oranlar) — Mal teslimi ve hizmet ifalarında KDV oranları:
-- Listede yer almayan tüm işlemler: %20 (genel oran)
-- Ekli (I) sayılı listedeki teslim ve hizmetler: %1 (temel gıda, tarım ürünleri, ilaç vb.)
-- Ekli (II) sayılı listedeki teslim ve hizmetler: %10 (indirimli oran)
+Madde 1 - KDV'nin konusu
+Turkiye'de yapilan ticari, sinai, zirai ve serbest meslek faaliyeti kapsamindaki mal teslimleri ile hizmet ifalari KDV'ye tabidir. KOBI'ler icin temel kural, fatura veya benzeri belgeye baglanan teslim ve hizmetlerin KDV hesaplamasina konu olmasidir.
 
-%1 ORANA TABİ ÖRNEKLER (I sayılı liste — özet)
-Temel gıda maddeleri: ekmek unu, süt, yoğurt, peynir, yumurta, et, balık, sebze-meyve, bakliyat, zeytin, zeytinyağı, un, bulgur, pirinç, şeker, bal, reçel, çay, kahve (belirli GTİP kodları listeye göre).
-İlaçlar, tıbbi cihazlar (liste kapsamında).
-Kitap ve ders kitapları (belirli koşullarda).
+Madde 28 - Oranlar
+Cumhurbaskani Kararlari ile guncel oran yapisi korunmakta olup 2026'da genel oran %20'dir. I sayili listede yer alan temel gida, bazi tarim urunleri ve belirli kalemler icin %1; II sayili listede yer alan bazi hizmet ve mallar icin %10 uygulanir. Liste disindaki teslim ve hizmetler genel olarak %20'ye tabidir.
 
-%10 ORANA TABİ ÖRNEKLER (II sayılı liste — özet)
-Konut teslimi (belirli koşullar ve metrekare sınırları).
-Gıda dışı temel ihtiyaçlar: deterjan, sabun, şampuan, bebek bezi, kadın hijyen ürünleri.
-Tekstil ve giyim ürünleri.
-Konaklama hizmetleri (otel, pansiyon vb.).
-Yeme-içme hizmetleri (restoran, kafe — paket servis dahil belirli haller).
-Eğitim hizmetleri (özel okul, kurs — liste kapsamında).
-Kültür ve eğlence hizmetleri (sinema, tiyatro biletleri vb.).
-Ulaştırma hizmetleri (şehir içi toplu taşıma vb.).
-Sağlık hizmetleri (belirli muayene ve tedavi hizmetleri).
+Madde 29 - Indirim hakki
+Mukellefler, faaliyetlerine iliskin olarak yuklendikleri ve kanunen indirilebilir nitelikte olan KDV'yi hesaplanan KDV'den indirebilir. Indirim hakki icin faturanin usulune uygun olmasi, islemin isletme faaliyetiyle ilgili bulunmasi ve yasal kayitlara alinmasi gerekir. Bu madde, "alis KDV'si otomatik giderdir" yanlisini engeller; esas olan once indirim, indirilemeyen kisim varsa ilgili ozel hukumlere bakilmasidir.
 
-%20 ORANA TABİ
-Listede sayılmayan tüm mal ve hizmet teslimleri: elektronik, mobilya, otomobil (ÖTV hariç KDV matrahı), danışmanlık, yazılım, reklam, inşaat işçiliği (liste dışı), genel ticari mal satışları.
+Madde 32 - Tam istisnali islemlerde iade
+Ihracat, deniz-hava tasimaciligi ve bazi tesvikli islemlerde yuklenilen ancak indirimle giderilemeyen KDV iade konusu olabilir. Iade hakki sadece "devreden KDV var" diye otomatik dogmaz; iade doguran islem, tevsik belgeleri ve GIB'in belirledigi usuller birlikte aranir.
 
-Madde 41 — KDV mükellefi, vergilendirme dönemine ilişkin KDV'yi izleyen ayın 26. günü akşamına kadar beyan eder.
+Madde 41 - Beyan suresi
+Vergilendirme donemine ait KDV beyannamesi izleyen ayda verilir. Kanundaki asli duzenleme 26. gun esasina dayansa da GIB'in genel uzatma uygulamasi nedeniyle fiili beyan ve odeme takvimi 2026'da da genel olarak izleyen ayin 28. gunu sonu olarak takip edilir. Son gun resmi tatile denk gelirse sure ilk is gunune uzar.
 
-Madde 46 — Tahakkuk eden KDV, beyanname verilen ayın 26. günü akşamına kadar ödenir.
+Madde 46 - Odeme
+Tahakkuk eden KDV, beyanname verme suresi icinde odenir. Yani Mart 2026 donemi KDV'si icin beyan ve odeme yukumlulugu Nisan 2026 sonunda tamamlanir. KDV'nin sadece "beyan borcu" degil ayni zamanda "nakit cikis borcu" oldugu unutulmamalidir.
 
-GİB uygulaması (149 Seri No.lu Sirküler): 1 Aralık 2022'den itibaren KDV beyannamesinin verilme ve ödeme süresi, ilgili vergilendirme dönemini izleyen ayın 28. günü sonuna kadar uzatılmıştır. Pratikte çoğu mükellef için son tarih her ayın 28'idir; resmi tatil ve hafta sonu VUK md. 18 uyarınca ilk iş gününe kayar.
+2026 uygulama basliklari
+- Genel oran: %20
+- Indirimli oranlar: %1 ve %10
+- Ocak 2026 KDV'si icin Subat son gunu hafta sonuna denk gelirse odeme 2 Mart 2026 Pazartesi'ye sarkabilir.
+- Devreden KDV bir sonraki doneme tasinir; her devreden KDV iade edilmez.
+- E-fatura, e-arsiv ve BA/BS disiplinindeki eksikler KDV incelemelerinde belge riskini buyutur.
 
-Örnek: Ocak 2026 dönemi KDV'si → Şubat 2026 beyanı; Şubat sonu hafta sonuna denk gelirse Mart başı iş gününe kayabilir (2026 takviminde Ocak KDV ödemesi 2 Mart 2026 Pazartesi).
+Pratik kontrol listesi
+1. Satis ve alis faturalarini ayni donemde kayda al.
+2. Oran farklarini urun veya hizmet bazinda ayir.
+3. Indirilecek KDV dayanaklarini tam sakla.
+4. Iade beklentisi varsa islemin Madde 32 kapsaminda olup olmadigini once kontrol et.
+5. Beyan oncesi devreden KDV, tahsil edilmeyen alacak ve stok hareketlerini ayri gozden gecir.
 
-KDV İNDİRİMİ
-Alış faturalarındaki KDV, satış KDV'sinden indirilir. İndirilemeyen KDV gider yazılamaz; devreden KDV sonraki döneme aktarılır.
-
-KOBİ notu: E-fatura / e-arşiv mükellefiyeti, KDV beyanı ve BA-BS formları birlikte takip edilmelidir. Net KDV = hesaplanan KDV − indirilecek KDV − devreden KDV.
+KOBI notu: KDV acisindan en yaygin hata, tum alis KDV'lerini "nasil olsa duser" mantigiyla kaydetmektir. 2026'da genel oran %20 oldugu icin hatali belge veya gec kayit, nakit akisinda hizla buyuyen bir vergi farki yaratir.

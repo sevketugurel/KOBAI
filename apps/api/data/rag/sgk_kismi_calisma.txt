@@ -1,0 +1,25 @@
+5510 Sayili Kanun ve SGK Uygulamasi - Kismi Sureli Calisma 2026
+Kaynak: SGK Esnek Calisma ve Sigortalilik rehberi; 4857 sayili Is Kanunu; SGK eksik gun bildirimi aciklamalari.
+
+Madde 80 - Prime esas kazanc ve eksik gun
+Kismi sureli veya cagri uzerine calisma gibi modellerde sigortalinin prime esas kazanci fiilen calistigi gun ve ucrete gore belirlenir. Aylik 30 gunun altinda calisma varsa eksik gun nedeni SGK'ya dogru kodla bildirilmelidir.
+
+Kismi sureli calisma nedir
+Tam sureli emsal calisana gore onemli olcude daha az haftalik calisma suresi olan is iliskisi kismi sureli sayilir. 2026'da asgari ucretin gunluk brut tutari 1.101 TL oldugu icin prim tabani ve eksik gun hesabinda bu rakam referans niteligindedir.
+
+Bildirim ve belge duzeni
+Eksik gunlu calisanlar icin yazili is sozlesmesi, puantaj kaydi ve ucret bordrosu saklanmalidir. SGK denetimlerinde sadece bordro yetmez; calisma duzeni ve saatleri de ispatlanabilir olmalidir. Yanlis eksik gun kodu, prim farki ve idari para cezasi riski yaratir.
+
+Madde 81 - Prim ve tesvik etkisi
+Kismi sureli calisanlar icin de genel prim oranlari gecerli olmakla birlikte toplam tutar prime esas gun ve kazanca gore degisir. Tesvik kullaniliyorsa eksik gun belgeleri tam degilse indirim hakkinda sorun cikabilir.
+
+2026 pratik hesap
+Ay icinde 15 gun calisan bir personelde prim gunu 15 olarak dikkate alinabilir; ancak ulusal bayram, hafta tatili ve ucret tamamlama uygulamalari bordro mantigina gore ayrica degerlendirilmelidir. Sadece gun sayisina degil, sozlesmeye ve ucretlendirme sekline bakilmalidir.
+
+KOBI acisindan risk noktasi
+- Yaziya baglanmamis yari zamanli calisma
+- Puantajsiz personel
+- SGK'ya eksik gun kodunun genel gecilmesi
+- Asgari ucret tabaninin altinda prim bildirimi
+
+KOBI notu: 2026'da yari zamanli personel kullanan isletmeler icin en kritik konu, "az calisti diye az belge gerekir" yanilgisi. SGK tarafinda kismi calisma, tam zamanli calismadan daha fazla belge disiplini ister.

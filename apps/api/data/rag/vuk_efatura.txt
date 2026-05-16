@@ -1,0 +1,27 @@
+Vergi Usul Kanunu - e-Fatura, e-Arsiv ve Gecis Esikleri 2026
+Kaynak: 509 Sira No.lu VUK Genel Tebligi; 535 ve 573 Sira No.lu degisiklik tebligleri; ebelge.gib.gov.tr resmi mevzuat sayfasi.
+
+Madde 227 - Belgelendirme esasi
+Vergi uygulamalarinda ispat ve tevsik belge duzeniyle saglanir. Elektronik belge rejimi, kagit faturanin yerine gecerken ayni hukuki sonuclari dogurur. Bu nedenle e-fatura zorunlulugu yalnizca teknik bir entegrasyon degil, vergi usul duzenine uyum basligidir.
+
+509 Sira No.lu Teblig - Kimler geciyor
+Brut satis hasilatina gore belirlenen sinirlari asan mukellefler, belirli sektorlerde faaliyet gosterenler ve elektronik ticaret ile tasinmaz/otomotiv ilan platformlarinda yer alan bazi isletmeler e-fatura ve e-arsiv sistemine gecmek zorundadir. GIB'in 2025-2026 yonlendirmelerinde 2022 ve sonraki hesap donemleri icin 3 milyon TL ve uzeri brut satis hasilati, temel genel esiklerden biri olarak korunmaktadir.
+
+2026 icin pratik gecis kurali
+2025 hesap donemi brut satis hasilati esigi asildiysa, genel kural olarak 1 Temmuz 2026 itibariyla e-faturaya gecis zorunlulugu dogabilir. Yil icinde ise belirli faaliyetlere yeni baslayan mukellefler, ise baslama veya lisans alma tarihini izleyen uc ay icinde sisteme gecmek zorunda kalabilir. Kesin gecis tarihi, mukellefin faaliyet turu ve ilgili alt duzenlemesine gore teyit edilmelidir.
+
+e-Arsiv Fatura
+e-Fatura kullanicisi olmayan alicilara duzenlenen elektronik faturalar icin e-arsiv uygulamasi devreye girer. Internet satisi yapan KOBI'lerde gunluk ve islem bazli esikler nedeniyle kagit fatura duzeni yetersiz kalabilir. Bu alan, KDV ve BA/BS raporlamasi ile birlikte dusunulmelidir.
+
+Sektor bazli zorunluluklar
+- Elektronik ticaret araci hizmet saglayicilari
+- Internetten ilan yayinlayan platformlar
+- Gayrimenkul ve motorlu tasit ticareti yapanlarin belirli kisimlari
+- Lisansli veya ozel rejime tabi enerji, maden ve benzeri faaliyetler
+
+2026 operasyonel riskler
+- Gecis tarihini kacirmak ozel usulsuzluk cezasi riski dogurur.
+- Logo/entegrator kurulumu tek basina yetmez; belge numara dizisi, birim test ve arsiv sureci de kurulmalidir.
+- E-fatura zorunlu oldugu halde kagit belge duzenlenmesi belge duzenine aykirilik yaratabilir.
+
+KOBI notu: 2026'da e-fatura esigini en cok internetten satis yapan ve ciroyu yil sonunda fark eden isletmeler kacirir. Brut satis hasilati 3 milyon TL sinirina yaklasan KOBI, Haziran 2026'yi beklemeden entegrasyon planini acmalidir.

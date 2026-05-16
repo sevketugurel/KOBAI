@@ -1,0 +1,22 @@
+GVK ve VUK Cercevesinde POS Tahsilati, Stopaj ve Belge Uyumu 2026
+Kaynak: GVK Madde 94; VUK belge duzeni; GIB Yeni Nesil OKC ve banka/POS entegrasyon aciklamalari.
+
+Madde 94 - Stopajin sinirlari
+POS tahsilatinin kendisi gelir vergisi stopajina tabi bir islem degildir. Stopaj, odemenin niteligine gore dogar; ornegin serbest meslek odemesi, kira veya personel ucreti gibi kalemlerde soz konusu olur. Bu nedenle "POS'tan tahsil edildi, stopaj var mi?" sorusunun cevabi satisin kendisine gore degil odemenin hukuki niteligine gore verilir.
+
+POS tahsilati neyi etkiler
+POS tahsilati satis hasilatinin bankadan tahsil edilme seklidir. Komisyon, bloke gunu, iade isleme tarihi ve taksitli satisin muhasebe kaydi vergi matrahini dolayli etkiler. KDV, gelir veya kurumlar vergisi hesabinda tahsilat kanali degil, teslim-hizmet ve belge tarihi esas alinir.
+
+Komisyon ve belge
+Banka veya odeme kurulusunun kestiği POS komisyonu gider niteliginde olabilir; bunun dayanak belgesi banka ekstresi, komisyon dekontu veya hizmet faturasi ile tevsik edilir. Komisyon uzerinden ayrica stopaj aranmaz; ancak odeme hizmetinin niteligine gore KDV ve belge duzeni kontrol edilir.
+
+Yeni Nesil OKC ve e-Belge uyumu
+Perakende satis yapan KOBI'lerde POS tahsilati ile YNOKC fişi, e-arsiv fatura veya e-fatura kaydinin tutar ve tarih olarak uyusmasi gerekir. Gun sonu POS raporu ile satis belgeleri farkli ise vergi incelemesinde hasilat eksikligi supheleri dogabilir.
+
+2026 kontrol basliklari
+- POS komisyon oranlarini aylik net mutabakatla izle
+- Iade islemlerini ayni donemde belgeye bagla
+- Taksitli satislarda brut satis ile net banka girişi farkini ayir
+- POS tahsilatlarini stopajli odemelerle karistirma
+
+KOBI notu: POS tahsilati bir vergi turu degil, kayit kanitidir. 2026'da asıl risk stopaj sanilan yerde degil; banka net tahsilati ile belge brutunun birbirini tutmamasinda ortaya cikar.

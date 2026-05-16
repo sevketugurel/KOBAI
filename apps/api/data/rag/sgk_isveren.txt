@@ -1,40 +1,30 @@
-5510 Sayılı Sosyal Sigortalar ve Genel Sağlık Sigortası Kanunu — İşveren Prim Oranları 2026
-Kaynak: SGK resmi sitesi — İşveren Prim Oranları (13.01.2026); Genel Bilgi (12.01.2026); 5510 sayılı Kanun md. 4/1-a, md. 81.
+5510 Sayili Kanun - Isveren Prim Oranlari ve Bildirim 2026
+Kaynak: SGK Isveren Prim Oranlari sayfasi 13.01.2026; SGK Genel Bilgi duyurulari; 5510 sayili Kanun Madde 81.
 
-HİZMET AKDİNE TABİ ÇALIŞANLAR (4/1-a) — 01.01.2008'DEN İTİBAREN GEÇERLİ ORANLAR (2026)
+Madde 81 - Isveren hissesi ve indirimler
+4/1-a kapsamindaki sigortalilar icin 2026'da standart toplam prim yuku %38,75'tir. Bunun %23,75'i isveren, %15'i sigortalidan kesilen pay olarak uygulanir. Kisa vadeli sigorta kollari iskoluna gore degisebilse de SGK'nin 2026 genel tablosunda isveren acisindan %23,75 toplam oran esas alinmaktadir.
 
-| Sigorta kolu | İşveren (%) | Çalışan (%) | Toplam (%) |
-| Malullük, yaşlılık, ölüm (MYÖ) | 12 | 9 | 21 |
-| Genel sağlık sigortası (GSS) | 7,5 | 5 | 12,5 |
-| Kısa vadeli sigorta kolları (KVSK) | 2,25 | — | 2,25 |
-| İşsizlik sigortası | 2 | 1 | 3 |
-| TOPLAM | 23,75 | 15 | 38,75 |
+2026 standart oranlar:
+- Malulluk, yaslilik ve olum sigortasi: isveren %12, calisan %9
+- Genel saglik sigortasi: isveren %7,5, calisan %5
+- Kisa vadeli sigorta kollari: isveren %2,25
+- Issizlik sigortasi: isveren %2, calisan %1
+- Toplam: isveren %23,75, calisan %15, genel toplam %38,75
 
-Not: 2025'te MYÖ işveren payı %11 iken 2026'da %12'ye yükselmiştir. Eski kaynaklardaki %20,5 veya %22,5 işveren payı artık geçerli değildir.
+Madde 81 (i) - 5 puan ve 2 puan indirim rejimi
+Imalat sektorunde faaliyeti bulunan ve sartlari saglayan isyerlerinde malulluk, yaslilik ve olum sigortasi isveren hissesinde 5 puanlik indirim uygulanabilir. Imalat disi sektorlerde 2026 itibariyla daha sinirli, 2 puanlik indirim yapisi dikkate alinmaktadir. Primlerin sureinde odenmemesi veya yasal surelerin kacirilmasi halinde indirim hakki kaybedilir.
 
-PRİM BİLDİRİM VE ÖDEME SÜRELERİ
-- Aylık prim ve hizmet belgesi: İzleyen ayın 26. günü sonuna kadar (elektronik ortam).
-- Prim ödemesi: İzleyen ayın son gününe kadar (genelde ayın 30 veya 31'i).
-- Muhtasar beyanname (ücret stopajı): İzleyen ayın 26. günü akşamına kadar.
+Bildirim ve odeme takvimi
+- Aylik prim ve hizmet bildirimi ya da muhtasar prim hizmet beyannamesi: izleyen ayin 26. gunu sonuna kadar
+- Prim odemesi: izleyen ayin son gunu sonuna kadar
+- Ucret stopaji ve muhtasar zinciriyle birlikte takibi gerekir
 
-PRİME ESAS KAZANÇ TAVANI (2026)
-- Aylık tavan: 297.270 TL (brüt asgari ücretin 9 katı; önceki dönemde 7,5 kat uygulanıyordu).
-- Aylık taban: 33.030 TL (2026 brüt asgari ücret).
-- Günlük tavan: 9.909 TL; günlük taban: 1.101 TL.
-Tavan üzerindeki ücretler için prim yalnızca tavan tutarı üzerinden hesaplanır.
+Prime esas kazanc
+2026 aylik prime esas kazanc tabani 33.030 TL, tavani 297.270 TL'dir. Tavan uzerindeki odemelerde prim sadece tavan tutari uzerinden hesaplanir. Ikramiye, prim ve yan haklar da prime esas kazanca dahil olabilir; bordro tasarimi bu ayrima dikkat etmelidir.
 
-İŞVEREN PRİM İNDİRİMLERİ (5510 md. 81)
+Risk alanlari
+- Eksik gun bildirimlerinde kismi sureli calisma belgeleri saklanmalidir.
+- Sahte sigortalilik veya kayit disi istihdam tespiti tesvik iptaline yol acar.
+- Eski oranlarla hesap yapan bordro sablonlari 2026'da hatali maliyet uretir.
 
-Madde 81 (ı) — Malullük, yaşlılık ve ölüm sigortası işveren hissesinden indirim:
-- İmalat sektörü (NACE Rev.2, bölüm C, kodlar 10–32): 5 puan indirim → net işveren MYÖ payı %7 (toplam işveren payı yaklaşık %18,75).
-- İmalat dışı sektörler (2026): 2 puan indirim (önceki 4 puandan düşürüldü) → net işveren MYÖ payı %10 (toplam işveren payı yaklaşık %21,75).
-- İndirimsiz tam işveren payı: %23,75.
-
-Madde 81 (j) — 4/1-b kapsamı (tarım, orman vb. belirli işler): 5 puanlık ayrı indirim rejimi.
-
-Diğer teşvikler (özet): Yatırım teşvik belgesi kapsamı prim desteği; genç, kadın ve engelli istihdamı teşvikleri (4447, 4857); AR-GE personeli prim teşviki (5746); 2026 asgari ücret desteği (5510 geçici md. 112).
-
-YASAKLAMA (5510 ek md. 14)
-Kayıt dışı istihdam veya sahte sigortalılık tespitinde işveren belirtilen teşviklerden 1 ay ile 1 yıl arasında yararlanamaz; tekrarda süre uzar. Asgari ücret desteğinde doğrudan 1 yıl yasaklama uygulanır.
-
-KOBİ notu: Brüt ücret × işveren oranı = aylık işveren SGK maliyeti. Asgari ücrette işveren maliyeti (imalat, 5 puan indirimli): yaklaşık 39.223 TL/ay; diğer sektörler (2 puan): yaklaşık 40.214 TL/ay.
+KOBI notu: 2026'da SGK maliyeti sadece maas gununde ortaya cikmaz. Ayin 26'si ile ay sonu arasinda hem bildirim hem odeme oldugu icin personelli KOBI'lerde bu hafta aylik sabit nakit zirvesi olarak ele alinmalidir.

@@ -1,7 +1,11 @@
 """MevzuatRagAgent — RAG sonuçlarını öneri formatına dönüştürür."""
+from datetime import date, datetime, timezone
+from decimal import Decimal
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from agents.mevzuat_rag import MevzuatRagAgent
+from schemas.tax import TaxCalendarItemOut
+from services.tenant_context import TenantAnalysisContext
 
 
 @pytest.mark.asyncio
@@ -51,6 +55,76 @@ async def test_analyze_preserves_scope_and_returns_three_recommendations(six_mon
     assert all(1.0 <= rec["confidence"] <= 5.0 for rec in recs)
     assert fake_retriever.search.await_count == 3
     assert fake_gemini.generate_text.await_count == 3
+
+
+@pytest.mark.asyncio
+async def test_analyze_adds_tax_calendar_queries_for_muhtasar_and_gecici_vergi(six_month_invoices):
+    fake_retriever = MagicMock()
+    fake_retriever.search = AsyncMock(side_effect=[
+        [{"text": "KDV Kanunu Md. 41", "metadata": {"law_name": "KDV"},
+          "source_citation": "KDV Md. 41", "confidence": 4.7, "scope": "global"}],
+        [{"text": "GVK Md. 103", "metadata": {"law_name": "GVK"},
+          "source_citation": "GVK Md. 103", "confidence": 4.5, "scope": "global"}],
+        [{"text": "5510 Md. 81", "metadata": {"law_name": "SGK"},
+          "source_citation": "SGK Md. 81", "confidence": 4.1, "scope": "global"}],
+        [{"text": "GVK Md. 94 muhtasar", "metadata": {"law_name": "GVK"},
+          "source_citation": "GVK Md. 94", "confidence": 4.4, "scope": "global"}],
+        [{"text": "GVK Md. 120 geçici vergi", "metadata": {"law_name": "GVK"},
+          "source_citation": "GVK Md. 120", "confidence": 4.3, "scope": "global"}],
+    ])
+    fake_gemini = MagicMock()
+    fake_gemini.generate_text = AsyncMock(side_effect=[
+        "KDV planını 28'inden önce tamamlayın.",
+        "Gelir vergisi dilimini izleyin.",
+        "SGK primini ay sonuna bırakmayın.",
+        "Muhtasar stopaj kontrolünü ayın 26'sından önce bitirin.",
+        "Geçici vergi nakdini Mayıs döneminden önce ayırın.",
+    ])
+    tenant_context = TenantAnalysisContext(
+        tenant_id="tenant-1",
+        period="2026-03",
+        invoices=six_month_invoices,
+        tax_calendar_items=[
+            TaxCalendarItemOut(
+                id="tax-1",
+                tenant_id="tenant-1",
+                title="Mart 2026 Muhtasar",
+                tax_type="muhtasar",
+                due_date=date(2026, 4, 26),
+                amount=Decimal("18000"),
+                status="pending",
+                period="2026-03",
+                created_at=datetime(2026, 4, 1, tzinfo=timezone.utc),
+                updated_at=datetime(2026, 4, 1, tzinfo=timezone.utc),
+            ),
+            TaxCalendarItemOut(
+                id="tax-2",
+                tenant_id="tenant-1",
+                title="1. Dönem Geçici Vergi",
+                tax_type="gecici_vergi",
+                due_date=date(2026, 5, 17),
+                amount=Decimal("22000"),
+                status="overdue",
+                period="2026-Q1",
+                created_at=datetime(2026, 5, 1, tzinfo=timezone.utc),
+                updated_at=datetime(2026, 5, 1, tzinfo=timezone.utc),
+            ),
+        ],
+    )
+    agent = MevzuatRagAgent(retrievers=[fake_retriever], gemini=fake_gemini)
+
+    recs = await agent.analyze([], tenant_context=tenant_context)
+
+    assert len(recs) == 5
+    assert fake_retriever.search.await_count == 5
+    queried_prefixes = [call.args[0].split(":", 1)[0] for call in fake_retriever.search.await_args_list]
+    assert queried_prefixes == ["KDV", "GVK", "SGK", "GVK", "GVK"]
+    muhtasar_query = fake_retriever.search.await_args_list[3].args[0]
+    gecici_query = fake_retriever.search.await_args_list[4].args[0]
+    assert "Madde 94" in muhtasar_query
+    assert "muhtasar" in muhtasar_query.lower()
+    assert "Madde 120" in gecici_query
+    assert "geçici vergi" in gecici_query.lower()
 
 
 @pytest.mark.asyncio

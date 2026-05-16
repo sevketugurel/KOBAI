@@ -1,31 +1,36 @@
-193 Sayılı Gelir Vergisi Kanunu (GVK) — Gelir Vergisi Tarifesi 2026
-Kaynak: 31.12.2025 tarihli Resmî Gazete (Sayı: 33124, 5. Mükerrer); 332 Seri No.lu Gelir Vergisi Genel Tebliği; GİB gelir vergisi tarifeleri.
+193 Sayili Gelir Vergisi Kanunu - Gelir Vergisi Tarifesi 2026
+Kaynak: 30.12.2025 tarihli Resmi Gazete; 332 Seri No.lu Gelir Vergisi Genel Tebligi; GIB 2026 gelir vergisi tarifesi duyurulari.
 
-Madde 103 — 2026 takvim yılı gelirlerinin vergilendirilmesinde uygulanacak tarife, yeniden değerleme oranı (%25,49) ile güncellenmiştir. 1 Ocak 2026 – 31 Aralık 2026 dönemi için geçerlidir.
+Madde 103 - 2026 tarifesi
+2026 takvim yilinda elde edilen gelirler icin gelir vergisi tarifesi yeniden degerleme dikkate alinarak guncellenmistir. Ucret gelirleri ile ucret disi gelirlerde ucuncu dilimden itibaren farkli esikler uygulanir. Sahis sirketleri, serbest meslek erbabi ve kira geliri sahipleri icin tarifedeki esiklerin yil ici kümülatif matraha gore takip edilmesi gerekir.
 
-ÜCRET GELİRLERİ TARİFESİ (maaş, ücret, huzur hakkı vb.)
-- 190.000 TL'ye kadar: %15
-- 400.000 TL'nin 190.000 TL'si için 28.500 TL, fazlası: %20
-- 1.500.000 TL'nin 400.000 TL'si için 70.500 TL, fazlası: %27
-- 5.300.000 TL'nin 1.500.000 TL'si için 367.500 TL, fazlası: %35
-- 5.300.000 TL'den fazlasının 5.300.000 TL'si için 1.697.500 TL, fazlası: %40
+2026 ucret gelirleri tarifesi:
+- 158.000 TL'ye kadar: %15
+- 330.000 TL'nin 158.000 TL'si icin 23.700 TL, fazlasi: %20
+- 1.200.000 TL'nin 330.000 TL'si icin 58.100 TL, fazlasi: %27
+- 4.300.000 TL'nin 1.200.000 TL'si icin 293.000 TL, fazlasi: %35
+- 4.300.000 TL'den fazlasinin 4.300.000 TL'si icin 1.378.000 TL, fazlasi: %40
 
-ÜCRET DIŞI GELİRLER TARİFESİ (ticari kazanç, serbest meslek, kira, menkul sermaye iradı vb.)
-- 190.000 TL'ye kadar: %15
-- 400.000 TL'nin 190.000 TL'si için 28.500 TL, fazlası: %20
-- 1.000.000 TL'nin 400.000 TL'si için 70.500 TL, fazlası: %27
-- 5.300.000 TL'nin 1.000.000 TL'si için 232.500 TL, fazlası: %35
-- 5.300.000 TL'den fazlasının 5.300.000 TL'si için 1.737.500 TL, fazlası: %40
+2026 ucret disi gelirler tarifesi:
+- 158.000 TL'ye kadar: %15
+- 330.000 TL'nin 158.000 TL'si icin 23.700 TL, fazlasi: %20
+- 800.000 TL'nin 330.000 TL'si icin 58.100 TL, fazlasi: %27
+- 4.300.000 TL'nin 800.000 TL'si icin 185.000 TL, fazlasi: %35
+- 4.300.000 TL'den fazlasinin 4.300.000 TL'si icin 1.410.000 TL, fazlasi: %40
 
-Not: Ücret gelirlerinde üçüncü dilim 1.500.000 TL'de başlar; ücret dışı gelirlerde 1.000.000 TL'de başlar. Bu fark, ücretlilerin yüksek vergi dilimine daha geç girmesini sağlar.
+Madde 92 - Beyan zamani
+Ticari, zirai ve serbest meslek kazanci sahipleri bir takvim yilina ait gelir vergisi beyannamesini izleyen yilin Mart ayi sonuna kadar verir. 2025 yilina ait beyanname icin son gun 31 Mart 2026'dir. Tahakkuk eden gelir vergisi iki esit taksitte odenir; birinci taksit beyan sirasinda, ikinci taksit ise 31 Temmuz 2026 gunu sonuna kadar tamamlanir.
 
-Madde 86 — Asgari ücrette elde edilen ücret gelirleri (2022'den itibaren) gelir vergisinden istisnadır; 2026 brüt asgari ücret 33.030 TL olduğundan bu tutara kadar ücret gelirinde gelir vergisi hesaplanmaz.
+Madde 94 - Tevkifat ve mahsup
+Isverenler, serbest meslek odemesi yapanlar, kira odemesi yapan belirli kurumlar ve bazi odeme sorumlulari gelir vergisi stopaji yapmak zorundadir. Yil icinde stopaj yoluyla kesilen vergi, yillik beyannamede hesaplanan gelir vergisinden mahsup edilir. KOBI acisindan bu madde, hem aylik muhtasar beyannamenin dogru verilmesi hem de yil sonu mahsup hesabinin eksiksiz yapilmasi anlamina gelir.
 
-YILLIK BEYAN (şahıs işletmesi / serbest meslek)
-- Ticari veya mesleki kazanç sahipleri, bir takvim yılına ait kazançlarını ertesi yılın Mart ayı sonuna kadar (31 Mart) yıllık gelir vergisi beyannamesi ile bildirir.
-- Beyan sonrası tahakkuk eden vergi iki eşit taksitte ödenir: 1. taksit Mart sonu (beyanla birlikte), 2. taksit Temmuz sonu (31 Temmuz 2026).
-- Beyanname e-Beyanname sistemi üzerinden verilir.
+Madde 86 - Ucret istisnasi ve beyan sinirlari
+Asgari ucrete isabet eden ucret gelirleri icin gelir vergisi istisnasi devam eder. Ucret, kira ve menkul sermaye iratlari gibi gelirlerin beyana tabi olup olmadigi her gelir unsuru icin ayri sinirlar uzerinden degerlendirilir; tek bir rakama bakilarak karar verilmemelidir. GIB rehberleri her beyan donemi oncesi kontrol edilmelidir.
 
-Madde 94 — Ücret ödemelerinde işveren tarafından gelir vergisi stopajı (tevkifat) yapılır; yıllık beyan ile mahsup edilir.
+2026 uygulama notlari
+- Sahis sirketlerinde gelir vergisi planlamasi aylik nakit akisiyla birlikte izlenmelidir; tarife yil sonunda toplu degil, yil ici biriken matrah uzerinden etkisini gosterir.
+- Gecici vergi donemleri Mayis, Agustos ve Kasim aylarinda nakit baskisi yaratir; yillik beyanda mahsup dikkate alinmalidir.
+- Ucretli personeli olan isletmeler, personel bordrolarindaki kümülatif matrah degisimini ayrica izlemelidir.
+- Kira, serbest meslek veya stopajli odemeler varsa sadece tarife degil, tevkifat ve mahsup zinciri de kontrol edilmelidir.
 
-KOBİ notu: Şahıs şirketi ve kolay usul mükellefleri için gelir toplamı ve gider belgeleri beyan matrahını doğrudan etkiler; dilim geçişleri yıllık kümülatif matraha göre hesaplanır.
+KOBI notu: 2026'da ucret disi gelirlerde ucuncu dilim 800.000 TL'de baslar. Sahis isletmesi sahipleri gider belgelerini duzenli toplamazsa sadece vergi artmaz; tarife dilimine daha erken gecis riski de buyur.

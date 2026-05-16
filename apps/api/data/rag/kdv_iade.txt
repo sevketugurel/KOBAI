@@ -1,0 +1,28 @@
+3065 Sayili Katma Deger Vergisi Kanunu - KDV Iadesi 2026
+Kaynak: KDV Kanunu Madde 29 ve 32; KDV Genel Uygulama Tebligi; GIB KDV iade rehberleri.
+
+Madde 29 - Indirim ve devreden KDV
+Bir vergilendirme doneminde indirilecek KDV, hesaplanan KDV'den fazla ise aradaki fark devreden KDV olarak sonraki doneme tasinir. Bu kural tek basina iade hakki yaratmaz. KOBI'lerin en sik karistirdigi nokta, devreden KDV ile iade alacaginin ayni sey olmadigidir.
+
+Madde 32 - Iade doguran islemler
+Ihracat, uluslararasi tasimacilik, tam istisna kapsami bazi teslim ve hizmetler ile indirimli orana tabi islemlerden dogan belirli farklar iade konusu olabilir. Iade icin islemin kanunda ozel olarak sayilmis olmasi, yuklenilen KDV'nin belgelenmesi ve GIB tarafindan belirlenen iade usullerine uyulmasi gerekir.
+
+2026'da iade sureci nasil okunur
+Iade talebi nakden veya mahsuben yapilabilir. Nakden iadede teminat, YMM raporu veya vergi inceleme raporu gibi guvenceler aranabilir. Mahsuben iadede SGK primi, muhtasar veya diger vergi borclarina mahsup secenegi KOBI acisindan daha hizli sonuc verebilir.
+
+Indirimli oranli islemler
+%1 veya %10 oranli teslim ve hizmetlerde yuklenilen KDV'nin hesaplanan vergiyi asmasi halinde, ilgili yil icin belirlenen sinirlar dahilinde iade mekanizmasi calisabilir. Ancak burada da sadece oran farki yetmez; islem listeleri, yuklenim hesaplari ve belgeler eksiksiz olmalidir.
+
+Belgeler ve kontrol
+- Alis ve satis faturalarinin tutarliligi
+- Ihracat veya istisna dayanak belgeleri
+- YMM veya muhasebe calisma kagitlari
+- Devreden KDV'nin donemsel izlenmesi
+- Indirilemeyecek KDV kalemlerinin ayiklanmasi
+
+2026 operasyonel riskleri
+- Hatali oran kullanimi iade hesabini bozar.
+- E-fatura veya e-arsiv uyumsuzlugu iade incelemesini uzatir.
+- Sadece cari hesap raporuna bakilarak iade tutari hesaplanamaz; stok ve yuklenim analizi gerekir.
+
+KOBI notu: "Devreden KDV iade edilir mi?" sorusunun cevabi genelde hayirdir. 2026'da iade beklentisi ancak Madde 32 kapsaminda bir islem varsa ve yuklenilen KDV belgeli olarak ispatlanabiliyorsa anlam kazanir.

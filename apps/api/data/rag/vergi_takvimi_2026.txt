@@ -1,41 +1,44 @@
-2026 Vergi Takvimi — KOBİ Beyan ve Ödeme Tarihleri (Özet)
-Kaynak: GİB Vergi Takvimi (gib.gov.tr/vergi-takvimi); VUK md. 18 (tatil uzatması); 149 Seri No.lu Sirküler (KDV süre uzatımı).
+2026 Vergi Takvimi - KOBI Beyan ve Odeme Ozeti
+Kaynak: GIB vergi takvimi; VUK Madde 18; GIB KDV sure uzatimi uygulamasi.
 
-KDV (tüm KDV mükellefleri)
-- Beyan ve ödeme: İlgili ayı izleyen ayın 28. günü sonu (GİB sirküler uygulaması; kanuni md. 41/46'da 26. gün).
-- Örnek: Şubat 2026 dönemi KDV → 28 Mart 2026; Ocak 2026 dönemi (Şubat sonu tatil) → 2 Mart 2026 Pazartesi.
+Madde 18 - Tatil gunune denk gelen sureler
+Vergi hukukunda son gun resmi tatil veya hafta sonuna gelirse sure izleyen ilk is gunu sonuna uzar. 2026 takvimi okunurken "kanuni son gun" ile "fiili son gun" ayirimi bu nedenle onemlidir.
 
-MUHTASAR VE SGK (çalışanı olan işletmeler)
-- Aylık muhtasar beyanname: İzleyen ayın 26. günü akşamına kadar.
-- SGK prim belgesi: İzleyen ayın 26. günü.
-- SGK prim ödemesi: İzleyen ayın son günü.
+KDV
+- Her vergilendirme donemi icin beyan ve odeme, fiili uygulamada izleyen ayin 28. gunu esasiyla takip edilir.
+- Ocak 2026 KDV'si icin Subat sonu hafta sonuna denk gelirse son gun 2 Mart 2026 Pazartesi olabilir.
+- KDV tahakkuku, muhtasar ve SGK donemleriyle ayni haftaya gelebilir.
 
-BA-BS FORMLARI
-- Alış ve satış bildirimi: İlgili ayı izleyen ayın son iş günü.
+Muhtasar ve prim hizmet
+- Ucret, kira ve diger stopaj unsurlari iceren muhtasar beyanname izleyen ayin 26. gunu aksamina kadar verilir.
+- SGK prim bilgileri de ayni donemsel disiplinle takip edilir.
 
-GELİR VERGİSİ (şahıs şirketi, serbest meslek)
-- 2025 yılı kazancı yıllık beyan: 31 Mart 2026 sonuna kadar.
-- 1. taksit ödeme: Beyan ile birlikte (31 Mart 2026).
-- 2. taksit ödeme: 31 Temmuz 2026.
+SGK
+- Prim hizmet bildirimi: izleyen ayin 26. gunu sonu
+- Prim odemesi: izleyen ayin son gunu
+- Tesvik kullanan isletmeler icin gecikme sadece faiz degil, indirim kaybi da yaratir
 
-KURUMLAR VERGİSİ (A.Ş., Ltd. Şti.)
-- 2025 hesap dönemi beyan ve ödeme: 1–30 Nisan 2026.
+Gecici vergi
+- 1. donem: 17 Mayis 2026 kanuni, 18 Mayis 2026 fiili son gun
+- 2. donem: 17 Agustos 2026
+- 3. donem: 16 Kasim 2026
 
-GEÇİCİ VERGİ
-- 1. dönem: 17 Mayıs 2026
-- 2. dönem: 17 Ağustos 2026
-- 3. dönem: 16 Kasım 2026
+Gelir vergisi
+- 2025 yilina ait yillik gelir vergisi beyani: 31 Mart 2026
+- 1. taksit: 31 Mart 2026
+- 2. taksit: 31 Temmuz 2026
 
-DAMGA VERGİSİ
-- Aylık beyan: İzleyen ayın 26. günü (muhtasar ile benzer dönem).
+Kurumlar vergisi
+- 2025 hesap donemi beyani ve odemesi: 1-30 Nisan 2026
 
-ÖNEMLİ NOTLAR
-- Son gün cumartesi, pazar veya resmi tatile denk gelirse süre izleyen ilk iş gününe uzar (VUK md. 18).
-- e-Beyanname işlemleri genelde ilgili gün saat 23:59'a kadar tamamlanmalıdır.
-- 2025 yılında vergi cezalarının önemli kısmı beyan süresi gecikmesinden kaynaklanmaktadır; takvim proaktif kullanılmalıdır.
+BA/BS ve diger bildirimler
+- Form BA ve Form BS icin ayri beyan yukumlulugu olan mukellefler, izleyen ayin son gunu esasini ve elektronik belge istisnalarini kontrol etmelidir.
+- Damga vergisi ve diger ozel vergilerde de muhtasar zinciriyle uyum aranir.
 
-KOBİ pratik kontrol listesi (aylık)
-1. KDV beyanı ve ödemesi (28. gün veya uzatılmış iş günü)
-2. Muhtasar + SGK prim (26. gün beyan, ay sonu ödeme)
-3. BA-BS (ay sonu iş günü)
-4. Geçici vergi dönemlerinde ek beyan (Mayıs, Ağustos, Kasım)
+Aylik kontrol akisi
+1. Ay kapanisinda fatura ve banka mutabakati.
+2. Ayin 20-26 araliginda muhtasar ve SGK taslak kontrolu.
+3. Ayin 26-28 araliginda KDV ve prim odeme hazirligi.
+4. Ceyrek sonlarinda gecici vergi karsiligi.
+
+KOBI notu: Vergi takvimi ayri ayri vergi turlerinin listesi degildir; nakit akis piklerini gosteren operasyon takvimidir. 2026'da Mart, Nisan, Mayis, Agustos ve Kasim aylari kucuk isletmeler icin en yogun vergi donemleridir.

@@ -1,33 +1,29 @@
-5520 Sayılı Kurumlar Vergisi Kanunu (KVK) — Oranlar ve Beyan 2026
-Kaynak: GİB — Kurumlar Vergisinde Oran Uygulamaları Rehberi (Mart 2026, Yayın No: 605); 5520 sayılı KVK; mevzuat.gov.tr.
+5520 Sayili Kurumlar Vergisi Kanunu - Kurumlar Vergisi 2026
+Kaynak: 5520 sayili KVK; GIB Kurumlar Vergisinde Oran Uygulamalari Rehberi 2026; mevzuat.gov.tr kurumlar vergisi metni.
 
-Madde 32 — Kurumlar vergisi oranı
-- Kural: Kurum kazancı üzerinden %25.
-- İstisna: Bankalar, finansal kiralama, faktoring, varlık yönetim şirketleri, sigorta ve reasürans ile emeklilik şirketleri %30 oranında öder.
+Madde 1 - Mukellefler
+Anonim sirketler, limited sirketler, kooperatifler, iktisadi kamu kuruluslari ve dernek veya vakif iktisadi isletmeleri kurumlar vergisi mukellefidir. Sahis isletmeleri bu kapsama girmez; onlar gelir vergisine tabidir.
 
-GEÇİCİ VERGİ (KVK md. 32/A ve GVK md. 120)
-- Kurumlar vergisi mükellefleri, cari yıl kurumlar vergisi oranında geçici vergi öder.
-- 2026 geçici vergi dönemleri (ticari kazanç):
-  1. dönem (Ocak–Mart): beyan ve ödeme 17 Mayıs 2026
-  2. dönem (Ocak–Haziran): beyan ve ödeme 17 Ağustos 2026
-  3. dönem (Ocak–Eylül): beyan ve ödeme 16 Kasım 2026
-  4. dönem: yıllık kurumlar vergisi beyannamesi ile mahsup
+Madde 32 - Kurumlar vergisi orani
+2026 hesaplamalarinda genel kurumlar vergisi orani %25 olarak uygulanir. Bankalar, finansal kiralama, faktorink, finansman, tasarruf finansman, sigorta, reasurans ve emeklilik sirketleri gibi belirli finansal kurumlarda oran %30 olarak dikkate alinir. Oran farki nedeniyle sirket tipi ve faaliyet konusu beyan oncesinde kontrol edilmelidir.
 
-YILLIK KURUMLAR VERGİSİ BEYANI
-- 2025 hesap dönemi kazancı: 1–30 Nisan 2026 arasında beyan ve ödeme.
-- Anonim şirket (A.Ş.) ve limited şirket (Ltd. Şti.) kurumlar vergisi mükellefidir.
-- Beyan e-Beyanname üzerinden; ödeme aynı dönemde.
+Yillik beyan donemi
+2025 hesap donemine iliskin kurumlar vergisi beyannamesi 1 Nisan 2026 ile 30 Nisan 2026 arasinda verilir. Tahakkuk eden vergi ayni sure icinde odenir. Ozel hesap donemine tabi mukelleflerde beyan tarihi hesap donemi kapanisini izleyen dorduncu ay esasina gore degisir.
 
-İNDİRİMLİ ORAN UYGULAMALARI (özet)
-- Halka arz: Borsa İstanbul'da en az %20 halka arz → 5 hesap dönemi boyunca 2 puan indirim (%23).
-- İhracat kazancı: Belirli koşullarda 1 veya 5 puan indirim (döneme göre).
-- Üretim faaliyeti: Üretim kazançlarına indirimli oran (şartlar sağlanmalı).
-- KOBİ birleşmeleri: Tanıma uygun birleşmelerde indirimli oran (belirli dönem ve şartlar).
+Gecici vergi baglantisi
+Kurumlar vergisi mukellefleri de yil icinde gecici vergi oder. 2026 donemlerinde 1. ceyrek icin 18 Mayis 2026, 2. ceyrek icin 17 Agustos 2026, 3. ceyrek icin 16 Kasim 2026 fiili son gun olarak izlenir. Odenen gecici vergiler yillik kurumlar vergisinden mahsup edilir.
 
-STOPAJ (KVK md. 15 ve md. 30)
-Kurumlara yapılan temettü, faiz, kira, serbest meslek ödemeleri vb. üzerinden kaynakta kesinti (stopaj) uygulanır. Oranlar Cumhurbaşkanı kararları ile belirlenir (2009/14594 ve 2009/14593 sayılı kararlar temel referans). Kara liste ülkelere ödemelerde %30 kesinti (md. 30).
+Madde 5 - Istisnalar
+Istirak kazanci istisnasi, tasinmaz ve istirak hissesi satis kazanci istisnasi gibi basliklar belirli sartlarla uygulanir. Ancak bu istisnalar otomatik degildir; muhasebe kaydi, fon hesabi ve satis sureleri birlikte aranir. KOBI olcegindeki limited sirketlerin en sik hatasi, istisna konusunu sadece satisin yapilmis olmasina baglayip fon ve sure sartlarini atlamaktir.
 
-YURT İÇİ ASGARİ KURUMLAR VERGİSİ
-Transfer fiyatlandırması kapsamında, ilişkili kişilerle yapılan işlemlerde vergi matrahı düzeltmesi sonrası asgari vergi yükümlülüğü doğabilir.
+Madde 10 - Indirimler
+Sponsorluk, bagis-yardim ve Ar-Ge gibi bazi kalemler ozel sartlarla kurum kazancindan indirilebilir. Belgelenemeyen veya kanunen kabul edilmeyen giderler matraha eklenir. Bu nedenle vergi oncesi kar ile vergi matrahi bire bir ayni degildir.
 
-KOBİ notu: Şahıs şirketi gelir vergisine, Ltd./A.Ş. kurumlar vergisine tabidir. Geçici vergi nakit akışını etkiler; yıllık beyanda mahsup edilir. Detaylı oran ve istisna için mali müşavir veya GİB rehberi kullanılmalıdır.
+2026 uygulama notlari
+- Genel oran %25'tir.
+- Finansal kurumlar icin oran %30'dur.
+- 2025 hesap donemi yillik beyan ve odeme suresi Nisan 2026 sonuna kadardir.
+- Gecici vergi odemeleri yillik vergiden mahsup edilir.
+- Kar dagitimi yapilacaksa ayrica stopaj ve finansal tablolar etkisi degerlendirilmelidir.
+
+KOBI notu: Ltd. veya A.S. yapisinda faaliyet gosteriyorsaniz vergi planlamasini sadece Nisan 2026'ya birakmak yeterli degildir. Gecici vergi, KKEG ve istisna sartlari yil boyunca takip edilmediginde yillik beyanda surpriz matrah farki dogar.

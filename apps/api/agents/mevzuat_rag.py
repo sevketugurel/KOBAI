@@ -100,7 +100,10 @@ def _summarize_tenant_context(context: TenantAnalysisContext) -> dict[str, float
     return invoice_context
 
 
-def _build_tax_queries(context: dict[str, float | int | str]) -> list[tuple[str, str]]:
+def _build_tax_queries(
+    context: dict[str, float | int | str],
+    tenant_context: TenantAnalysisContext | None = None,
+) -> list[tuple[str, str]]:
     income_kdv_total = float(context["income_kdv_total"])
     expense_kdv_total = float(context["expense_kdv_total"])
     net_kdv_estimate = float(context["net_kdv_estimate"])
@@ -111,7 +114,7 @@ def _build_tax_queries(context: dict[str, float | int | str]) -> list[tuple[str,
 
     net_kdv_label = "ödenecek yaklaşık net KDV" if net_kdv_estimate >= 0 else "devreden KDV farkı"
 
-    return [
+    queries: list[tuple[str, str]] = [
         (
             "KDV",
             (
@@ -139,6 +142,62 @@ def _build_tax_queries(context: dict[str, float | int | str]) -> list[tuple[str,
             ),
         ),
     ]
+
+    if tenant_context is None:
+        return queries
+
+    pending_tax_types = {
+        getattr(item, "tax_type", None)
+        for item in tenant_context.tax_calendar_items
+        if item.status in ("pending", "overdue")
+    }
+
+    if "muhtasar" in pending_tax_types:
+        queries.append(
+            (
+                "GVK",
+                (
+                    f"{date_range} döneminde toplam gelir {_format_try(income_total)} olan küçük işletme için "
+                    "muhtasar beyanname, ücret ve kira stopajı, GVK Madde 94 kapsamındaki tevkifatlar "
+                    "ve izleyen ayın 26. günü sonuna kadar tamamlanması gereken kontrol adımları"
+                ),
+            )
+        )
+    if "gecici_vergi" in pending_tax_types:
+        queries.append(
+            (
+                "GVK",
+                (
+                    f"{date_range} döneminde gelir {_format_try(income_total)} ve gider {_format_try(expense_total)} olan işletme için "
+                    "GVK Madde 120 kapsamındaki geçici vergi beyanı, Mayıs-Ağustos-Kasım takvimi "
+                    "ve peşin vergi planlamasında dikkat edilmesi gereken noktalar"
+                ),
+            )
+        )
+    if "gelir_vergisi" in pending_tax_types:
+        queries.append(
+            (
+                "GVK",
+                (
+                    f"{date_range} dönemindeki faaliyet sonuçlarına göre küçük işletme için "
+                    "yıllık gelir vergisi beyannamesi, Mart sonu beyan süresi, Temmuz ikinci taksit "
+                    "ve GVK gelir vergisi tarifesine göre planlama notları"
+                ),
+            )
+        )
+    if "kurumlar_vergisi" in pending_tax_types:
+        queries.append(
+            (
+                "KVK",
+                (
+                    f"{date_range} dönemindeki şirket faaliyetleri için "
+                    "kurumlar vergisi oranı, Nisan ayı yıllık beyan süresi, KVK Madde 32 kapsamındaki oranlar "
+                    "ve geçici vergi mahsubu hakkında kısa uygulama özeti"
+                ),
+            )
+        )
+
+    return queries
 
 
 def _build_generation_context(
@@ -228,7 +287,7 @@ class MevzuatRagAgent:
             if tenant_context is not None
             else _summarize_invoice_context(invoices)
         )
-        queries = _build_tax_queries(context)
+        queries = _build_tax_queries(context, tenant_context)
         recommendations: list[dict] = []
         for law, q in queries:
             hits = await self._query(f"{law}: {q}")
