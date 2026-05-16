@@ -62,6 +62,11 @@ def _extract_bearer(authorization: str | None) -> str:
 
 
 def _decode_jwt(token: str) -> dict:
+    if not settings.supabase_jwt_secret and token.count(".") != 2:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="v2 auth yapılandırılmamış (SUPABASE_JWT_SECRET eksik)",
+        )
     # JWKS yolu: SUPABASE_URL varsa ES256/RS256 ile dene (modern Supabase projeler).
     if settings.supabase_url:
         try:

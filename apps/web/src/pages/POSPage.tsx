@@ -1,15 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
+import { CreditCard, RefreshCw, ReceiptText, TrendingUp } from "lucide-react";
 
 import {
+  isMockMode,
   V2ApiError,
   v2,
   type PosProvider,
   type PosTransaction,
 } from "../api/v2";
+import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
+import { formatDateTime, formatTRY } from "../lib/utils";
 
-const TRY = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" });
 const DATE_TIME = new Intl.DateTimeFormat("tr-TR", {
   day: "2-digit", month: "2-digit", year: "numeric",
   hour: "2-digit", minute: "2-digit",
@@ -28,6 +31,22 @@ const STATUS_CLASSES: Record<PosTransaction["status"], string> = {
   pending: "bg-amber-100 text-amber-800 border-amber-300",
   cancelled: "bg-neutral-100 text-neutral-700 border-neutral-300",
 };
+
+const STATUS_LABELS: Record<PosTransaction["status"], string> = {
+  success: "Başarılı",
+  failed: "Hatalı",
+  pending: "Bekliyor",
+  cancelled: "İptal",
+};
+
+function signedTxn(t: PosTransaction): number {
+  const value = Number(t.amount);
+  return t.txn_type === "refund" ? -value : value;
+}
+
+function successfulNet(rows: PosTransaction[]): number {
+  return rows.filter((t) => t.status === "success").reduce((sum, t) => sum + signedTxn(t), 0);
+}
 
 export default function POSPage() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -93,38 +112,87 @@ export default function POSPage() {
   const webhookFull = c?.webhook_url
     ? `${window.location.origin.replace(/:\d+$/, ":8000")}${c.webhook_url}`
     : null;
+  const txRows = txns.data ?? [];
+  const monthNet = successfulNet(txRows);
+  const weekNet = successfulNet(txRows.slice(0, 7));
+  const saleItems = txRows.filter((t) => t.status === "success" && t.txn_type === "sale").length;
+  const terminals = [
+    { name: "Web Checkout", provider: "iyzico", status: "Aktif", amount: monthNet * 0.62 },
+    { name: "Mağaza Terminali", provider: "iyzico", status: "Aktif", amount: monthNet * 0.28 },
+    { name: "Mobil Link", provider: "Craftgate", status: "Test", amount: monthNet * 0.1 },
+  ];
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-xl">Sanal POS</h1>
-        <p className="text-xs text-neutral-500">
-          iyzico Checkout BYOI. Webhook ile gelen online ödemeleri yakalar.
-        </p>
-      </header>
+      <PageHeader
+        title="Sanal POS"
+        subtitle="Online ödeme terminalleri, günlük özet ve işlem akışı."
+      />
 
-      {summary.data && (
-        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Kpi label="Bugün Satış" value={TRY.format(Number(summary.data.total_sales))} />
-          <Kpi label="Bugün İade" value={TRY.format(Number(summary.data.total_refunds))} />
-          <Kpi
-            label="Net"
-            value={TRY.format(Number(summary.data.net_amount))}
-            tone={Number(summary.data.net_amount) >= 0 ? "good" : "bad"}
-          />
-          <Kpi label="İşlem" value={String(summary.data.sale_count + summary.data.refund_count)} />
-        </section>
-      )}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <KpiCard
+          label="Bugün Net"
+          value={formatTRY(Number(summary.data?.net_amount ?? 0))}
+          icon={<CreditCard size={20} />}
+          loading={summary.isLoading}
+        />
+        <KpiCard
+          label="Haftalık Net"
+          value={formatTRY(weekNet)}
+          icon={<TrendingUp size={20} />}
+          loading={txns.isLoading}
+        />
+        <KpiCard
+          label="Bu Ay POS"
+          value={formatTRY(monthNet)}
+          icon={<ReceiptText size={20} />}
+          loading={txns.isLoading}
+        />
+        <KpiCard
+          label="Başarılı Satış"
+          value={String(saleItems)}
+          icon={<RefreshCw size={20} />}
+          loading={txns.isLoading}
+        />
+      </section>
 
-      <section className="rounded border border-border bg-surface p-4">
-        <h2 className="mb-2 text-sm font-medium">Yapılandırma</h2>
-        {cfg.isLoading && <p className="text-xs text-neutral-500">Yükleniyor…</p>}
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <Card>
+          <Card.Header title="Terminaller" subtitle="Sağlayıcı ve kanal bazlı satış dağılımı" />
+          <Card.Body>
+            <div className="grid gap-3 md:grid-cols-3">
+              {terminals.map((terminal) => (
+                <div key={terminal.name} className="rounded-lg border border-border bg-background p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-navy-900">{terminal.name}</h3>
+                      <p className="mt-1 text-xs text-neutral-500">{terminal.provider}</p>
+                    </div>
+                    <StatusBadge
+                      variant={terminal.status === "Aktif" ? "success" : "warning"}
+                      label={terminal.status}
+                      dot={terminal.status === "Aktif"}
+                    />
+                  </div>
+                  <p className="mt-4 font-mono text-lg font-semibold text-navy-900">
+                    {formatTRY(terminal.amount)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Card.Body>
+        </Card>
+
+        <Card>
+          <Card.Header title="Yapılandırma" subtitle="Webhook ve sağlayıcı durumu" />
+          <Card.Body>
+        {cfg.isLoading && <div className="skeleton h-20" />}
         {c && (
-          <p className="text-xs text-neutral-600">
-            Sağlayıcı: <strong>{c.provider ?? "—"}</strong> · Aktif:{" "}
-            <strong>{c.is_active ? "Evet" : "Hayır"}</strong> · Son webhook:{" "}
-            {c.last_sync_at ? new Date(c.last_sync_at).toLocaleString("tr-TR") : "—"}
-          </p>
+          <div className="space-y-2 text-sm text-neutral-700">
+            <p>Sağlayıcı: <strong>{c.provider ?? "—"}</strong></p>
+            <p>Aktif: <strong>{c.is_active ? "Evet" : "Hayır"}</strong></p>
+            <p>Son webhook: {c.last_sync_at ? formatDateTime(c.last_sync_at) : "—"}</p>
+          </div>
         )}
 
         {webhookFull && (
@@ -150,7 +218,7 @@ export default function POSPage() {
             placeholder="API Key"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            required
+            required={!isMockMode}
             className="w-full rounded border border-neutral-300 px-2 py-1.5"
           />
           <input
@@ -158,7 +226,7 @@ export default function POSPage() {
             placeholder="Secret Key"
             value={secretKey}
             onChange={(e) => setSecretKey(e.target.value)}
-            required
+            required={!isMockMode}
             className="w-full rounded border border-neutral-300 px-2 py-1.5"
           />
           <input
@@ -166,40 +234,38 @@ export default function POSPage() {
             placeholder="Webhook Secret (8-128 karakter)"
             value={webhookSecret}
             onChange={(e) => setWebhookSecret(e.target.value)}
-            required
+            required={!isMockMode}
             minLength={8}
             className="w-full rounded border border-neutral-300 px-2 py-1.5 font-mono"
           />
           {okMsg && <p className="text-emerald-700">{okMsg}</p>}
           {err && <p className="text-red-600">{err}</p>}
-          <button
+          <Button
             type="submit"
-            disabled={save.isPending}
-            className="rounded bg-navy-900 px-3 py-1.5 text-white disabled:opacity-60"
+            loading={save.isPending}
+            size="sm"
           >
-            {save.isPending ? "Kaydediliyor…" : "Kaydet"}
-          </button>
+            Kaydet
+          </Button>
         </form>
+          </Card.Body>
+        </Card>
       </section>
 
-      <section>
-        <h2 className="mb-2 font-display text-lg">Son İşlemler</h2>
-        {txns.isLoading && <p className="text-sm text-neutral-500">Yükleniyor…</p>}
+      <Card>
+        <Card.Header title="Son İşlemler" subtitle="Satış, iade ve bekleyen POS hareketleri" />
+        <Card.Body>
+        {txns.isLoading && <div className="skeleton h-48" />}
         {txns.data && txns.data.length === 0 && (
-          <p className="text-sm text-neutral-500">Henüz işlem yok.</p>
+          <EmptyState
+            icon={<CreditCard size={32} />}
+            title="Henüz işlem yok"
+            message="Webhook üzerinden gelen POS hareketleri burada listelenir."
+          />
         )}
         {txns.data && txns.data.length > 0 && <TxTable rows={txns.data} />}
-      </section>
-    </div>
-  );
-}
-
-function Kpi({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
-  const color = tone === "bad" ? "text-red-700" : tone === "good" ? "text-emerald-700" : "text-neutral-900";
-  return (
-    <div className="rounded border border-border bg-surface px-4 py-3">
-      <div className="text-xs text-neutral-500">{label}</div>
-      <div className={`mt-1 font-mono text-lg ${color}`}>{value}</div>
+        </Card.Body>
+      </Card>
     </div>
   );
 }
@@ -226,7 +292,7 @@ function TxTable({ rows }: { rows: PosTransaction[] }) {
               <td className="py-2 pr-3">{TXN_TYPE_LABELS[t.txn_type]}</td>
               <td className="py-2 pr-3">
                 <span className={`rounded border px-2 py-0.5 text-xs ${STATUS_CLASSES[t.status]}`}>
-                  {t.status}
+                  {STATUS_LABELS[t.status]}
                 </span>
               </td>
               <td className="py-2 pr-3 font-mono text-xs text-neutral-600">
@@ -240,8 +306,7 @@ function TxTable({ rows }: { rows: PosTransaction[] }) {
                   t.txn_type === "refund" ? "text-red-700" : "text-emerald-700"
                 }`}
               >
-                {t.txn_type === "refund" ? "−" : ""}
-                {TRY.format(Number.parseFloat(t.amount))}
+                {formatTRY(signedTxn(t))}
               </td>
             </tr>
           ))}

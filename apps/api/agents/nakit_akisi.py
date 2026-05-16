@@ -1,7 +1,9 @@
 """Nakit akışı ajanı — 3 dönem hareketli ortalama + KDV/SGK takvimi."""
 from datetime import date
+from decimal import Decimal
 from statistics import mean
 from schemas.invoice import InvoiceData
+from services.tenant_context import TenantAnalysisContext
 
 
 SGK_RATE = 0.225
@@ -66,10 +68,42 @@ class NakitAkisiAgent:
         *,
         start_year: int | None = None,
         start_month: int | None = None,
+        tenant_context: TenantAnalysisContext | None = None,
     ) -> list[dict]:
         if not invoices:
-            return []
+            if tenant_context is None:
+                return []
+            invoices = tenant_context.invoices
+            if not invoices and not tenant_context.bank_transactions and not tenant_context.pos_transactions:
+                return []
         by_month = _group_by_month(invoices)
+        if tenant_context is not None:
+            for tx in tenant_context.bank_transactions:
+                key = tx.transacted_at.strftime("%Y-%m")
+                bucket = by_month.setdefault(
+                    key,
+                    {"income": 0.0, "expense": 0.0, "kdv_collected": 0.0, "kdv_paid": 0.0},
+                )
+                amount = float(tx.amount if not isinstance(tx.amount, Decimal) else tx.amount)
+                if tx.direction == "credit":
+                    bucket["income"] += amount
+                else:
+                    bucket["expense"] += amount
+            for tx in tenant_context.pos_transactions:
+                if tx.status != "success":
+                    continue
+                key = tx.transacted_at.strftime("%Y-%m")
+                bucket = by_month.setdefault(
+                    key,
+                    {"income": 0.0, "expense": 0.0, "kdv_collected": 0.0, "kdv_paid": 0.0},
+                )
+                amount = float(tx.amount if not isinstance(tx.amount, Decimal) else tx.amount)
+                if tx.txn_type == "refund":
+                    bucket["expense"] += amount
+                elif tx.txn_type == "sale":
+                    bucket["income"] += amount
+        if not by_month:
+            return []
         sorted_keys = sorted(by_month.keys())
         last = date.fromisoformat(sorted_keys[-1] + "-01")
         if start_year is None:

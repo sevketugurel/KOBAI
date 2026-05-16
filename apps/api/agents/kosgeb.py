@@ -1,4 +1,6 @@
-"""KOSGEB destek önerileri — sektör/şirket tipine göre statik kural seti."""
+"""KOSGEB destek önerileri — sektör/şirket tipi ve tenant sinyallerine göre."""
+
+from services.tenant_context import TenantAnalysisContext
 
 _RULES = [
     {"sector": "Gıda & İçecek", "title": "KOSGEB KOBİGEL — Gıda İmalatı Destek Programı",
@@ -12,5 +14,27 @@ _RULES = [
 ]
 
 
-def suggest_kosgeb(*, sector: str, company_type: str) -> list[dict]:
-    return [{"title": r["title"], "detail": r["detail"], "url": r["url"]} for r in _RULES if r["sector"] == sector]
+def suggest_kosgeb(
+    *,
+    sector: str,
+    company_type: str,
+    tenant_context: TenantAnalysisContext | None = None,
+) -> list[dict]:
+    summary = tenant_context.summary_dict() if tenant_context is not None else {}
+    scale_note = ""
+    if summary:
+        revenue = float(summary.get("invoice_income_total", 0)) + float(summary.get("pos_success_sales_total", 0))
+        bank_net = float(summary.get("bank_net_total", 0))
+        scale_note = (
+            f" Dönem sinyali: gelir/POS ölçeği yaklaşık {revenue:,.0f} TL, "
+            f"banka net akışı {bank_net:,.0f} TL."
+        )
+    return [
+        {
+            "title": r["title"],
+            "detail": f"{r['detail']}{scale_note}",
+            "url": r["url"],
+        }
+        for r in _RULES
+        if r["sector"] == sector
+    ]

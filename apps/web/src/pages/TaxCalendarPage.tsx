@@ -1,7 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock } from "lucide-react";
 
 import { v2, type TaxCalendarItem, type TaxStatus, type TaxType } from "../api/v2";
+import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
+import { formatTRY } from "../lib/utils";
 
 const TAX_TYPE_LABELS: Record<TaxType, string> = {
   kdv: "KDV",
@@ -57,37 +60,78 @@ export default function TaxCalendarPage() {
   const pending = rows.filter((r) => r.status === "pending");
   const overdue = rows.filter((r) => r.status === "overdue");
   const paid = rows.filter((r) => r.status === "paid");
+  const pendingAmount = [...pending, ...overdue].reduce(
+    (sum, r) => sum + Number(r.amount ?? 0),
+    0,
+  );
+  const nextItem = [...pending, ...overdue].sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-xl">Vergi Takvimi</h1>
-        <p className="text-xs text-neutral-500">
-          KDV, Muhtasar, SGK, Geçici Vergi ve yıllık beyannameler için son ödeme tarihleri.
-        </p>
-      </header>
+      <PageHeader
+        title="Vergi Takvimi"
+        subtitle="KDV, Muhtasar, SGK, Geçici Vergi ve yıllık beyannameler için ödeme görünümü."
+      />
 
-      <Summary label="Gecikmiş" tone="overdue" count={overdue.length} />
-      {overdue.length > 0 && <ItemList rows={overdue} onPaid={(id) => markPaid.mutate({ itemId: id })} />}
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <KpiCard label="Açık Tutar" value={formatTRY(pendingAmount)} icon={<CalendarDays size={20} />} />
+        <KpiCard label="Yaklaşan" value={`${pending.length} kalem`} icon={<Clock size={20} />} />
+        <KpiCard label="Gecikmiş" value={`${overdue.length} kalem`} icon={<AlertTriangle size={20} />} />
+        <KpiCard label="Ödenmiş" value={`${paid.length} kalem`} icon={<CheckCircle2 size={20} />} />
+      </section>
 
-      <Summary label="Yaklaşan" tone="pending" count={pending.length} />
-      <ItemList rows={pending} onPaid={(id) => markPaid.mutate({ itemId: id })} />
+      {nextItem ? (
+        <Card>
+          <Card.Body>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                  Sıradaki ödeme
+                </p>
+                <h2 className="mt-1 font-display text-lg text-navy-900">{nextItem.title}</h2>
+                <p className="mt-1 text-sm text-neutral-600">
+                  {TAX_TYPE_LABELS[nextItem.tax_type]} · {nextItem.period ?? "Dönem yok"} · {formatTRY(Number(nextItem.amount ?? 0))}
+                </p>
+              </div>
+              <div className="text-left md:text-right">
+                <StatusBadge
+                  variant={nextItem.status === "overdue" ? "danger" : "warning"}
+                  label={STATUS_LABELS[nextItem.status]}
+                />
+                <p className="mt-2 font-mono text-sm text-navy-900">
+                  {DATE_FMT.format(new Date(nextItem.due_date))}
+                </p>
+              </div>
+            </div>
+          </Card.Body>
+        </Card>
+      ) : null}
 
-      {paid.length > 0 && (
-        <>
-          <Summary label="Ödenmiş" tone="paid" count={paid.length} />
-          <ItemList rows={paid} muted />
-        </>
-      )}
+      <TaxSection title="Gecikmiş" rows={overdue} onPaid={(id) => markPaid.mutate({ itemId: id })} />
+      <TaxSection title="Yaklaşan" rows={pending} onPaid={(id) => markPaid.mutate({ itemId: id })} />
+      <TaxSection title="Ödenmiş" rows={paid} muted />
     </div>
   );
 }
 
-function Summary({ label, count, tone }: { label: string; count: number; tone: TaxStatus }) {
+function TaxSection({
+  title,
+  rows,
+  onPaid,
+  muted,
+}: {
+  title: string;
+  rows: TaxCalendarItem[];
+  onPaid?: (id: string) => void;
+  muted?: boolean;
+}) {
   return (
-    <div className={`inline-block rounded border px-3 py-1 text-sm ${STATUS_CLASSES[tone]}`}>
-      {label}: <strong>{count}</strong>
-    </div>
+    <Card>
+      <Card.Header title={title} subtitle={`${rows.length} kayıt`} />
+      <Card.Body>
+        <ItemList rows={rows} onPaid={onPaid} muted={muted} />
+      </Card.Body>
+    </Card>
   );
 }
 
@@ -99,10 +143,28 @@ function ItemList({
   muted?: boolean;
 }) {
   if (rows.length === 0) {
-    return <p className="text-sm text-neutral-500">Kayıt yok.</p>;
+    return (
+      <EmptyState
+        icon={<CalendarDays size={32} />}
+        title="Kayıt yok"
+        message="Bu durum için vergi takvimi kalemi bulunmuyor."
+      />
+    );
   }
   return (
-    <ul className="space-y-2">
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className="border-b border-border text-left text-xs text-neutral-500">
+          <tr>
+            <th className="py-2 pr-3">Kalem</th>
+            <th className="py-2 pr-3">Dönem</th>
+            <th className="py-2 pr-3">Durum</th>
+            <th className="py-2 pr-3 text-right">Tutar</th>
+            <th className="py-2 pr-3 text-right">Son Tarih</th>
+            {onPaid ? <th className="py-2 pr-3 text-right">Aksiyon</th> : null}
+          </tr>
+        </thead>
+        <tbody>
       {rows.map((it) => {
         const dl = daysUntil(it.due_date);
         const urgency =
@@ -110,27 +172,31 @@ function ItemList({
           : dl <= 3 ? "text-amber-700"
           : "text-neutral-700";
         return (
-          <li
+          <tr
             key={it.id}
-            className={`flex items-center justify-between rounded border border-border bg-surface px-4 py-3 ${
-              muted ? "opacity-60" : ""
-            }`}
+            className={`border-b border-border/60 ${muted ? "opacity-60" : ""}`}
           >
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wide text-neutral-500">
+            <td className="py-3 pr-3">
+              <div className="min-w-0">
+                <span className="text-xs font-medium uppercase tracking-wide text-neutral-500">
                   {TAX_TYPE_LABELS[it.tax_type]}
                 </span>
-                <span className={`text-xs ${STATUS_CLASSES[it.status]} rounded border px-2 py-0.5`}>
-                  {STATUS_LABELS[it.status]}
-                </span>
-              </div>
-              <div className="mt-1 text-sm font-medium">{it.title}</div>
+              <div className="mt-1 font-medium text-navy-900">{it.title}</div>
               {it.description && (
                 <div className="text-xs text-neutral-500">{it.description}</div>
               )}
-            </div>
-            <div className="text-right">
+              </div>
+            </td>
+            <td className="py-3 pr-3 font-mono text-xs text-neutral-600">{it.period ?? "—"}</td>
+            <td className="py-3 pr-3">
+              <span className={`rounded border px-2 py-0.5 text-xs ${STATUS_CLASSES[it.status]}`}>
+                {STATUS_LABELS[it.status]}
+              </span>
+            </td>
+            <td className="py-3 pr-3 text-right font-mono text-navy-900">
+              {formatTRY(Number(it.amount ?? 0))}
+            </td>
+            <td className="py-3 pr-3 text-right">
               <div className={`font-mono text-sm ${urgency}`}>
                 {DATE_FMT.format(new Date(it.due_date))}
               </div>
@@ -141,18 +207,25 @@ function ItemList({
                   : dl > 0 ? `${dl} gün sonra`
                   : `${Math.abs(dl)} gün önce`}
               </div>
+            </td>
+            {onPaid ? (
+              <td className="py-3 pr-3 text-right">
               {onPaid && it.status !== "paid" && (
-                <button
+                <Button
                   onClick={() => onPaid(it.id)}
-                  className="mt-1 text-xs text-navy-700 underline"
+                  size="sm"
+                  variant="secondary"
                 >
-                  Ödendi olarak işaretle
-                </button>
+                  Ödendi
+                </Button>
               )}
-            </div>
-          </li>
+              </td>
+            ) : null}
+          </tr>
         );
       })}
-    </ul>
+        </tbody>
+      </table>
+    </div>
   );
 }

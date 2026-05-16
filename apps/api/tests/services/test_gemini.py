@@ -62,6 +62,26 @@ async def test_parse_invoice_pdf_normalizes_total_price_and_tax_rate(monkeypatch
 
 
 @pytest.mark.asyncio
+async def test_parse_invoice_pdf_fills_missing_invoice_id(monkeypatch):
+    fake_resp = MagicMock()
+    fake_resp.text = (
+        '{"invoice_id":null,"vendor_name":"V","vendor_tax_no":"NOT_MENTIONED",'
+        '"date":"2026-01-15","due_date":null,'
+        '"items":[{"description":"x","quantity":1,"unit_price":10,"total":10,"kdv_rate":20}],'
+        '"subtotal":10,"kdv_amount":2,"total_amount":12,"currency":"TRY",'
+        '"category":"diğer","raw_text":null}'
+    )
+    fake_model = MagicMock()
+    fake_model.generate_content_async = AsyncMock(return_value=fake_resp)
+    svc = GeminiService(api_key="k")
+    monkeypatch.setattr(svc, "_vision_model", fake_model)
+
+    inv = await svc.parse_invoice_pdf(b"%PDF-fake")
+    assert inv.invoice_id
+    assert isinstance(inv.invoice_id, str)
+
+
+@pytest.mark.asyncio
 async def test_embed_text_returns_1536(monkeypatch):
     fake_emb = {"embedding": [0.0] * 1536}
     svc = GeminiService(api_key="k")

@@ -1,6 +1,7 @@
 """Gemini istemcisi — Vision/Text/Embedding tek wrapper."""
 import json
 import asyncio
+import uuid
 import google.generativeai as genai
 from tenacity import (
     retry,
@@ -40,10 +41,12 @@ def _normalize_invoice_item(item: object) -> dict:
 
 
 def _normalize_parsed_invoice(data: dict) -> dict:
+    out = dict(data)
+    if not out.get("invoice_id"):
+        out["invoice_id"] = str(uuid.uuid4())
     items = data.get("items")
     if not isinstance(items, list):
-        return data
-    out = dict(data)
+        return out
     out["items"] = [_normalize_invoice_item(it) for it in items]
     return out
 

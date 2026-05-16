@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Send, Sparkles } from "lucide-react";
 import { useV2Chat } from "../../hooks/useV2Chat";
+import { isMockMode } from "../../api/v2";
 import { cn } from "../../lib/utils";
 
 const SAMPLES = [
@@ -10,6 +11,20 @@ const SAMPLES = [
   "En büyük gider kalemim ne?",
 ];
 
+function MessageContent({ content }: { content: string }) {
+  const parts = content.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        return <span key={index}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 interface ChatPanelV2Props {
   slug: string;
   sessionId: string;
@@ -17,7 +32,7 @@ interface ChatPanelV2Props {
 }
 
 export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanelV2Props) {
-  const { messages, sendMessage, isStreaming, isLoadingHistory } = useV2Chat({
+  const { messages, sendMessage, isStreaming, isLoadingHistory, error } = useV2Chat({
     slug,
     sessionId,
     jobId,
@@ -41,7 +56,7 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
     isStreaming && (!lastMessage || lastMessage.role !== "assistant");
 
   return (
-    <div className="card flex flex-col h-[calc(100vh-6rem)] sticky top-24 overflow-hidden">
+    <div className="card flex min-h-[560px] max-h-[calc(100vh-8rem)] flex-col overflow-hidden">
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-navy-50 flex items-center justify-center text-navy-600">
@@ -69,7 +84,9 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
         ) : messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-navy-600">
-              Örnek sorulardan başlayabilirsiniz.
+              {isMockMode
+                ? "Mock demo verileriyle örnek sorulardan başlayabilirsiniz."
+                : "Doküman yüklenmediyse yanıtlar sınırlı olabilir; örnek sorulardan başlayabilirsiniz."}
             </p>
             <div className="flex flex-wrap gap-2">
               {SAMPLES.map((s) => (
@@ -98,13 +115,13 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
             >
               <div
                 className={cn(
-                  "max-w-[85%] px-4 py-2 text-sm leading-relaxed",
+                  "max-w-[92%] whitespace-pre-wrap break-words px-4 py-2 text-sm leading-relaxed",
                   m.role === "user"
-                    ? "bg-navy-600 text-white rounded-2xl rounded-tr-md"
+                    ? "bg-navy-600 text-white rounded-2xl rounded-tr-md sm:max-w-[88%]"
                     : "bg-surface border border-border text-navy-900 rounded-2xl rounded-tl-md",
                 )}
               >
-                {m.content}
+                <MessageContent content={m.content} />
                 {isStreaming &&
                   i === messages.length - 1 &&
                   m.role === "assistant" && (
@@ -130,6 +147,12 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
             </div>
           </div>
         )}
+
+        {error ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            AI paneli şu anda yanıt veremiyor. Mock modunda demo yanıtı, gerçek API modunda ise RAG dokümanları ve chat servisi beklenir.
+          </div>
+        ) : null}
 
         <div ref={bottomRef} />
       </div>

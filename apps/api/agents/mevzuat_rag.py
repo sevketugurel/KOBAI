@@ -15,6 +15,7 @@ from rag.collections import global_mevzuat_collection, tenant_docs_collection
 from rag.retriever import RagRetriever
 from schemas.invoice import InvoiceData
 from services.gemini import GeminiService
+from services.tenant_context import TenantAnalysisContext
 
 
 def _build_retrievers(tenant_id: str | None) -> list[RagRetriever]:
@@ -79,6 +80,23 @@ def _summarize_invoice_context(invoices: list[InvoiceData]) -> dict[str, float |
     }
 
 
+def _summarize_tenant_context(context: TenantAnalysisContext) -> dict[str, float | int | str]:
+    invoice_context = _summarize_invoice_context(context.invoices)
+    summary = context.summary_dict()
+    pending_kdv = [
+        item for item in context.tax_calendar_items
+        if item.tax_type == "kdv" and item.status in ("pending", "overdue")
+    ]
+    if pending_kdv:
+        invoice_context["net_kdv_estimate"] = sum(float(item.amount or 0) for item in pending_kdv)
+        invoice_context["date_range"] = context.period or str(pending_kdv[0].period or "güncel dönem")
+    elif not context.invoices:
+        invoice_context["income_total"] = float(summary.get("bank_credit_total", 0)) + float(summary.get("pos_success_sales_total", 0))
+        invoice_context["expense_total"] = float(summary.get("bank_debit_total", 0))
+        invoice_context["date_range"] = context.period or "güncel dönem"
+    return invoice_context
+
+
 def _build_tax_queries(context: dict[str, float | int | str]) -> list[tuple[str, str]]:
     income_kdv_total = float(context["income_kdv_total"])
     expense_kdv_total = float(context["expense_kdv_total"])
@@ -120,7 +138,11 @@ def _build_tax_queries(context: dict[str, float | int | str]) -> list[tuple[str,
     ]
 
 
-def _build_generation_context(law: str, context: dict[str, float | int | str]) -> str:
+def _build_generation_context(
+    law: str,
+    context: dict[str, float | int | str],
+    tenant_context: TenantAnalysisContext | None = None,
+) -> str:
     base = (
         "Türkçe yaz. 1-2 cümle ile uygulanabilir tek öneri ver. "
         "Mümkünse tarih veya tutar belirt. "
@@ -131,6 +153,8 @@ def _build_generation_context(law: str, context: dict[str, float | int | str]) -
         f"gider KDV'si {_format_try(float(context['expense_kdv_total']))}, "
         f"net KDV tahmini {_format_try(abs(float(context['net_kdv_estimate'])))}."
     )
+    if tenant_context is not None:
+        base = f"{base} Tenant genel finans özeti: {tenant_context.summary_text()}"
     if law == "GVK":
         return (
             f"{base} Kesin vergi tasarrufu hesabı verme. "
@@ -175,11 +199,22 @@ class MevzuatRagAgent:
     async def search_sgk(self, query: str) -> list[dict]:
         return await self._query(f"SGK mevzuatı: {query}")
 
-    async def analyze(self, invoices: list[InvoiceData]) -> list[dict]:
-        if not invoices:
+    async def analyze(
+        self,
+        invoices: list[InvoiceData],
+        *,
+        tenant_context: TenantAnalysisContext | None = None,
+    ) -> list[dict]:
+        if not invoices and tenant_context is not None:
+            invoices = tenant_context.invoices
+        if not invoices and tenant_context is None:
             return []
 
-        context = _summarize_invoice_context(invoices)
+        context = (
+            _summarize_tenant_context(tenant_context)
+            if tenant_context is not None
+            else _summarize_invoice_context(invoices)
+        )
         queries = _build_tax_queries(context)
         recommendations: list[dict] = []
         for law, q in queries:
@@ -189,7 +224,7 @@ class MevzuatRagAgent:
             top = hits[0]
             advice = await self._gemini.generate_text(
                 prompt=_build_generation_prompt(law, top["text"]),
-                context=_build_generation_context(law, context),
+                context=_build_generation_context(law, context, tenant_context),
             )
             recommendations.append({
                 "recommendation": advice.strip(),

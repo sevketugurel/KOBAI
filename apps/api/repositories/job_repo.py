@@ -43,6 +43,10 @@ class JobRepo(Protocol):
         self, *, tenant_id: str, job_id: str,
     ) -> AnalysisResult: ...
 
+    async def get_latest_completed(
+        self, *, tenant_id: str,
+    ) -> AnalysisResult | None: ...
+
 
 class JobNotFound(KeyError):
     pass
@@ -149,6 +153,23 @@ class SupabaseJobRepo:
         rows = res.data or []
         if not rows or not rows[0].get("result"):
             raise JobNotFound(job_id)
+        return AnalysisResult.model_validate(rows[0]["result"])
+
+    async def get_latest_completed(
+        self, *, tenant_id: str,
+    ) -> AnalysisResult | None:
+        res = (
+            self._db.table("analyses")
+            .select("result")
+            .eq("tenant_id", tenant_id)
+            .eq("status", "completed")
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = res.data or []
+        if not rows or not rows[0].get("result"):
+            return None
         return AnalysisResult.model_validate(rows[0]["result"])
 
 

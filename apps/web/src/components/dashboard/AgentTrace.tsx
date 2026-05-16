@@ -18,6 +18,10 @@ const AGENT_STYLES: Record<string, { bg: string; badge: string; icon: LucideIcon
   cashflow_agent: { bg: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", icon: TrendingUp },
   tax_optimization_agent: { bg: "bg-amber-500", badge: "bg-amber-50 text-amber-700", icon: Receipt },
   report_agent: { bg: "bg-red-400", badge: "bg-red-50 text-red-700", icon: FileText },
+  nakit_akisi: { bg: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", icon: TrendingUp },
+  risk: { bg: "bg-red-400", badge: "bg-red-50 text-red-700", icon: Activity },
+  mevzuat_rag: { bg: "bg-amber-500", badge: "bg-amber-50 text-amber-700", icon: Receipt },
+  kosgeb: { bg: "bg-navy-500", badge: "bg-navy-50 text-navy-700", icon: Search },
 };
 
 function stylesFor(name: string): { bg: string; badge: string; icon: LucideIcon } {
@@ -36,6 +40,13 @@ function ConfidenceDots({ value }: { value: number }) {
       ))}
     </span>
   );
+}
+
+function statusLabel(status?: AgentStep["status"], durationMs?: number) {
+  if (status === "running") return "çalışıyor";
+  if (status === "failed") return "hata";
+  if (durationMs === 0) return "tamamlandı";
+  return `${durationMs} ms`;
 }
 
 export default function AgentTrace({
@@ -70,6 +81,8 @@ export default function AgentTrace({
           {trace.map((step, index) => {
             const styles = stylesFor(step.agent_name);
             const Icon = styles.icon;
+            const isRunning = step.status === "running";
+            const isFailed = step.status === "failed";
             return (
               <motion.li
                 key={index}
@@ -82,6 +95,8 @@ export default function AgentTrace({
                   className={cn(
                     "absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center text-white",
                     styles.bg,
+                    isRunning && "animate-pulse",
+                    isFailed && "bg-red-600",
                   )}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -99,8 +114,10 @@ export default function AgentTrace({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-navy-500 whitespace-nowrap">
-                    <span>{step.duration_ms} ms</span>
-                    <ConfidenceDots value={step.confidence} />
+                    <span className={cn(isRunning && "text-amber-700", isFailed && "text-red-700")}>
+                      {statusLabel(step.status, step.duration_ms)}
+                    </span>
+                    {isRunning ? null : <ConfidenceDots value={step.confidence} />}
                     <ChevronDown
                       className={cn("w-4 h-4 transition-transform", openIndex === index && "rotate-180")}
                     />

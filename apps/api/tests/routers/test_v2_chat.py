@@ -12,8 +12,10 @@ from fastapi.testclient import TestClient
 from main import app
 from middleware.tenant import AuthPrincipal, require_auth
 from repositories.chat_repo import get_chat_repo
+from repositories.job_repo import get_job_repo
 from repositories.tenant_repo import MembershipOut, TenantOut, get_tenant_repo
 from schemas.chat_v2 import ChatMessageV2
+from services.tenant_context import TenantAnalysisContext, get_tenant_data_service
 
 
 # ── Fake repos ────────────────────────────────────────────────────────
@@ -60,6 +62,27 @@ class FakeTenantRepoMin:
     async def update(self, *a, **k): ...
     async def list_for_user(self, *a, **k): return []
     async def list_members(self, *a, **k): return []
+
+
+class FakeJobRepo:
+    async def save_invoice(self, *a, **k): ...
+    async def get_invoices(self, *a, **k): return []
+    async def create_job(self, *a, **k): return "job"
+    async def update_job_status(self, *a, **k): ...
+    async def set_job_result(self, *a, **k): ...
+    async def get_job(self, *a, **k):
+        from repositories.job_repo import JobNotFound
+
+        raise JobNotFound("job")
+    async def get_latest_completed(self, *a, **k): return None
+
+
+class FakeTenantData:
+    async def build_context(self, *, tenant_id, period=None, document_ids=None, tenant_profile=None, include_all_tenant_data=True):
+        return TenantAnalysisContext(
+            tenant_id=tenant_id,
+            tenant_profile={"sector": "hizmet", "company_type": "sahis_sirketi"},
+        )
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────
@@ -109,6 +132,10 @@ def gemini_mock(monkeypatch):
     fake = AsyncMock()
     fake.generate_text = AsyncMock(return_value="Test yanıt")
     monkeypatch.setattr(v2chat, "_gemini", fake)
+    class FakeRetriever:
+        def __init__(self, *a, **k): ...
+        async def search(self, *a, **k): return []
+    monkeypatch.setattr(v2chat, "RagRetriever", FakeRetriever)
     return fake
 
 
@@ -118,6 +145,8 @@ def client_for(chat_repo, tenant_repo, gemini_mock):
         app.dependency_overrides[require_auth] = lambda: AuthPrincipal(user_id=user_id, email="x@y")
         app.dependency_overrides[get_chat_repo] = lambda: chat_repo
         app.dependency_overrides[get_tenant_repo] = lambda: tenant_repo
+        app.dependency_overrides[get_job_repo] = lambda: FakeJobRepo()
+        app.dependency_overrides[get_tenant_data_service] = lambda: FakeTenantData()
         return TestClient(app)
     yield _make
     app.dependency_overrides.clear()
