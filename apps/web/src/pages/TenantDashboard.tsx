@@ -38,6 +38,8 @@ import {
 import ChatPanelV2 from "../components/chat/ChatPanelV2";
 import AgentTrace from "../components/dashboard/AgentTrace";
 import { useTenantDashboard } from "../hooks/useTenantDashboard";
+import { useAgentSnapshots, getSnapshot } from "../hooks/useAgentSnapshots";
+import type { AgentSnapshot } from "../api/v2";
 import { cn, formatDate, formatDateTime, formatRelative, formatTRY } from "../lib/utils";
 import { isMockMode, v2 } from "../api/v2";
 import type {
@@ -223,8 +225,32 @@ function AnalysisControlPanel({
   );
 }
 
-function CashFlowPanel({ analysis }: { analysis?: AnalysisResult }) {
-  const rows = analysis?.cash_flow_forecast ?? [];
+function AgentMissingCTA({ snapshot }: { snapshot?: AgentSnapshot }) {
+  if (!snapshot || snapshot.status !== "idle" || snapshot.missing.length === 0) {
+    return null;
+  }
+  return (
+    <EmptyState
+      icon={<UploadCloud size={30} />}
+      title="Veri eksik"
+      message={snapshot.missing[0]}
+    />
+  );
+}
+
+function CashFlowPanel({
+  analysis,
+  snapshot,
+}: {
+  analysis?: AnalysisResult;
+  snapshot?: AgentSnapshot;
+}) {
+  const snapshotRows =
+    snapshot?.status === "completed" && Array.isArray((snapshot.output as { forecast?: unknown })?.forecast)
+      ? ((snapshot.output as { forecast: AnalysisResult["cash_flow_forecast"] }).forecast)
+      : null;
+  const rows = snapshotRows ?? analysis?.cash_flow_forecast ?? [];
+  const missingCta = !snapshotRows && rows.length === 0 ? <AgentMissingCTA snapshot={snapshot} /> : null;
   return (
     <Card className="xl:col-span-2">
       <Card.Header
@@ -233,11 +259,13 @@ function CashFlowPanel({ analysis }: { analysis?: AnalysisResult }) {
       />
       <Card.Body className="h-80">
         {rows.length === 0 ? (
-          <EmptyState
-            icon={<Activity size={30} />}
-            title="Analiz bekleniyor"
-            message="Fatura analizi tamamlandığında tahmin grafiği burada görünür."
-          />
+          missingCta ?? (
+            <EmptyState
+              icon={<Activity size={30} />}
+              title="Analiz bekleniyor"
+              message="Fatura analizi tamamlandığında tahmin grafiği burada görünür."
+            />
+          )
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={rows} margin={{ top: 12, right: 12, bottom: 4, left: 0 }}>
@@ -262,42 +290,81 @@ function CashFlowPanel({ analysis }: { analysis?: AnalysisResult }) {
   );
 }
 
-function RiskPanel({ analysis }: { analysis?: AnalysisResult }) {
-  const risk = riskCopy(analysis?.risk_label);
+function RiskPanel({
+  analysis,
+  snapshot,
+}: {
+  analysis?: AnalysisResult;
+  snapshot?: AgentSnapshot;
+}) {
+  const snapshotOutput =
+    snapshot?.status === "completed" && snapshot.output
+      ? (snapshot.output as {
+          label?: RiskLabel;
+          score?: number;
+          explanation?: string;
+        })
+      : null;
+  const label = snapshotOutput?.label ?? analysis?.risk_label;
+  const score = snapshotOutput?.score ?? analysis?.risk_score;
+  const explanation = snapshotOutput?.explanation ?? analysis?.risk_explanation;
+  const risk = riskCopy(label);
+  const hasData = label != null || score != null || explanation;
+  const missingCta = !hasData ? <AgentMissingCTA snapshot={snapshot} /> : null;
   return (
     <Card>
       <Card.Header title="Risk Değerlendirmesi" subtitle="Risk ajanı skoru ve açıklaması" />
       <Card.Body className="space-y-4">
-        <div className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-2", risk.className)}>
-          {analysis?.risk_label === "green" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
-          <span className="text-sm font-semibold">{risk.label} Risk</span>
-        </div>
-        <div>
-          <p className="font-mono text-4xl font-semibold text-navy-900">
-            {analysis?.risk_score ?? "-"}
-            <span className="text-base text-navy-400">/5</span>
-          </p>
-          <p className="mt-2 text-sm leading-6 text-navy-600">
-            {analysis?.risk_explanation ?? "Analiz tamamlandığında dönem risk açıklaması burada gösterilir."}
-          </p>
-        </div>
+        {missingCta ?? (
+          <>
+            <div className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-2", risk.className)}>
+              {label === "green" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
+              <span className="text-sm font-semibold">{risk.label} Risk</span>
+            </div>
+            <div>
+              <p className="font-mono text-4xl font-semibold text-navy-900">
+                {score ?? "-"}
+                <span className="text-base text-navy-400">/5</span>
+              </p>
+              <p className="mt-2 text-sm leading-6 text-navy-600">
+                {explanation ?? "Analiz tamamlandığında dönem risk açıklaması burada gösterilir."}
+              </p>
+            </div>
+          </>
+        )}
       </Card.Body>
     </Card>
   );
 }
 
-function TaxRecommendationsPanel({ analysis }: { analysis?: AnalysisResult }) {
-  const rows = analysis?.tax_recommendations ?? [];
+function TaxRecommendationsPanel({
+  analysis,
+  snapshot,
+}: {
+  analysis?: AnalysisResult;
+  snapshot?: AgentSnapshot;
+}) {
+  const snapshotRows =
+    snapshot?.status === "completed" &&
+    Array.isArray((snapshot.output as { tax_recommendations?: unknown })?.tax_recommendations)
+      ? ((snapshot.output as {
+          tax_recommendations: AnalysisResult["tax_recommendations"];
+        }).tax_recommendations)
+      : null;
+  const rows = snapshotRows ?? analysis?.tax_recommendations ?? [];
+  const missingCta = !snapshotRows && rows.length === 0 ? <AgentMissingCTA snapshot={snapshot} /> : null;
   return (
     <Card>
       <Card.Header title="RAG Vergi Önerileri" subtitle="Global mevzuat ve tenant belgeleri" />
       <Card.Body>
         {rows.length === 0 ? (
-          <EmptyState
-            icon={<ReceiptText size={30} />}
-            title="Öneri yok"
-            message="RAG ajanı çalıştığında kaynaklı öneriler listelenir."
-          />
+          missingCta ?? (
+            <EmptyState
+              icon={<ReceiptText size={30} />}
+              title="Öneri yok"
+              message="RAG ajanı çalıştığında kaynaklı öneriler listelenir."
+            />
+          )
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((row, index) => (
@@ -322,18 +389,34 @@ function TaxRecommendationsPanel({ analysis }: { analysis?: AnalysisResult }) {
   );
 }
 
-function KosgebPanel({ analysis }: { analysis?: AnalysisResult }) {
-  const rows = analysis?.kosgeb_suggestions ?? [];
+function KosgebPanel({
+  analysis,
+  snapshot,
+}: {
+  analysis?: AnalysisResult;
+  snapshot?: AgentSnapshot;
+}) {
+  const snapshotRows =
+    snapshot?.status === "completed" &&
+    Array.isArray((snapshot.output as { kosgeb_suggestions?: unknown })?.kosgeb_suggestions)
+      ? ((snapshot.output as {
+          kosgeb_suggestions: AnalysisResult["kosgeb_suggestions"];
+        }).kosgeb_suggestions)
+      : null;
+  const rows = snapshotRows ?? analysis?.kosgeb_suggestions ?? [];
+  const missingCta = !snapshotRows && rows.length === 0 ? <AgentMissingCTA snapshot={snapshot} /> : null;
   return (
     <Card>
       <Card.Header title="KOSGEB Eşleşmeleri" subtitle="Sektör ve dönem verisine göre" />
       <Card.Body>
         {rows.length === 0 ? (
-          <EmptyState
-            icon={<Bot size={30} />}
-            title="Eşleşme yok"
-            message="Destek ajanı çalıştığında program önerileri burada görünür."
-          />
+          missingCta ?? (
+            <EmptyState
+              icon={<Bot size={30} />}
+              title="Eşleşme yok"
+              message="Destek ajanı çalıştığında program önerileri burada görünür."
+            />
+          )
         ) : (
           <ul className="space-y-3">
             {rows.map((row) => (
@@ -450,6 +533,11 @@ export default function TenantDashboard() {
   const qc = useQueryClient();
   const { data, isLoading, isError } = useTenantDashboard(slug);
   const summary = data as DashboardSummary | undefined;
+  const { data: agentSnapshots } = useAgentSnapshots(slug);
+  const cashSnapshot = getSnapshot(agentSnapshots, "nakit_akisi");
+  const riskSnapshot = getSnapshot(agentSnapshots, "risk");
+  const taxSnapshot = getSnapshot(agentSnapshots, "mevzuat_rag");
+  const kosgebSnapshot = getSnapshot(agentSnapshots, "kosgeb");
   const [activityFilter, setActivityFilter] = useState<"all" | DashboardActivity["type"]>("all");
   const [uploaded, setUploaded] = useState<InvoiceUploadOut[]>([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
@@ -548,7 +636,13 @@ export default function TenantDashboard() {
   });
 
   const analysisData = analysis.data;
-  const cashFlowNext = analysisData?.cash_flow_forecast?.[0]?.net ?? null;
+  const snapshotForecast =
+    cashSnapshot?.status === "completed" &&
+    Array.isArray((cashSnapshot.output as { forecast?: unknown })?.forecast)
+      ? ((cashSnapshot.output as { forecast: AnalysisResult["cash_flow_forecast"] }).forecast)
+      : null;
+  const cashFlowNext =
+    snapshotForecast?.[0]?.net ?? analysisData?.cash_flow_forecast?.[0]?.net ?? null;
 
   return (
     <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
@@ -598,13 +692,13 @@ export default function TenantDashboard() {
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(380px,1fr)]">
         <main className="min-w-0 space-y-6">
           <section className="grid gap-6 xl:grid-cols-3">
-            <CashFlowPanel analysis={analysisData} />
-            <RiskPanel analysis={analysisData} />
+            <CashFlowPanel analysis={analysisData} snapshot={cashSnapshot} />
+            <RiskPanel analysis={analysisData} snapshot={riskSnapshot} />
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <TaxRecommendationsPanel analysis={analysisData} />
-            <KosgebPanel analysis={analysisData} />
+            <TaxRecommendationsPanel analysis={analysisData} snapshot={taxSnapshot} />
+            <KosgebPanel analysis={analysisData} snapshot={kosgebSnapshot} />
           </section>
 
           <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">

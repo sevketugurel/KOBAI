@@ -41,6 +41,7 @@ from services.encryption import (
     decrypt_credentials,
     encrypt_credentials,
 )
+from services.agent_events import AgentEvent, get_event_bus
 from services.tenant_rag import refresh_tenant_rag
 
 log = logging.getLogger(__name__)
@@ -192,6 +193,18 @@ async def pos_webhook(
         await refresh_tenant_rag(tenant_id=tenant_id)
     except Exception as e:  # noqa: BLE001
         log.warning("tenant RAG index güncellenemedi tenant=%s: %s", tenant_id, e)
+    if not duplicate:
+        bus = get_event_bus()
+        await bus.emit(AgentEvent(
+            tenant_id=tenant_id,
+            event_type="pos.transaction.created",
+            payload={"txn_id": txn_id, "external_id": event.external_id},
+        ))
+        await bus.emit(AgentEvent(
+            tenant_id=tenant_id,
+            event_type="tenant_rag.indexed",
+            payload={"reason": "pos"},
+        ))
     log.info(
         "pos webhook: tenant=%s txn=%s dup=%s ext=%s amount=%s",
         tenant_id, txn_id, duplicate, event.external_id, event.amount,

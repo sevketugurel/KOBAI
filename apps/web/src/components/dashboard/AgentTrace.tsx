@@ -22,6 +22,7 @@ const AGENT_STYLES: Record<string, { bg: string; badge: string; icon: LucideIcon
   risk: { bg: "bg-red-400", badge: "bg-red-50 text-red-700", icon: Activity },
   mevzuat_rag: { bg: "bg-amber-500", badge: "bg-amber-50 text-amber-700", icon: Receipt },
   kosgeb: { bg: "bg-navy-500", badge: "bg-navy-50 text-navy-700", icon: Search },
+  tax_calendar: { bg: "bg-amber-500", badge: "bg-amber-50 text-amber-700", icon: Receipt },
 };
 
 function stylesFor(name: string): { bg: string; badge: string; icon: LucideIcon } {

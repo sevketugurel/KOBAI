@@ -67,6 +67,18 @@ async def _ping_chroma() -> None:
         log.error("ChromaDB erişilemedi (%s); RAG çalışmayacak.", e)
 
 
+@app.on_event("startup")
+async def _init_agent_orchestration() -> None:
+    """Faz 7 — event bus'a orchestration service'i subscribe et."""
+    try:
+        from services.agent_orchestration import get_orchestration_service
+
+        get_orchestration_service()
+        log.info("AgentOrchestrationService event bus'a bağlandı.")
+    except Exception as e:  # noqa: BLE001
+        log.error("Agent orchestration başlatılamadı (%s); event akışı pasif.", e)
+
+
 @app.get("/health")
 async def health() -> dict:
     return {
@@ -96,6 +108,7 @@ from routers.v2 import pos as v2_pos_router
 from routers.v2 import dashboard as v2_dashboard_router
 from routers.v2 import analyze as v2_analyze_router
 from routers.v2 import demo as v2_demo_router
+from routers.v2 import agents as v2_agents_router
 
 app.include_router(v2_tenants_router.router)
 app.include_router(v2_chat_router.router)
@@ -107,3 +120,4 @@ app.include_router(v2_pos_router.public_router)
 app.include_router(v2_dashboard_router.router)
 app.include_router(v2_analyze_router.router)
 app.include_router(v2_demo_router.router)
+app.include_router(v2_agents_router.router)

@@ -20,6 +20,7 @@ from repositories.bank_repo import BankRepo, get_bank_repo
 from schemas.bank import BankStatementImportResult, BankTransactionOut
 from schemas.tenant import TenantContext
 from services.bank_statement_parser import BankParseError, BankStatementParser
+from services.agent_events import AgentEvent, get_event_bus
 from services.tenant_rag import refresh_tenant_rag
 
 log = logging.getLogger(__name__)
@@ -92,6 +93,18 @@ async def upload_bank_statement(
         await refresh_tenant_rag(tenant_id=ctx.tenant_id)
     except Exception as e:  # noqa: BLE001
         log.warning("tenant RAG index güncellenemedi tenant=%s: %s", ctx.tenant_id, e)
+
+    bus = get_event_bus()
+    await bus.emit(AgentEvent(
+        tenant_id=ctx.tenant_id,
+        event_type="bank.imported",
+        payload={"rows": inserted, "document_id": document_id},
+    ))
+    await bus.emit(AgentEvent(
+        tenant_id=ctx.tenant_id,
+        event_type="tenant_rag.indexed",
+        payload={"reason": "bank"},
+    ))
 
     txs = statement.transactions
     period_start = min((t.transacted_at for t in txs), default=None)
