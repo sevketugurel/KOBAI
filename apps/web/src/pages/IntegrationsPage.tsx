@@ -34,9 +34,12 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 function integrationLabel(provider: string): string {
   const labels: Record<string, string> = {
+    bank_statement: "Banka Ekstresi",
     banka_ekstresi: "Banka Ekstresi",
     iyzico_checkout: "iyzico Checkout",
     craftgate: "Craftgate",
+    efatura_uyumsoft: "Uyumsoft e-Fatura",
+    efatura_mikro: "Mikro e-Fatura",
     "e-Defter": "e-Defter",
   };
   return labels[provider] ?? provider;

@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile, status
 from google.api_core.exceptions import ResourceExhausted
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,6 +29,7 @@ from repositories.tenant_repo import TenantRepo, get_tenant_repo
 from schemas.invoice import InvoiceData
 from schemas.tenant import TenantContext
 from services.gemini import GeminiParseError, GeminiService
+from services.pdf_generator import build_analysis_pdf
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v2/{slug}", tags=["v2-analyze"])
@@ -186,3 +187,28 @@ async def get_analysis(
     except JobNotFound as e:
         raise HTTPException(status_code=404, detail="job bulunamadı") from e
     return result.model_dump(mode="json")
+
+
+@router.get("/analyze/{job_id}/report")
+async def get_analysis_report(
+    job_id: str,
+    ctx: Annotated[TenantContext, Depends(require_tenant)],
+    repo: Annotated[JobRepo, Depends(get_job_repo)],
+    tenant_repo: Annotated[TenantRepo, Depends(get_tenant_repo)],
+) -> Response:
+    try:
+        result = await repo.get_job(tenant_id=ctx.tenant_id, job_id=job_id)
+    except JobNotFound as e:
+        raise HTTPException(status_code=404, detail="job bulunamadı") from e
+    if result.status != "completed":
+        raise HTTPException(status_code=409, detail="analiz tamamlanmadı")
+
+    tenant = await tenant_repo.get_by_slug(ctx.tenant_slug)
+    company_name = tenant.display_name if tenant else ctx.tenant_slug
+    pdf = build_analysis_pdf(result, company_name=company_name)
+    filename = f"{ctx.tenant_slug}-{job_id}.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )

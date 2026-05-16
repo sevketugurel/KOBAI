@@ -32,6 +32,97 @@ export interface MembershipOut {
   created_at: string;
 }
 
+export interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  kdv_rate: number;
+}
+
+export interface InvoiceData {
+  invoice_id: string;
+  vendor_name: string;
+  vendor_tax_no: string | null;
+  date: string;
+  due_date: string | null;
+  items: InvoiceItem[];
+  subtotal: number;
+  kdv_amount: number;
+  total_amount: number;
+  currency: string;
+  category: string;
+  raw_text: string | null;
+}
+
+export interface AgentStep {
+  agent_name: string;
+  action: string;
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
+  duration_ms: number;
+  confidence: number;
+}
+
+export type RiskLabel = "green" | "yellow" | "red";
+export type JobStatus = "pending" | "processing" | "completed" | "failed";
+
+export interface CashFlowMonth {
+  month: string;
+  income: number;
+  expense: number;
+  net: number;
+  kdv_payment: number;
+  sgk_payment: number;
+  cumulative: number;
+}
+
+export interface TaxRecommendation {
+  recommendation: string;
+  source: string;
+  article: string;
+  confidence: number;
+  action: string;
+  scope?: "global" | "private";
+}
+
+export interface KosgebSuggestion {
+  title: string;
+  detail: string;
+  url?: string;
+}
+
+export interface AnalysisResult {
+  job_id: string;
+  status: JobStatus;
+  invoices: InvoiceData[];
+  cash_flow_forecast: CashFlowMonth[];
+  risk_score: number;
+  risk_label: RiskLabel;
+  risk_explanation: string;
+  tax_recommendations: TaxRecommendation[];
+  kosgeb_suggestions: KosgebSuggestion[];
+  agent_trace: AgentStep[];
+  created_at: string;
+  completed_at: string | null;
+  error: string | null;
+}
+
+export interface InvoiceUploadOut {
+  document_id: string;
+  invoice: InvoiceData;
+}
+
+export interface AnalyzeRequestV2 {
+  document_ids: string[];
+  period?: string | null;
+}
+
+export interface JobStartedOut {
+  job_id: string;
+  status: "pending";
+}
+
 export class V2ApiError extends Error {
   constructor(public status: number, message: string, public detail?: unknown) {
     super(message);
@@ -117,6 +208,45 @@ async function _multipart<T>(path: string, file: File): Promise<T> {
   return (await r.json()) as T;
 }
 
+async function _blob(path: string, init: RequestInit = {}): Promise<Blob> {
+  const headers: Record<string, string> = {
+    ...(await authHeader()),
+    ...((init.headers as Record<string, string>) ?? {}),
+  };
+  const r = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+  if (!r.ok) {
+    let detail: unknown = null;
+    try {
+      detail = await r.json();
+    } catch {
+      /* ignore */
+    }
+    throw new V2ApiError(r.status, `HTTP ${r.status}`, detail);
+  }
+  return await r.blob();
+}
+
+async function claimDemoTenantIfAvailable(slug: string): Promise<boolean> {
+  if (slug !== "kuzey-market") return false;
+  const { error } = await supabase.rpc("claim_kuzey_market_demo");
+  return !error;
+}
+
+async function getTenantWithDemoClaim(slug: string): Promise<TenantOut> {
+  try {
+    return await _json<TenantOut>(`/v2/tenants/${encodeURIComponent(slug)}`);
+  } catch (e) {
+    if (
+      e instanceof V2ApiError &&
+      (e.status === 403 || e.status === 404) &&
+      await claimDemoTenantIfAvailable(slug)
+    ) {
+      return _json<TenantOut>(`/v2/tenants/${encodeURIComponent(slug)}`);
+    }
+    throw e;
+  }
+}
+
 export const v2 = {
   registerTenant: (payload: TenantCreate) =>
     isMockMode
@@ -127,7 +257,7 @@ export const v2 = {
   getTenant: (slug: string) =>
     isMockMode
       ? mockV2.getTenant(slug)
-      : _json<TenantOut>(`/v2/tenants/${encodeURIComponent(slug)}`),
+      : getTenantWithDemoClaim(slug),
   updateTenant: (slug: string, patch: Partial<Pick<TenantCreate, "display_name" | "sector" | "tax_number">>) =>
     isMockMode
       ? mockV2.updateTenant(slug, patch)
@@ -208,6 +338,31 @@ export const v2 = {
       ? mockV2.getDashboardSummary(slug)
       : _json<DashboardSummary>(
           `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
+        ),
+
+  // v2 analyze — tenant-scoped invoice upload + LangGraph analysis
+  uploadInvoice: (slug: string, file: File) =>
+    isMockMode
+      ? mockV2.uploadInvoice(slug, file)
+      : _multipart<InvoiceUploadOut>(`/v2/${encodeURIComponent(slug)}/invoices`, file),
+  startAnalysis: (slug: string, payload: AnalyzeRequestV2) =>
+    isMockMode
+      ? mockV2.startAnalysis(slug, payload)
+      : _json<JobStartedOut>(`/v2/${encodeURIComponent(slug)}/analyze`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+  getAnalysis: (slug: string, jobId: string) =>
+    isMockMode
+      ? mockV2.getAnalysis(slug, jobId)
+      : _json<AnalysisResult>(
+          `/v2/${encodeURIComponent(slug)}/analyze/${encodeURIComponent(jobId)}`,
+        ),
+  downloadAnalysisReport: (slug: string, jobId: string) =>
+    isMockMode
+      ? mockV2.downloadAnalysisReport(slug, jobId)
+      : _blob(
+          `/v2/${encodeURIComponent(slug)}/analyze/${encodeURIComponent(jobId)}/report`,
         ),
 
   // v2 chat — tenant + session-scoped, SSE

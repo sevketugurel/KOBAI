@@ -112,7 +112,55 @@ const mocks = vi.hoisted(() => {
     refund_count: 0,
     avg_ticket: "750.00",
   };
-  return { tenantId, taxes, posTransactions, integrations, bankTransactions, dashboard, posSummary };
+  const analysis = {
+    job_id: "mock-job-acme-co",
+    status: "completed",
+    invoices: [],
+    cash_flow_forecast: [
+      {
+        month: "2026-06",
+        income: 42000,
+        expense: 24000,
+        net: 18000,
+        kdv_payment: 0,
+        sgk_payment: 4000,
+        cumulative: 18000,
+      },
+    ],
+    risk_score: 2,
+    risk_label: "yellow",
+    risk_explanation: "Tahsilat akışı iyi, vergi çıkışı izlenmeli.",
+    tax_recommendations: [
+      {
+        recommendation: "KDV beyanı öncesi POS ve banka hareketlerini mutabık hale getirin.",
+        source: "KDV Kanunu",
+        article: "Genel beyan dönemi",
+        confidence: 4,
+        action: "review",
+        scope: "global",
+      },
+    ],
+    kosgeb_suggestions: [
+      {
+        title: "KOSGEB Dijitalleşme Desteği",
+        detail: "Online satış kanalı için uygunluk kontrol edilmeli.",
+      },
+    ],
+    agent_trace: [
+      {
+        agent_name: "mevzuat_rag",
+        action: "RAG kaynakları tarandı",
+        input: {},
+        output: { summary: "1 öneri bulundu" },
+        duration_ms: 24,
+        confidence: 4,
+      },
+    ],
+    created_at: "2026-05-16T09:00:00Z",
+    completed_at: "2026-05-16T09:00:00Z",
+    error: null,
+  };
+  return { tenantId, taxes, posTransactions, integrations, bankTransactions, dashboard, posSummary, analysis };
 });
 
 vi.mock("../../auth/AuthContext", () => ({
@@ -128,6 +176,10 @@ vi.mock("../../api/v2", () => ({
   V2ApiError: class V2ApiError extends Error {},
   v2: {
     getDashboardSummary: vi.fn().mockResolvedValue(mocks.dashboard),
+    uploadInvoice: vi.fn(),
+    startAnalysis: vi.fn().mockResolvedValue({ job_id: "mock-job-acme-co", status: "pending" }),
+    getAnalysis: vi.fn().mockResolvedValue(mocks.analysis),
+    downloadAnalysisReport: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
     getChatHistory: vi.fn().mockResolvedValue([]),
     streamChatV2: vi.fn(),
     listIntegrations: vi.fn().mockResolvedValue(mocks.integrations),
@@ -180,6 +232,11 @@ describe("tenant v2 pages", () => {
     expect(screen.getByText("Bu Ay POS Satışı")).toBeInTheDocument();
     expect(await screen.findByText("KDV Beyannamesi")).toBeInTheDocument();
     expect(screen.getByText("Tahsilat")).toBeInTheDocument();
+    expect(await screen.findByText("Nakit Akışı Projeksiyonu")).toBeInTheDocument();
+    expect(screen.getByText("Risk Değerlendirmesi")).toBeInTheDocument();
+    expect(screen.getByText("RAG Vergi Önerileri")).toBeInTheDocument();
+    expect(screen.getByText("Ajan Akışı")).toBeInTheDocument();
+    expect(screen.getByText("Belge ve Analiz")).toBeInTheDocument();
   });
 
   it("renders integrations with provider cards and bank transactions", async () => {

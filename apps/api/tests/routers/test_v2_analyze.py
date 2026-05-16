@@ -205,6 +205,23 @@ def test_analyze_starts_job_and_completes(client_for, job_repo, mock_pipeline) -
     assert body["risk_label"] == "yellow"
 
 
+def test_analysis_report_returns_tenant_scoped_pdf(client_for, job_repo, mock_pipeline) -> None:
+    c = client_for(USER_A)
+    up = c.post("/v2/acme-co/invoices", files=_pdf_file())
+    document_id = up.json()["document_id"]
+    started = c.post("/v2/acme-co/analyze", json={"document_ids": [document_id], "period": "2026-04"})
+    assert started.status_code == 202, started.text
+    job_id = started.json()["job_id"]
+
+    report = c.get(f"/v2/acme-co/analyze/{job_id}/report")
+    assert report.status_code == 200, report.text
+    assert report.headers["content-type"] == "application/pdf"
+    assert report.content.startswith(b"%PDF")
+
+    forbidden = client_for(USER_B).get(f"/v2/acme-co/analyze/{job_id}/report")
+    assert forbidden.status_code == 403
+
+
 def test_analyze_with_empty_doc_ids_rejected(client_for) -> None:
     r = client_for(USER_A).post("/v2/acme-co/analyze", json={"document_ids": []})
     assert r.status_code == 422  # Pydantic min_length=1

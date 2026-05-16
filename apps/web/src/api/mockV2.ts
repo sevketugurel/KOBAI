@@ -3,9 +3,14 @@ import type {
   BankTransaction,
   ChatMessageV2,
   ChatRequestV2,
+  AnalysisResult,
+  AnalyzeRequestV2,
   DashboardActivity,
   DashboardSummary,
   Integration,
+  InvoiceData,
+  InvoiceUploadOut,
+  JobStartedOut,
   PosConfigIn,
   PosConfigOut,
   PosDailySummary,
@@ -291,6 +296,139 @@ function dashboardSummary(slug: string): DashboardSummary {
   };
 }
 
+function mockInvoice(slug: string): InvoiceData {
+  const seed = hashSlug(slug) % 700;
+  return {
+    invoice_id: `INV-${slug}-2026-05`,
+    vendor_name: `${displayName(slug)} Tedarik`,
+    vendor_tax_no: "3912345678",
+    date: "2026-05-12",
+    due_date: "2026-05-26",
+    items: [
+      {
+        description: "Perakende stok alımı",
+        quantity: 1,
+        unit_price: 42000 + seed,
+        total: 42000 + seed,
+        kdv_rate: 20,
+      },
+    ],
+    subtotal: 42000 + seed,
+    kdv_amount: 8400 + seed * 0.2,
+    total_amount: 50400 + seed * 1.2,
+    currency: "TRY",
+    category: "gider",
+    raw_text: "Mock tenant demo invoice",
+  };
+}
+
+function mockAnalysis(slug: string, jobId = `mock-job-${slug}`): AnalysisResult {
+  const summary = dashboardSummary(slug);
+  const invoice = mockInvoice(slug);
+  return {
+    job_id: jobId,
+    status: "completed",
+    invoices: [invoice],
+    cash_flow_forecast: [
+      {
+        month: "2026-06",
+        income: 182000,
+        expense: 126000,
+        net: 48750,
+        kdv_payment: 0,
+        sgk_payment: 7250,
+        cumulative: 48750,
+      },
+      {
+        month: "2026-07",
+        income: 176000,
+        expense: 132500,
+        net: 35800,
+        kdv_payment: 0,
+        sgk_payment: 7700,
+        cumulative: 84550,
+      },
+      {
+        month: "2026-08",
+        income: 190000,
+        expense: 138000,
+        net: 29400,
+        kdv_payment: 14200,
+        sgk_payment: 8400,
+        cumulative: 113950,
+      },
+    ],
+    risk_score: 3,
+    risk_label: "yellow",
+    risk_explanation:
+      "POS satışları sağlıklı ancak Mayıs sonunda KDV ve SGK çıkışları nakit tamponunu azaltıyor.",
+    tax_recommendations: [
+      {
+        recommendation:
+          "Mayıs KDV beyannamesi için POS satışları ve banka tahsilatlarını 24 Mayıs'a kadar mutabık hale getirin.",
+        source: "KDV Kanunu",
+        article: "KDV genel beyan dönemi",
+        confidence: 4.2,
+        scope: "global",
+        action: "review",
+      },
+      {
+        recommendation:
+          "Tedarikçi faturalarını dönem kapanmadan belgeleyerek indirilecek KDV etkisini netleştirin.",
+        source: "Tenant belgeleri",
+        article: "Mock özel belge",
+        confidence: 3.8,
+        scope: "private",
+        action: "review",
+      },
+    ],
+    kosgeb_suggestions: [
+      {
+        title: "KOSGEB Girişimcilik Destek Programı",
+        detail: "Perakende ve dijital satış kanalı yatırımları için başvuru koşulları kontrol edilmeli.",
+        url: "https://www.kosgeb.gov.tr",
+      },
+    ],
+    agent_trace: [
+      {
+        agent_name: "nakit_akisi",
+        action: "3 aylık nakit akışı projeksiyonu oluşturuluyor",
+        input: { invoice_count: 1 },
+        output: { summary: "3 aylık tahmin üretildi" },
+        duration_ms: 42,
+        confidence: 4.1,
+      },
+      {
+        agent_name: "risk",
+        action: "Finansal anomaliler ve eşik değerleri kontrol ediliyor",
+        input: { net_flow: summary.net_flow_this_month },
+        output: { summary: "Risk Seviyesi: YELLOW" },
+        duration_ms: 31,
+        confidence: 4,
+      },
+      {
+        agent_name: "mevzuat_rag",
+        action: "Global ve tenant RAG kaynakları taranıyor",
+        input: { query: "KDV SGK ödeme takvimi" },
+        output: { summary: "2 mevzuat önerisi bulundu" },
+        duration_ms: 86,
+        confidence: 4.2,
+      },
+      {
+        agent_name: "kosgeb",
+        action: "Sektörel destek programları eşleştiriliyor",
+        input: { sector: tenant(slug).sector },
+        output: { summary: "1 destek programı eşleşti" },
+        duration_ms: 19,
+        confidence: 3.9,
+      },
+    ],
+    created_at: MOCK_NOW.toISOString(),
+    completed_at: MOCK_NOW.toISOString(),
+    error: null,
+  };
+}
+
 export const mockV2 = {
   registerTenant: async (payload: TenantCreate): Promise<TenantOut> => tenant(payload.slug),
   listMyTenants: async (): Promise<TenantOut[]> => [tenant("kuzey-market"), tenant("atlas-mobilya")],
@@ -365,6 +503,18 @@ export const mockV2 = {
   getPosSummary: async (slug: string, targetDate?: string): Promise<PosDailySummary> =>
     posSummary(slug, targetDate ?? MOCK_TODAY),
   getDashboardSummary: async (slug: string): Promise<DashboardSummary> => dashboardSummary(slug),
+  uploadInvoice: async (slug: string, _file?: File): Promise<InvoiceUploadOut> => ({
+    document_id: `${tenantId(slug)}_invoice_doc`,
+    invoice: mockInvoice(slug),
+  }),
+  startAnalysis: async (slug: string, _payload: AnalyzeRequestV2): Promise<JobStartedOut> => ({
+    job_id: `mock-job-${slug}`,
+    status: "pending",
+  }),
+  getAnalysis: async (slug: string, jobId: string): Promise<AnalysisResult> =>
+    mockAnalysis(slug, jobId),
+  downloadAnalysisReport: async (slug: string, jobId: string): Promise<Blob> =>
+    new Blob([`Mock PDF report for ${slug}/${jobId}`], { type: "application/pdf" }),
   getChatHistory: async (
     _slug?: string,
     _sessionId?: string,
