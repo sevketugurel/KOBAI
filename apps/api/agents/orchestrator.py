@@ -11,6 +11,7 @@ from agents.nakit_akisi import NakitAkisiAgent
 from agents.risk import RiskAgent
 from agents.mevzuat_rag import MevzuatRagAgent
 from agents.kosgeb import suggest_kosgeb
+from services.tenant_context import TenantAnalysisContext
 
 
 class AgentState(TypedDict, total=False):
@@ -18,6 +19,7 @@ class AgentState(TypedDict, total=False):
     # v2: tenant bağlamı. None → v1 demo modu (yalnızca global RAG).
     tenant_id: str | None
     invoices: list[InvoiceData]
+    tenant_context: TenantAnalysisContext | None
     company_type: str
     sector: str
     period: str
@@ -43,7 +45,8 @@ def _step(*, agent: str, action: str, t0: float, input_data: dict | None = None,
 
 async def _cashflow_node(state: AgentState) -> dict:
     t0 = time.perf_counter()
-    out = await NakitAkisiAgent().forecast(state["invoices"])
+    ctx = state.get("tenant_context")
+    out = await NakitAkisiAgent().forecast(state["invoices"], tenant_context=ctx)
     return {
         "forecast": out,
         "trace": [
@@ -51,7 +54,11 @@ async def _cashflow_node(state: AgentState) -> dict:
                 agent="nakit_akisi",
                 action="3 aylık nakit akışı projeksiyonu oluşturuluyor",
                 t0=t0,
-                input_data={"invoice_count": len(state["invoices"])},
+                input_data={
+                    "invoice_count": len(state["invoices"]),
+                    "bank_tx_count": len(ctx.bank_transactions) if ctx else 0,
+                    "pos_tx_count": len(ctx.pos_transactions) if ctx else 0,
+                },
                 output=f"{len(out)} aylık tahmin üretildi",
             )
         ],
@@ -60,7 +67,8 @@ async def _cashflow_node(state: AgentState) -> dict:
 
 async def _risk_node(state: AgentState) -> dict:
     t0 = time.perf_counter()
-    out = await RiskAgent().assess(state["invoices"], state["forecast"])
+    ctx = state.get("tenant_context")
+    out = await RiskAgent().assess(state["invoices"], state["forecast"], tenant_context=ctx)
     return {
         "risk": out,
         "trace": [
@@ -68,7 +76,10 @@ async def _risk_node(state: AgentState) -> dict:
                 agent="risk",
                 action="Finansal anomaliler ve eşik değerleri kontrol ediliyor",
                 t0=t0,
-                input_data={"trend_months": len(state["invoices"])},
+                input_data={
+                    "invoice_count": len(state["invoices"]),
+                    "tax_calendar_count": len(ctx.tax_calendar_items) if ctx else 0,
+                },
                 output=f"Risk Seviyesi: {out['risk_label'].upper()}",
             )
         ],
@@ -79,7 +90,7 @@ async def _tax_node(state: AgentState) -> dict:
     t0 = time.perf_counter()
     # v2: tenant_id varsa private + global RAG; yoksa salt global (v1 demo).
     agent = MevzuatRagAgent(tenant_id=state.get("tenant_id"))
-    out = await agent.analyze(state["invoices"])
+    out = await agent.analyze(state["invoices"], tenant_context=state.get("tenant_context"))
     return {
         "tax_recs": out,
         "trace": [
@@ -97,6 +108,7 @@ async def _tax_node(state: AgentState) -> dict:
 async def _kosgeb_node(state: AgentState) -> dict:
     t0 = time.perf_counter()
     out = suggest_kosgeb(sector=state["sector"], company_type=state["company_type"])
+    ctx = state.get("tenant_context")
     return {
         "kosgeb": out,
         "trace": [
@@ -104,7 +116,11 @@ async def _kosgeb_node(state: AgentState) -> dict:
                 agent="kosgeb",
                 action="Sektörel KOSGEB destekleri ve hibe kriterleri inceleniyor",
                 t0=t0,
-                input_data={"sector": state["sector"], "type": state["company_type"]},
+                input_data={
+                    "sector": state["sector"],
+                    "type": state["company_type"],
+                    "invoice_count": len(ctx.invoices) if ctx else len(state["invoices"]),
+                },
                 output=f"{len(out)} adet uygun destek programı eşleşti",
             )
         ],
@@ -141,9 +157,11 @@ _graph = _build_graph()
 async def run_pipeline(
     *, invoices: list[InvoiceData], company_type: str, sector: str, period: str,
     job_id: str, auto_approve: bool = True, tenant_id: str | None = None,
+    tenant_context: TenantAnalysisContext | None = None,
 ) -> AnalysisResult:
     init: AgentState = {
         "job_id": job_id, "tenant_id": tenant_id, "invoices": invoices,
+        "tenant_context": tenant_context,
         "company_type": company_type, "sector": sector, "period": period,
         "trace": [], "human_approved": auto_approve,
     }

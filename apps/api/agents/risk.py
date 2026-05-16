@@ -1,5 +1,6 @@
 """Risk değerlendirme — sabit eşikler, Türkçe açıklama."""
 from schemas.invoice import InvoiceData
+from services.tenant_context import TenantAnalysisContext
 
 
 THRESH_INCOME_DROP_YELLOW = 0.20
@@ -14,7 +15,13 @@ def _escalate(current: str, new: str) -> str:
 
 
 class RiskAgent:
-    async def assess(self, invoices: list[InvoiceData], forecast: list[dict]) -> dict:
+    async def assess(
+        self,
+        invoices: list[InvoiceData],
+        forecast: list[dict],
+        *,
+        tenant_context: TenantAnalysisContext | None = None,
+    ) -> dict:
         anomalies: list[str] = []
         label = "green"
 
@@ -71,6 +78,26 @@ class RiskAgent:
                 anomalies.append("Önümüzdeki dönemde 2 ay üst üste negatif nakit akışı riski.")
                 label = _escalate(label, "red")
                 break
+
+        if tenant_context is not None:
+            monthly = tenant_context.monthly_totals()
+            if monthly:
+                last = monthly[-1]
+                if (last["bank_credit"] - last["bank_debit"]) < 0:
+                    anomalies.append("Son dönemde banka nakit hareketleri net negatif.")
+                    label = _escalate(label, "yellow")
+            failed_pos = [t for t in tenant_context.pos_transactions if t.status == "failed"]
+            if len(failed_pos) >= 3:
+                anomalies.append(f"POS tarafında {len(failed_pos)} başarısız işlem var; tahsilat kaybı riski oluşabilir.")
+                label = _escalate(label, "yellow")
+            overdue_tax = [t for t in tenant_context.tax_calendar_items if t.status == "overdue"]
+            if overdue_tax:
+                anomalies.append(f"{len(overdue_tax)} vergi takvimi kalemi gecikmiş görünüyor.")
+                label = _escalate(label, "red")
+            upcoming_tax = [t for t in tenant_context.tax_calendar_items if t.status == "pending"]
+            if upcoming_tax:
+                anomalies.append(f"{len(upcoming_tax)} bekleyen vergi/SGK takvim kalemi takip edilmeli.")
+                label = _escalate(label, "yellow")
 
         score = {"green": 5, "yellow": 3, "red": 1}[label]
         

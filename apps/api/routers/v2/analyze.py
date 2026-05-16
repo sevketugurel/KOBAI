@@ -27,9 +27,12 @@ from middleware.tenant import require_tenant
 from repositories.job_repo import JobNotFound, JobRepo, get_job_repo, make_initial_result
 from repositories.tenant_repo import TenantRepo, get_tenant_repo
 from schemas.invoice import InvoiceData
+from schemas.analysis import AgentStep
 from schemas.tenant import TenantContext
 from services.gemini import GeminiParseError, GeminiService
 from services.pdf_generator import build_analysis_pdf
+from services.tenant_context import TenantAnalysisContext, get_tenant_data_service
+from services.tenant_rag import get_tenant_rag_indexer, refresh_tenant_rag
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v2/{slug}", tags=["v2-analyze"])
@@ -59,6 +62,7 @@ class AnalyzeRequestV2(BaseModel):
     model_config = ConfigDict(extra="forbid")
     document_ids: list[str] = Field(min_length=1, max_length=100)
     period: str | None = None  # "2025-06" formatı, opsiyonel
+    include_all_tenant_data: bool = True
 
 
 class JobStartedOut(BaseModel):
@@ -75,6 +79,22 @@ def _looks_like_pdf(file: UploadFile, data: bytes) -> bool:
         if (file.filename or "").lower().endswith(".pdf"):
             return True
     return len(data) >= 4 and data[:4] == b"%PDF"
+
+
+async def _refresh_tenant_rag(
+    *,
+    tenant_id: str,
+    period: str | None = None,
+    tenant_profile: dict[str, object] | None = None,
+) -> None:
+    try:
+        await refresh_tenant_rag(
+            tenant_id=tenant_id,
+            period=period,
+            tenant_profile=tenant_profile,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("tenant RAG index güncellenemedi tenant=%s: %s", tenant_id, e)
 
 
 @router.post("/invoices", status_code=status.HTTP_201_CREATED, response_model=InvoiceUploadOut)
@@ -113,25 +133,42 @@ async def upload_invoice(
         file_url=f"memory://{ctx.tenant_id}/invoice",
         invoice=invoice,
     )
+    await _refresh_tenant_rag(tenant_id=ctx.tenant_id)
     return InvoiceUploadOut(document_id=document_id, invoice=invoice)
 
 
 async def _run(*, repo: JobRepo, tenant_id: str, job_id: str, document_ids: list[str],
-               company_type: str, sector: str, period: str) -> None:
+               company_type: str, sector: str, period: str,
+               include_all_tenant_data: bool = True) -> None:
     try:
         await repo.update_job_status(tenant_id=tenant_id, job_id=job_id, status="processing")
         invoices = await repo.get_invoices(tenant_id=tenant_id, document_ids=document_ids)
         if not invoices:
             raise ValueError("hiç geçerli fatura bulunamadı (document_ids tenant'a ait olmayabilir)")
-        result = await run_pipeline(
-            invoices=invoices,
-            company_type=company_type,
-            sector=sector,
-            period=period,
-            job_id=job_id,
-            auto_approve=True,
-            tenant_id=tenant_id,
-        )
+        tenant_context: TenantAnalysisContext | None = None
+        try:
+            tenant_context = await get_tenant_data_service().build_context(
+                tenant_id=tenant_id,
+                period=period,
+                document_ids=document_ids,
+                tenant_profile={"sector": sector, "company_type": company_type},
+                include_all_tenant_data=include_all_tenant_data,
+            )
+            await get_tenant_rag_indexer().index_context(tenant_context)
+        except Exception as e:  # noqa: BLE001
+            log.warning("tenant context/RAG hazırlanamadı tenant=%s job=%s: %s", tenant_id, job_id, e)
+        kwargs = {
+            "invoices": invoices,
+            "company_type": company_type,
+            "sector": sector,
+            "period": period,
+            "job_id": job_id,
+            "auto_approve": True,
+            "tenant_id": tenant_id,
+        }
+        if tenant_context is not None:
+            kwargs["tenant_context"] = tenant_context
+        result = await run_pipeline(**kwargs)
         await repo.set_job_result(tenant_id=tenant_id, job_id=job_id, result=result)
     except Exception as e:  # noqa: BLE001
         log.exception("v2 pipeline hatası tenant=%s job=%s", tenant_id, job_id)
@@ -141,6 +178,17 @@ async def _run(*, repo: JobRepo, tenant_id: str, job_id: str, document_ids: list
             return
         failed = current.model_copy(update={
             "status": "failed", "error": str(e), "completed_at": datetime.utcnow(),
+            "agent_trace": [
+                *current.agent_trace,
+                AgentStep(
+                    agent_name="orchestrator",
+                    action="Analiz çalıştırılırken hata oluştu",
+                    input={"tenant_id": tenant_id, "job_id": job_id},
+                    output={"summary": str(e)},
+                    duration_ms=0,
+                    confidence=1.0,
+                ),
+            ],
         })
         await repo.set_job_result(tenant_id=tenant_id, job_id=job_id, result=failed)
 
@@ -172,6 +220,7 @@ async def start_analysis(
         company_type=tenant.company_type,
         sector=tenant.sector,
         period=req.period or datetime.utcnow().strftime("%Y-%m"),
+        include_all_tenant_data=req.include_all_tenant_data,
     )
     return JobStartedOut(job_id=job_id, status="pending")
 

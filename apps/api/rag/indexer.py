@@ -1,6 +1,7 @@
 """ChromaDB belge indexleyici — kobi_mevzuat koleksiyonuna chunk yazar."""
 import uuid
 import logging
+import hashlib
 import chromadb
 
 from config import settings
@@ -68,6 +69,25 @@ class RagIndexer:
                 ids=ids, embeddings=embeds, documents=docs, metadatas=metas
             )
             log.info("Yüklendi: %s — %d chunk", metadata.get("source", "?"), len(ids))
+        return len(ids)
+
+    async def upsert_document(self, text: str, metadata: dict, *, document_id: str) -> int:
+        """Deterministik ID ile yaz; aynı kayıt tekrar indexlenirse duplicate üretmez."""
+        chunks = chunk_text(text)
+        ids, embeds, metas, docs = [], [], [], []
+        for idx, chunk in enumerate(chunks):
+            digest = hashlib.sha1(f"{document_id}:{idx}:{chunk}".encode("utf-8")).hexdigest()[:16]
+            cid = f"{document_id}:chunk:{idx}:{digest}"
+            vec = await self._embedder.embed_for_index(chunk)
+            ids.append(cid)
+            embeds.append(vec)
+            docs.append(chunk)
+            metas.append(_chroma_metadata({**metadata, "chunk_id": cid}))
+        if ids:
+            self._collection.upsert(
+                ids=ids, embeddings=embeds, documents=docs, metadatas=metas
+            )
+            log.info("Upsert: %s — %d chunk", document_id, len(ids))
         return len(ids)
 
     def list_documents(self) -> list[dict]:

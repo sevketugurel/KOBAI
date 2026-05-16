@@ -29,20 +29,22 @@ class RagRetriever:
         `scope` salt etiket; sonuçlara `scope="global"|"private"` olarak
         eklenir, MevzuatRagAgent skor-birleştirme yaparken kullanır.
         """
-        if collection is None:
-            client = chromadb.HttpClient(
-                host=settings.chroma_host, port=settings.chroma_port
-            )
-            collection = client.get_or_create_collection(
-                name=collection_name or settings.chroma_collection
-            )
         self._collection = collection
+        self._collection_name = collection_name or settings.chroma_collection
         self._embedder = embedder or GeminiEmbedder()
         self._scope = scope
 
+    def _get_collection(self):
+        if self._collection is None:
+            client = chromadb.HttpClient(
+                host=settings.chroma_host, port=settings.chroma_port
+            )
+            self._collection = client.get_or_create_collection(name=self._collection_name)
+        return self._collection
+
     async def search(self, query: str, n_results: int = 5) -> list[dict]:
         vec = await self._embedder.embed_for_query(query)
-        raw = self._collection.query(query_embeddings=[vec], n_results=n_results)
+        raw = self._get_collection().query(query_embeddings=[vec], n_results=n_results)
         # Boş koleksiyon → documents=[[]]
         documents = raw.get("documents") or [[]]
         metadatas = raw.get("metadatas") or [[]]

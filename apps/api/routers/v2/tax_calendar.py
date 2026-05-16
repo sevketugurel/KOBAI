@@ -25,6 +25,7 @@ from schemas.tax import (
     TaxCalendarItemPatch,
 )
 from schemas.tenant import TenantContext
+from services.tenant_rag import refresh_tenant_rag
 
 log = logging.getLogger(__name__)
 tenant_router = APIRouter(prefix="/v2/{slug}", tags=["v2-tax-calendar"])
@@ -55,7 +56,12 @@ async def patch_tax_calendar(
     repo: Annotated[TaxRepo, Depends(get_tax_repo)],
 ) -> TaxCalendarItemOut:
     try:
-        return await repo.patch_item(tenant_id=ctx.tenant_id, item_id=item_id, patch=patch)
+        out = await repo.patch_item(tenant_id=ctx.tenant_id, item_id=item_id, patch=patch)
+        try:
+            await refresh_tenant_rag(tenant_id=ctx.tenant_id, period=out.period)
+        except Exception as e:  # noqa: BLE001
+            log.warning("tenant RAG index güncellenemedi tenant=%s: %s", ctx.tenant_id, e)
+        return out
     except KeyError as e:
         raise HTTPException(status_code=404, detail="kalem yok") from e
 

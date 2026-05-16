@@ -15,6 +15,7 @@ from rag.collections import global_mevzuat_collection, tenant_docs_collection
 from rag.retriever import RagRetriever
 from schemas.invoice import InvoiceData
 from services.gemini import GeminiService
+from services.tenant_context import TenantAnalysisContext
 
 
 def _build_retrievers(tenant_id: str | None) -> list[RagRetriever]:
@@ -120,7 +121,11 @@ def _build_tax_queries(context: dict[str, float | int | str]) -> list[tuple[str,
     ]
 
 
-def _build_generation_context(law: str, context: dict[str, float | int | str]) -> str:
+def _build_generation_context(
+    law: str,
+    context: dict[str, float | int | str],
+    tenant_context: TenantAnalysisContext | None = None,
+) -> str:
     base = (
         "Türkçe yaz. 1-2 cümle ile uygulanabilir tek öneri ver. "
         "Mümkünse tarih veya tutar belirt. "
@@ -131,6 +136,8 @@ def _build_generation_context(law: str, context: dict[str, float | int | str]) -
         f"gider KDV'si {_format_try(float(context['expense_kdv_total']))}, "
         f"net KDV tahmini {_format_try(abs(float(context['net_kdv_estimate'])))}."
     )
+    if tenant_context is not None:
+        base = f"{base} Tenant genel finans özeti: {tenant_context.summary_text()}"
     if law == "GVK":
         return (
             f"{base} Kesin vergi tasarrufu hesabı verme. "
@@ -175,7 +182,14 @@ class MevzuatRagAgent:
     async def search_sgk(self, query: str) -> list[dict]:
         return await self._query(f"SGK mevzuatı: {query}")
 
-    async def analyze(self, invoices: list[InvoiceData]) -> list[dict]:
+    async def analyze(
+        self,
+        invoices: list[InvoiceData],
+        *,
+        tenant_context: TenantAnalysisContext | None = None,
+    ) -> list[dict]:
+        if not invoices and tenant_context is not None:
+            invoices = tenant_context.invoices
         if not invoices:
             return []
 
@@ -189,7 +203,7 @@ class MevzuatRagAgent:
             top = hits[0]
             advice = await self._gemini.generate_text(
                 prompt=_build_generation_prompt(law, top["text"]),
-                context=_build_generation_context(law, context),
+                context=_build_generation_context(law, context, tenant_context),
             )
             recommendations.append({
                 "recommendation": advice.strip(),

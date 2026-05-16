@@ -41,6 +41,7 @@ from services.encryption import (
     decrypt_credentials,
     encrypt_credentials,
 )
+from services.tenant_rag import refresh_tenant_rag
 
 log = logging.getLogger(__name__)
 tenant_router = APIRouter(prefix="/v2/{slug}", tags=["v2-pos"])
@@ -187,6 +188,10 @@ async def pos_webhook(
         tenant_id=tenant_id, event=event,
     )
     await repo.mark_webhook_received(tenant_id=tenant_id)
+    try:
+        await refresh_tenant_rag(tenant_id=tenant_id)
+    except Exception as e:  # noqa: BLE001
+        log.warning("tenant RAG index güncellenemedi tenant=%s: %s", tenant_id, e)
     log.info(
         "pos webhook: tenant=%s txn=%s dup=%s ext=%s amount=%s",
         tenant_id, txn_id, duplicate, event.external_id, event.amount,

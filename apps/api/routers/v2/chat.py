@@ -20,10 +20,13 @@ from fastapi.responses import StreamingResponse
 
 from middleware.tenant import require_tenant
 from repositories.chat_repo import ChatRepo, get_chat_repo
+from repositories.job_repo import JobNotFound, JobRepo, get_job_repo
+from rag.collections import tenant_docs_collection
+from rag.retriever import RagRetriever
 from schemas.chat_v2 import ChatRequestV2
 from schemas.tenant import TenantContext
 from services.gemini import GeminiService
-from services.job_queue import queue
+from services.tenant_context import TenantDataService, get_tenant_data_service
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v2/{slug}", tags=["v2-chat"])
@@ -42,19 +45,61 @@ def _sse_event(payload: str) -> str:
 
 
 async def _build_context(
-    *, tenant_id: str, session_id: str, job_id: str | None, repo: ChatRepo
+    *,
+    tenant_id: str,
+    session_id: str,
+    message: str,
+    job_id: str | None,
+    repo: ChatRepo,
+    job_repo: JobRepo,
+    tenant_data: TenantDataService,
 ) -> str:
     parts: list[str] = []
-    if job_id:
-        try:
-            job = await queue.get_job(job_id)
+    try:
+        if job_id:
+            job = await job_repo.get_job(tenant_id=tenant_id, job_id=job_id)
             parts.append(
                 f"Şirket nakit akışı (3 ay): {job.cash_flow_forecast}\n"
                 f"Risk: {job.risk_label} — {job.risk_explanation}\n"
                 f"Vergi önerileri sayısı: {len(job.tax_recommendations)}"
             )
-        except KeyError:
-            parts.append(f"(job {job_id} bulunamadı — yalnızca chat geçmişi kullanılıyor)")
+        else:
+            job = await job_repo.get_latest_completed(tenant_id=tenant_id)
+            if job is not None:
+                parts.append(
+                    f"Son tamamlanan analiz: job={job.job_id}, risk={job.risk_label}, "
+                    f"nakit akışı={job.cash_flow_forecast}, açıklama={job.risk_explanation}"
+                )
+    except JobNotFound:
+        parts.append(f"(job {job_id} bulunamadı — güncel tenant bağlamı kullanılıyor)")
+    except Exception as e:  # noqa: BLE001
+        log.warning("analiz bağlamı okunamadı tenant=%s job=%s: %s", tenant_id, job_id, e)
+    try:
+        tenant_context = await tenant_data.build_context(tenant_id=tenant_id)
+        parts.append("Güncel structured tenant bağlamı:\n" + tenant_context.summary_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("tenant structured context okunamadı tenant=%s: %s", tenant_id, e)
+    try:
+        hits = await RagRetriever(
+            collection_name=tenant_docs_collection(tenant_id), scope="private"
+        ).search(f"{message} tenant finans özeti vergi banka pos fatura gider gelir", n_results=5)
+        if hits:
+            parts.append(
+                "Tenant private RAG kaynakları:\n"
+                + json.dumps(
+                    [
+                        {
+                            "text": h["text"],
+                            "metadata": h["metadata"],
+                            "confidence": h["confidence"],
+                        }
+                        for h in hits
+                    ],
+                    ensure_ascii=False,
+                )
+            )
+    except Exception as e:  # noqa: BLE001
+        log.warning("tenant RAG okunamadı tenant=%s: %s", tenant_id, e)
     history = await repo.list_recent(tenant_id=tenant_id, session_id=session_id, limit=10)
     if history:
         parts.append(
@@ -72,6 +117,8 @@ async def chat_v2(
     req: ChatRequestV2,
     ctx: Annotated[TenantContext, Depends(require_tenant)],
     repo: Annotated[ChatRepo, Depends(get_chat_repo)],
+    job_repo: Annotated[JobRepo, Depends(get_job_repo)],
+    tenant_data: Annotated[TenantDataService, Depends(get_tenant_data_service)],
 ) -> StreamingResponse:
     # Kullanıcı mesajını hemen persist et (sızıntı izolasyonu repo katmanında)
     await repo.save_message(
@@ -81,7 +128,13 @@ async def chat_v2(
         content=req.message,
     )
     context = await _build_context(
-        tenant_id=ctx.tenant_id, session_id=req.session_id, job_id=req.job_id, repo=repo
+        tenant_id=ctx.tenant_id,
+        session_id=req.session_id,
+        message=req.message,
+        job_id=req.job_id,
+        repo=repo,
+        job_repo=job_repo,
+        tenant_data=tenant_data,
     )
 
     async def event_stream():

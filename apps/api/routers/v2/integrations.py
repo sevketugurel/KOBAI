@@ -20,6 +20,7 @@ from repositories.bank_repo import BankRepo, get_bank_repo
 from schemas.bank import BankStatementImportResult, BankTransactionOut
 from schemas.tenant import TenantContext
 from services.bank_statement_parser import BankParseError, BankStatementParser
+from services.tenant_rag import refresh_tenant_rag
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v2/{slug}", tags=["v2-integrations"])
@@ -87,6 +88,10 @@ async def upload_bank_statement(
         provider="bank_statement",
         config={"last_document_id": document_id, "last_bank": statement.bank_name},
     )
+    try:
+        await refresh_tenant_rag(tenant_id=ctx.tenant_id)
+    except Exception as e:  # noqa: BLE001
+        log.warning("tenant RAG index güncellenemedi tenant=%s: %s", ctx.tenant_id, e)
 
     txs = statement.transactions
     period_start = min((t.transacted_at for t in txs), default=None)
