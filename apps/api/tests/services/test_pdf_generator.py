@@ -1,6 +1,6 @@
 """ReportLab PDF üretici — bytes döndürmeli."""
 from datetime import datetime
-from services.pdf_generator import build_analysis_pdf
+from services.pdf_generator import FONT, build_analysis_pdf
 from schemas.analysis import AnalysisResult
 
 
@@ -13,3 +13,11 @@ def test_build_pdf_returns_bytes():
     )
     pdf = build_analysis_pdf(r, company_name="Test Ltd")
     assert isinstance(pdf, bytes) and pdf.startswith(b"%PDF")
+
+
+def test_dejavu_font_loaded_from_bundle():
+    # Türkçe karakterler için Helvetica yetersiz — repo'ya bundle ettiğimiz
+    # DejaVuSans yüklenebilmiş olmalı.
+    assert FONT == "DejaVuSans", (
+        "PDF Türkçe karakter desteği yok: apps/api/assets/fonts/DejaVuSans.ttf eksik olabilir"
+    )

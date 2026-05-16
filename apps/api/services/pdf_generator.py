@@ -1,5 +1,8 @@
 """ReportLab — AnalysisResult → bytes PDF (Türkçe destekli)."""
 import io
+import logging
+from pathlib import Path
+
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
@@ -9,11 +12,32 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 
 from schemas.analysis import AnalysisResult
 
-try:
-    pdfmetrics.registerFont(TTFont("DejaVuSans", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
-    FONT = "DejaVuSans"
-except Exception:
-    FONT = "Helvetica"
+log = logging.getLogger(__name__)
+
+# Türkçe karakterler için DejaVu zorunlu. Helvetica fallback ğüşıöç'yi bozar.
+# Repo içine bundle ettiğimiz dosya ilk sırada — OS path'lerine bağımlı değil.
+_FONT_CANDIDATES = [
+    Path(__file__).resolve().parents[1] / "assets" / "fonts" / "DejaVuSans.ttf",
+    Path("/Library/Fonts/DejaVuSans.ttf"),
+    Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
+    Path("/usr/local/share/fonts/DejaVuSans.ttf"),
+]
+
+
+def _register_font() -> str:
+    for path in _FONT_CANDIDATES:
+        if not path.exists():
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont("DejaVuSans", str(path)))
+            return "DejaVuSans"
+        except Exception as e:  # noqa: BLE001
+            log.warning("DejaVuSans yüklenemedi %s: %s", path, e)
+    log.warning("DejaVuSans bulunamadı; Helvetica'ya düşülüyor (Türkçe karakter sorunu olabilir)")
+    return "Helvetica"
+
+
+FONT = _register_font()
 
 
 def _styles() -> dict:

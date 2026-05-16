@@ -11,6 +11,7 @@ Akış:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Annotated
@@ -21,7 +22,7 @@ from fastapi.responses import StreamingResponse
 from middleware.tenant import require_tenant
 from repositories.chat_repo import ChatRepo, get_chat_repo
 from repositories.job_repo import JobNotFound, JobRepo, get_job_repo
-from rag.collections import tenant_docs_collection
+from rag.collections import global_mevzuat_collection, tenant_docs_collection
 from rag.retriever import RagRetriever
 from schemas.chat_v2 import ChatRequestV2
 from schemas.tenant import TenantContext
@@ -109,11 +110,19 @@ async def _build_context(
             )
     except Exception as e:  # noqa: BLE001
         log.warning("tenant structured context okunamadı tenant=%s: %s", tenant_id, e)
+    # Global mevzuat + tenant-private aynı anda — mevzuat_rag.py deseni.
     try:
-        hits = await RagRetriever(
-            collection_name=tenant_docs_collection(tenant_id), scope="private"
-        ).search(f"{message} tenant finans özeti vergi banka pos fatura gider gelir", n_results=5)
-        if hits:
+        private_query = f"{message} tenant finans özeti vergi banka pos fatura gider gelir"
+        global_query = f"{message} Türk vergi mevzuatı KDV GVK SGK kanun yönetmelik"
+        private_hits, global_hits = await asyncio.gather(
+            RagRetriever(
+                collection_name=tenant_docs_collection(tenant_id), scope="private"
+            ).search(private_query, n_results=5),
+            RagRetriever(
+                collection_name=global_mevzuat_collection(), scope="global"
+            ).search(global_query, n_results=5),
+        )
+        if private_hits:
             parts.append(
                 "Tenant private RAG kaynakları:\n"
                 + json.dumps(
@@ -122,14 +131,31 @@ async def _build_context(
                             "text": h["text"],
                             "metadata": h["metadata"],
                             "confidence": h["confidence"],
+                            "scope": "private",
                         }
-                        for h in hits
+                        for h in private_hits
+                    ],
+                    ensure_ascii=False,
+                )
+            )
+        if global_hits:
+            parts.append(
+                "Global mevzuat RAG kaynakları:\n"
+                + json.dumps(
+                    [
+                        {
+                            "text": h["text"],
+                            "metadata": h["metadata"],
+                            "confidence": h["confidence"],
+                            "scope": "global",
+                        }
+                        for h in global_hits
                     ],
                     ensure_ascii=False,
                 )
             )
     except Exception as e:  # noqa: BLE001
-        log.warning("tenant RAG okunamadı tenant=%s: %s", tenant_id, e)
+        log.warning("RAG okunamadı tenant=%s: %s", tenant_id, e)
     history = await repo.list_recent(tenant_id=tenant_id, session_id=session_id, limit=10)
     if history:
         parts.append(

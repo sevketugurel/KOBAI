@@ -48,6 +48,9 @@ async def _http_exc_cors(request: Request, exc: HTTPException) -> JSONResponse:
     )
 
 
+app.state.chroma_ok = False
+
+
 @app.on_event("startup")
 async def _ping_chroma() -> None:
     try:
@@ -55,16 +58,22 @@ async def _ping_chroma() -> None:
             host=settings.chroma_host, port=settings.chroma_port
         )
         client.get_or_create_collection(name=settings.chroma_collection)
+        app.state.chroma_ok = True
         log.info(
             "ChromaDB bağlantısı tamam: koleksiyon=%s", settings.chroma_collection
         )
     except Exception as e:  # noqa: BLE001
-        log.warning("ChromaDB erişilemedi (%s); RAG çalışmayacak.", e)
+        app.state.chroma_ok = False
+        log.error("ChromaDB erişilemedi (%s); RAG çalışmayacak.", e)
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok", "version": "0.1.0"}
+async def health() -> dict:
+    return {
+        "status": "ok",
+        "version": "0.1.0",
+        "chroma": bool(getattr(app.state, "chroma_ok", False)),
+    }
 
 
 # Router'lar — v1 (auth-suz, demo data)
@@ -86,6 +95,7 @@ from routers.v2 import tax_calendar as v2_tax_router  # Faz 4 — register düş
 from routers.v2 import pos as v2_pos_router
 from routers.v2 import dashboard as v2_dashboard_router
 from routers.v2 import analyze as v2_analyze_router
+from routers.v2 import demo as v2_demo_router
 
 app.include_router(v2_tenants_router.router)
 app.include_router(v2_chat_router.router)
@@ -96,3 +106,4 @@ app.include_router(v2_pos_router.tenant_router)
 app.include_router(v2_pos_router.public_router)
 app.include_router(v2_dashboard_router.router)
 app.include_router(v2_analyze_router.router)
+app.include_router(v2_demo_router.router)

@@ -12,13 +12,16 @@ Storage NOT eklenmedi: PDF bytes Gemini Vision'a gider, kalıcı saklanmaz —
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
 import uuid
 from datetime import datetime
 from inspect import signature
-from typing import Annotated, Literal
+from typing import Annotated, AsyncIterator, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile, status
+from fastapi.responses import StreamingResponse
 from google.api_core.exceptions import ResourceExhausted
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -263,6 +266,75 @@ async def get_analysis(
     return result.model_dump(mode="json")
 
 
+@router.get("/analyze/{job_id}/events")
+async def stream_analysis_events(
+    job_id: str,
+    ctx: Annotated[TenantContext, Depends(require_tenant)],
+    repo: Annotated[JobRepo, Depends(get_job_repo)],
+) -> StreamingResponse:
+    """SSE: job durumu + yeni trace adımları artımlı olarak gönderilir.
+
+    Kalıcı pub/sub yerine repo'yu kısa aralıklarla okuyup yalnız yeni event'leri
+    yayınlıyoruz. completed/failed olduğunda akışı kapatıyoruz.
+    """
+
+    async def event_stream() -> AsyncIterator[str]:
+        sent_steps = 0
+        last_status: str | None = None
+        # 60 saniye sert üst limit; tipik analiz < 30s.
+        for _ in range(120):
+            try:
+                result = await repo.get_job(tenant_id=ctx.tenant_id, job_id=job_id)
+            except JobNotFound:
+                yield f"event: error\ndata: {json.dumps({'detail': 'job bulunamadı'})}\n\n"
+                return
+            trace = result.agent_trace or []
+            for step in trace[sent_steps:]:
+                yield f"event: step\ndata: {step.model_dump_json()}\n\n"
+            sent_steps = len(trace)
+            if result.status != last_status:
+                last_status = result.status
+                yield f"event: status\ndata: {json.dumps({'status': result.status})}\n\n"
+            if result.status in ("completed", "failed"):
+                payload = {
+                    "status": result.status,
+                    "approved": result.approved,
+                    "error": result.error,
+                }
+                yield f"event: done\ndata: {json.dumps(payload)}\n\n"
+                return
+            await asyncio.sleep(0.5)
+        yield f"event: timeout\ndata: {json.dumps({'detail': 'akış zaman aşımı'})}\n\n"
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.post("/analyze/{job_id}/approve", status_code=status.HTTP_200_OK)
+async def approve_analysis(
+    job_id: str,
+    ctx: Annotated[TenantContext, Depends(require_tenant)],
+    repo: Annotated[JobRepo, Depends(get_job_repo)],
+) -> dict:
+    try:
+        result = await repo.get_job(tenant_id=ctx.tenant_id, job_id=job_id)
+    except JobNotFound as e:
+        raise HTTPException(status_code=404, detail="job bulunamadı") from e
+    if result.status != "completed":
+        raise HTTPException(status_code=409, detail="analiz tamamlanmadı")
+    if not result.approved:
+        approved = result.model_copy(update={"approved": True})
+        await repo.set_job_result(tenant_id=ctx.tenant_id, job_id=job_id, result=approved)
+    return {"job_id": job_id, "approved": True}
+
+
 @router.get("/analyze/{job_id}/report")
 async def get_analysis_report(
     job_id: str,
@@ -276,6 +348,11 @@ async def get_analysis_report(
         raise HTTPException(status_code=404, detail="job bulunamadı") from e
     if result.status != "completed":
         raise HTTPException(status_code=409, detail="analiz tamamlanmadı")
+    if not result.approved:
+        raise HTTPException(
+            status_code=403,
+            detail="rapor için önce analizi onaylayın (POST /analyze/{job_id}/approve)",
+        )
 
     tenant = await tenant_repo.get_by_slug(ctx.tenant_slug)
     company_name = tenant.display_name if tenant else ctx.tenant_slug

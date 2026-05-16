@@ -1,6 +1,6 @@
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   Activity,
   AlertTriangle,
@@ -115,8 +115,10 @@ function AnalysisControlPanel({
   uploadPending,
   startPending,
   reportPending,
+  approvePending,
   onUpload,
   onStart,
+  onApprove,
   onDownloadReport,
 }: {
   slug: string;
@@ -126,10 +128,14 @@ function AnalysisControlPanel({
   uploadPending: boolean;
   startPending: boolean;
   reportPending: boolean;
+  approvePending: boolean;
   onUpload: (file: File) => void;
   onStart: () => void;
+  onApprove: () => void;
   onDownloadReport: () => void;
 }) {
+  const completed = analysis?.status === "completed";
+  const approved = Boolean(analysis?.approved);
   return (
     <Card>
       <Card.Header
@@ -189,15 +195,28 @@ function AnalysisControlPanel({
             <Sparkles size={16} />
             {startPending ? "Başlatılıyor" : "Analiz Başlat"}
           </button>
-          <button
-            type="button"
-            onClick={onDownloadReport}
-            disabled={!analysis || analysis.status !== "completed" || reportPending}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-navy-700 transition-colors hover:bg-navy-50 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            <Download size={16} />
-            Rapor
-          </button>
+          {completed && !approved ? (
+            <button
+              type="button"
+              onClick={onApprove}
+              disabled={approvePending}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <ShieldCheck size={16} />
+              {approvePending ? "Onaylanıyor" : "Analizi Onayla"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onDownloadReport}
+              disabled={!completed || !approved || reportPending}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-navy-700 transition-colors hover:bg-navy-50 disabled:cursor-not-allowed disabled:opacity-45"
+              title={!approved ? "Önce analizi onaylayın" : undefined}
+            >
+              <Download size={16} />
+              Rapor
+            </button>
+          )}
         </div>
       </Card.Body>
     </Card>
@@ -427,6 +446,7 @@ function ActivitiesPanel({
 
 export default function TenantDashboard() {
   const { slug = "" } = useParams<{ slug: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const { data, isLoading, isError } = useTenantDashboard(slug);
   const summary = data as DashboardSummary | undefined;
@@ -476,6 +496,37 @@ export default function TenantDashboard() {
       setActiveJobId(result.job_id);
       storeJobId(slug, result.job_id);
       void qc.invalidateQueries({ queryKey: ["tenant-analysis", slug, result.job_id] });
+    },
+  });
+
+  const demoLoad = useMutation({
+    mutationFn: () => v2.loadDemo(slug),
+    onSuccess: (r) => {
+      setActiveJobId(r.job_id);
+      storeJobId(slug, r.job_id);
+      void qc.invalidateQueries({ queryKey: ["tenant-analysis", slug, r.job_id] });
+    },
+  });
+
+  const demoAutoTriggered = useRef(false);
+  useEffect(() => {
+    if (demoAutoTriggered.current) return;
+    if (searchParams.get("demo") !== "1") return;
+    if (!slug || demoLoad.isPending || activeJobId) return;
+    demoAutoTriggered.current = true;
+    demoLoad.mutate();
+    const next = new URLSearchParams(searchParams);
+    next.delete("demo");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, slug, activeJobId, demoLoad, setSearchParams]);
+
+  const approve = useMutation({
+    mutationFn: async () => {
+      if (!activeJobId) throw new Error("Analiz bulunamadı");
+      return v2.approveAnalysis(slug, activeJobId);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["tenant-analysis", slug, activeJobId] });
     },
   });
 
@@ -647,8 +698,10 @@ export default function TenantDashboard() {
             uploadPending={upload.isPending}
             startPending={start.isPending}
             reportPending={report.isPending}
+            approvePending={approve.isPending}
             onUpload={(file) => upload.mutate(file)}
             onStart={() => start.mutate()}
+            onApprove={() => approve.mutate()}
             onDownloadReport={() => report.mutate()}
           />
           {slug ? <ChatPanelV2 slug={slug} sessionId={sessionId} jobId={activeJobId} /> : null}

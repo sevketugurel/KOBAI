@@ -28,12 +28,14 @@ export default function HomePage() {
     navigate(`/dashboard/${r.job_id}`);
   };
 
-  const loadDemoData = () =>
+  const loadDemoData = () => {
     toast({
       variant: "info",
-      title: "Demo verisi yakında",
-      description: "Ahmet Usta Fırını demo seti hazırlanıyor.",
+      title: "Demo yükleniyor",
+      description: "Ahmet Usta Fırını verisi kuzey-market'e açılıyor…",
     });
+    navigate("/dashboard/kuzey-market?demo=1");
+  };
 
   return (
     <>

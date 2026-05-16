@@ -1,0 +1,27 @@
+Gelir Vergisi Kanunu (GVK) — Geçici Vergi 2026
+Kaynak: GVK md. 120; GİB vergi takvimi; 332 Seri No.lu Gelir Vergisi Genel Tebliği.
+
+Madde 120 — Geçici vergi
+Ticari, zirai veya mesleki kazanç sahipleri, kazançları üzerinden yıl içinde üçer aylık dönemlerde geçici vergi öder. Geçici vergi, yıllık gelir vergisinin peşin ödemesi niteliğindedir; yıllık beyanname ile mahsup edilir, fazla ödenen iade alınabilir.
+
+2026 GEÇİCİ VERGİ TAKVİMİ (ticari / mesleki kazanç)
+
+| Dönem | Kapsadığı aylar | Beyan son tarihi | Ödeme son tarihi |
+| 1. dönem | Ocak – Mart 2026 | 17 Mayıs 2026 | 17 Mayıs 2026 |
+| 2. dönem | Ocak – Haziran 2026 | 17 Ağustos 2026 | 17 Ağustos 2026 |
+| 3. dönem | Ocak – Eylül 2026 | 16 Kasım 2026 | 16 Kasım 2026 |
+| 4. dönem | Ocak – Aralık 2026 | Yıllık gelir vergisi beyanı ile | Mart 2027 beyanı ile |
+
+HESAPLAMA (özet)
+- Geçici vergi matrahı = dönem kazancı − indirimler − geçmiş dönem zarar mahsubu (şartlarla).
+- Ödenecek geçici vergi = matrah × gelir vergisi oranı (kurumlar için KVK oranı) − önceki dönemlerde ödenen geçici vergi.
+- Şahıs işletmelerinde gelir vergisi tarifesi (md. 103) yıllık matraha göre dilimli uygulanır; geçici vergide genellikle önceki yıl oranı veya beyan edilen oran esas alınır.
+
+MUAFİYET VE İSTİSNALAR
+- Belirli had altındaki mükellefler geçici vergiden muaf olabilir (GVK ve tebliğler).
+- Serbest bölge, teşvik belgesi kapsamı kazançlarda özel düzenlemeler uygulanabilir.
+
+GECİKME
+Beyan veya ödeme süresinin geçirilmesi gecikme faizi ve usulsüzlük cezası doğurur (213 sayılı VUK).
+
+KOBİ notu: Nakit planlamasında Mayıs, Ağustos ve Kasım ayları geçici vergi ödeme dönemleridir. 4. dönem ödemesi yıllık beyanla birleşir.

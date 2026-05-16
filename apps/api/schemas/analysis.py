@@ -32,3 +32,4 @@ class AnalysisResult(BaseModel):
     created_at: datetime
     completed_at: datetime | None = None
     error: str | None = None
+    approved: bool = Field(default=False, description="HITL onayı — PDF indirimi için zorunlu")

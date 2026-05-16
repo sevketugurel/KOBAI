@@ -1,3 +1,39 @@
-KDV Kanunu — Özet
-Madde 28: Türkiye'de KDV genel oranı %20'dir. İndirimli oran %1 (temel gıda) ve %10 (giyim, hizmetler) uygulanır.
-Madde 41: KDV mükellefleri her ay 26'sı akşamına kadar bir önceki aya ait beyannamesini verir ve 28'inde öder.
+3065 Sayılı Katma Değer Vergisi Kanunu (KDV) — Oranlar ve Beyan Yükümlülükleri
+Kaynak: 3065 sayılı KDV Kanunu; 7346 sayılı Cumhurbaşkanı Kararı (10.07.2023 yürürlük); GİB 149 Seri No.lu VUK Sirküleri (beyan süresi uzatımı).
+
+Madde 1 (7346 sayılı Karar ile güncel oranlar) — Mal teslimi ve hizmet ifalarında KDV oranları:
+- Listede yer almayan tüm işlemler: %20 (genel oran)
+- Ekli (I) sayılı listedeki teslim ve hizmetler: %1 (temel gıda, tarım ürünleri, ilaç vb.)
+- Ekli (II) sayılı listedeki teslim ve hizmetler: %10 (indirimli oran)
+
+%1 ORANA TABİ ÖRNEKLER (I sayılı liste — özet)
+Temel gıda maddeleri: ekmek unu, süt, yoğurt, peynir, yumurta, et, balık, sebze-meyve, bakliyat, zeytin, zeytinyağı, un, bulgur, pirinç, şeker, bal, reçel, çay, kahve (belirli GTİP kodları listeye göre).
+İlaçlar, tıbbi cihazlar (liste kapsamında).
+Kitap ve ders kitapları (belirli koşullarda).
+
+%10 ORANA TABİ ÖRNEKLER (II sayılı liste — özet)
+Konut teslimi (belirli koşullar ve metrekare sınırları).
+Gıda dışı temel ihtiyaçlar: deterjan, sabun, şampuan, bebek bezi, kadın hijyen ürünleri.
+Tekstil ve giyim ürünleri.
+Konaklama hizmetleri (otel, pansiyon vb.).
+Yeme-içme hizmetleri (restoran, kafe — paket servis dahil belirli haller).
+Eğitim hizmetleri (özel okul, kurs — liste kapsamında).
+Kültür ve eğlence hizmetleri (sinema, tiyatro biletleri vb.).
+Ulaştırma hizmetleri (şehir içi toplu taşıma vb.).
+Sağlık hizmetleri (belirli muayene ve tedavi hizmetleri).
+
+%20 ORANA TABİ
+Listede sayılmayan tüm mal ve hizmet teslimleri: elektronik, mobilya, otomobil (ÖTV hariç KDV matrahı), danışmanlık, yazılım, reklam, inşaat işçiliği (liste dışı), genel ticari mal satışları.
+
+Madde 41 — KDV mükellefi, vergilendirme dönemine ilişkin KDV'yi izleyen ayın 26. günü akşamına kadar beyan eder.
+
+Madde 46 — Tahakkuk eden KDV, beyanname verilen ayın 26. günü akşamına kadar ödenir.
+
+GİB uygulaması (149 Seri No.lu Sirküler): 1 Aralık 2022'den itibaren KDV beyannamesinin verilme ve ödeme süresi, ilgili vergilendirme dönemini izleyen ayın 28. günü sonuna kadar uzatılmıştır. Pratikte çoğu mükellef için son tarih her ayın 28'idir; resmi tatil ve hafta sonu VUK md. 18 uyarınca ilk iş gününe kayar.
+
+Örnek: Ocak 2026 dönemi KDV'si → Şubat 2026 beyanı; Şubat sonu hafta sonuna denk gelirse Mart başı iş gününe kayabilir (2026 takviminde Ocak KDV ödemesi 2 Mart 2026 Pazartesi).
+
+KDV İNDİRİMİ
+Alış faturalarındaki KDV, satış KDV'sinden indirilir. İndirilemeyen KDV gider yazılamaz; devreden KDV sonraki döneme aktarılır.
+
+KOBİ notu: E-fatura / e-arşiv mükellefiyeti, KDV beyanı ve BA-BS formları birlikte takip edilmelidir. Net KDV = hesaplanan KDV − indirilecek KDV − devreden KDV.

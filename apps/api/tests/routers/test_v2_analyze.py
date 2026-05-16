@@ -213,6 +213,13 @@ def test_analysis_report_returns_tenant_scoped_pdf(client_for, job_repo, mock_pi
     assert started.status_code == 202, started.text
     job_id = started.json()["job_id"]
 
+    # HITL: onay olmadan rapor 403.
+    pre_approve = c.get(f"/v2/acme-co/analyze/{job_id}/report")
+    assert pre_approve.status_code == 403, pre_approve.text
+
+    approve = c.post(f"/v2/acme-co/analyze/{job_id}/approve")
+    assert approve.status_code == 200, approve.text
+
     report = c.get(f"/v2/acme-co/analyze/{job_id}/report")
     assert report.status_code == 200, report.text
     assert report.headers["content-type"] == "application/pdf"

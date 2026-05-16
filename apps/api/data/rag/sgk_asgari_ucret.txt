@@ -1,0 +1,29 @@
+2026 Yılı Asgari Ücret ve SGK Parametreleri
+Kaynak: Çalışma ve Sosyal Güvenlik Bakanlığı — Asgari Ücret Tespit Komisyonu Kararı 2025/1; Resmî Gazete 26.12.2025 (Sayı: 33119); SGK; GİB asgari ücret kesinti tablosu.
+
+ASGARİ ÜCRET (01.01.2026 – 31.12.2026)
+- Brüt aylık: 33.030,00 TL (%27,01 artış; 2025 brüt: 26.005,50 TL)
+- Net aylık: 28.075,50 TL
+- Brüt günlük: 1.101,00 TL
+
+ÇALIŞAN KESİNTİLERİ (brüt 33.030 TL üzerinden)
+- SGK işçi payı (%14): 4.624,20 TL
+- İşsizlik sigortası işçi payı (%1): 330,30 TL
+- Gelir vergisi: 0 TL (ücret istisnası — GVK md. 86)
+- Damga vergisi: 0 TL (istisna)
+- Toplam kesinti: 4.954,50 TL → Net: 28.075,50 TL
+
+İŞVERENE MALİYET (aylık, brüt 33.030 TL)
+- İmalat sektörü (5 puan SGK indirimi): 39.223,13 TL
+- Diğer sektörler (2 puan indirim): 40.214,03 TL
+- İndirim uygulanmazsa: 40.874,63 TL
+
+SGK PRİM TABAN VE TAVAN (2026)
+- Taban (aylık): 33.030 TL
+- Tavan (aylık): 297.270 TL (brüt asgari ücretin 9 katı)
+- Tavan hesabı: 01.01.2026 itibarıyla günlük kazanç alt sınırının 9 katı esas alınır (önceki 7,5 kat uygulaması sona erdi).
+
+2026 ASGARİ ÜCRET DESTEĞİ (5510 geçici md. 112)
+Özel sektör işverenlerine, şartları sağlayan işyerlerinde sigortalı başına aylık 1.270,00 TL destek öngörülmüştür (Resmî Gazete ile yürürlük). Kayıt dışı istihdam tespitinde destek 1 yıl geri alınır ve yasaklama uygulanır.
+
+KOBİ notu: Asgari ücretin altında ücret ödenemez. Kısmi süreli çalışmada günlük asgari ücret (1.101 TL) esas alınır. Prime esas kazanç, brüt ücret ile sınırlıdır; tavan aşımında prim tavan üzerinden hesaplanır.

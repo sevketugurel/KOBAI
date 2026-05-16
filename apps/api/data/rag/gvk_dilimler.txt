@@ -1,8 +1,31 @@
-Gelir Vergisi Kanunu (GVK) — Dilimler 2026
-Madde 103: 2026 yılı için gelir vergisi dilimleri:
-- 110.000 TL'ye kadar %15
-- 230.000 TL'ye kadar %20
-- 870.000 TL'ye kadar %27
-- 3.000.000 TL'ye kadar %35
-- 3.000.000 TL üzeri %40
-Şahıs şirketleri yıllık beyanname verir; Mart ayının sonuna kadar.
+193 Sayılı Gelir Vergisi Kanunu (GVK) — Gelir Vergisi Tarifesi 2026
+Kaynak: 31.12.2025 tarihli Resmî Gazete (Sayı: 33124, 5. Mükerrer); 332 Seri No.lu Gelir Vergisi Genel Tebliği; GİB gelir vergisi tarifeleri.
+
+Madde 103 — 2026 takvim yılı gelirlerinin vergilendirilmesinde uygulanacak tarife, yeniden değerleme oranı (%25,49) ile güncellenmiştir. 1 Ocak 2026 – 31 Aralık 2026 dönemi için geçerlidir.
+
+ÜCRET GELİRLERİ TARİFESİ (maaş, ücret, huzur hakkı vb.)
+- 190.000 TL'ye kadar: %15
+- 400.000 TL'nin 190.000 TL'si için 28.500 TL, fazlası: %20
+- 1.500.000 TL'nin 400.000 TL'si için 70.500 TL, fazlası: %27
+- 5.300.000 TL'nin 1.500.000 TL'si için 367.500 TL, fazlası: %35
+- 5.300.000 TL'den fazlasının 5.300.000 TL'si için 1.697.500 TL, fazlası: %40
+
+ÜCRET DIŞI GELİRLER TARİFESİ (ticari kazanç, serbest meslek, kira, menkul sermaye iradı vb.)
+- 190.000 TL'ye kadar: %15
+- 400.000 TL'nin 190.000 TL'si için 28.500 TL, fazlası: %20
+- 1.000.000 TL'nin 400.000 TL'si için 70.500 TL, fazlası: %27
+- 5.300.000 TL'nin 1.000.000 TL'si için 232.500 TL, fazlası: %35
+- 5.300.000 TL'den fazlasının 5.300.000 TL'si için 1.737.500 TL, fazlası: %40
+
+Not: Ücret gelirlerinde üçüncü dilim 1.500.000 TL'de başlar; ücret dışı gelirlerde 1.000.000 TL'de başlar. Bu fark, ücretlilerin yüksek vergi dilimine daha geç girmesini sağlar.
+
+Madde 86 — Asgari ücrette elde edilen ücret gelirleri (2022'den itibaren) gelir vergisinden istisnadır; 2026 brüt asgari ücret 33.030 TL olduğundan bu tutara kadar ücret gelirinde gelir vergisi hesaplanmaz.
+
+YILLIK BEYAN (şahıs işletmesi / serbest meslek)
+- Ticari veya mesleki kazanç sahipleri, bir takvim yılına ait kazançlarını ertesi yılın Mart ayı sonuna kadar (31 Mart) yıllık gelir vergisi beyannamesi ile bildirir.
+- Beyan sonrası tahakkuk eden vergi iki eşit taksitte ödenir: 1. taksit Mart sonu (beyanla birlikte), 2. taksit Temmuz sonu (31 Temmuz 2026).
+- Beyanname e-Beyanname sistemi üzerinden verilir.
+
+Madde 94 — Ücret ödemelerinde işveren tarafından gelir vergisi stopajı (tevkifat) yapılır; yıllık beyan ile mahsup edilir.
+
+KOBİ notu: Şahıs şirketi ve kolay usul mükellefleri için gelir toplamı ve gider belgeleri beyan matrahını doğrudan etkiler; dilim geçişleri yıllık kümülatif matraha göre hesaplanır.

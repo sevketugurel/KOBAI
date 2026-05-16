@@ -1,0 +1,33 @@
+5520 Sayılı Kurumlar Vergisi Kanunu (KVK) — Oranlar ve Beyan 2026
+Kaynak: GİB — Kurumlar Vergisinde Oran Uygulamaları Rehberi (Mart 2026, Yayın No: 605); 5520 sayılı KVK; mevzuat.gov.tr.
+
+Madde 32 — Kurumlar vergisi oranı
+- Kural: Kurum kazancı üzerinden %25.
+- İstisna: Bankalar, finansal kiralama, faktoring, varlık yönetim şirketleri, sigorta ve reasürans ile emeklilik şirketleri %30 oranında öder.
+
+GEÇİCİ VERGİ (KVK md. 32/A ve GVK md. 120)
+- Kurumlar vergisi mükellefleri, cari yıl kurumlar vergisi oranında geçici vergi öder.
+- 2026 geçici vergi dönemleri (ticari kazanç):
+  1. dönem (Ocak–Mart): beyan ve ödeme 17 Mayıs 2026
+  2. dönem (Ocak–Haziran): beyan ve ödeme 17 Ağustos 2026
+  3. dönem (Ocak–Eylül): beyan ve ödeme 16 Kasım 2026
+  4. dönem: yıllık kurumlar vergisi beyannamesi ile mahsup
+
+YILLIK KURUMLAR VERGİSİ BEYANI
+- 2025 hesap dönemi kazancı: 1–30 Nisan 2026 arasında beyan ve ödeme.
+- Anonim şirket (A.Ş.) ve limited şirket (Ltd. Şti.) kurumlar vergisi mükellefidir.
+- Beyan e-Beyanname üzerinden; ödeme aynı dönemde.
+
+İNDİRİMLİ ORAN UYGULAMALARI (özet)
+- Halka arz: Borsa İstanbul'da en az %20 halka arz → 5 hesap dönemi boyunca 2 puan indirim (%23).
+- İhracat kazancı: Belirli koşullarda 1 veya 5 puan indirim (döneme göre).
+- Üretim faaliyeti: Üretim kazançlarına indirimli oran (şartlar sağlanmalı).
+- KOBİ birleşmeleri: Tanıma uygun birleşmelerde indirimli oran (belirli dönem ve şartlar).
+
+STOPAJ (KVK md. 15 ve md. 30)
+Kurumlara yapılan temettü, faiz, kira, serbest meslek ödemeleri vb. üzerinden kaynakta kesinti (stopaj) uygulanır. Oranlar Cumhurbaşkanı kararları ile belirlenir (2009/14594 ve 2009/14593 sayılı kararlar temel referans). Kara liste ülkelere ödemelerde %30 kesinti (md. 30).
+
+YURT İÇİ ASGARİ KURUMLAR VERGİSİ
+Transfer fiyatlandırması kapsamında, ilişkili kişilerle yapılan işlemlerde vergi matrahı düzeltmesi sonrası asgari vergi yükümlülüğü doğabilir.
+
+KOBİ notu: Şahıs şirketi gelir vergisine, Ltd./A.Ş. kurumlar vergisine tabidir. Geçici vergi nakit akışını etkiler; yıllık beyanda mahsup edilir. Detaylı oran ve istisna için mali müşavir veya GİB rehberi kullanılmalıdır.

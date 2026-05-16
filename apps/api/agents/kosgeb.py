@@ -13,6 +13,19 @@ _RULES = [
      "detail": "İmalat sanayinde yerli üretim teşviki.", "url": "https://www.kosgeb.gov.tr"},
 ]
 
+# schemas.tenant.Sector enum string → _RULES.sector label.
+# Why: enum is snake_case for DB, rules are Title Case Turkish — without normalization
+# `r["sector"] == sector` never matches and KOSGEB suggestions stay empty.
+_SECTOR_TO_KOSGEB: dict[str, str] = {
+    "gida_perakende": "Gıda & İçecek",
+    "perakende": "Perakende",
+    "hizmet": "Hizmet",
+    "imalat": "İmalat",
+    "insaat": "İmalat",
+    "tarim": "Gıda & İçecek",
+    "diger": "Hizmet",
+}
+
 
 def suggest_kosgeb(
     *,
@@ -20,6 +33,7 @@ def suggest_kosgeb(
     company_type: str,
     tenant_context: TenantAnalysisContext | None = None,
 ) -> list[dict]:
+    sector = _SECTOR_TO_KOSGEB.get(sector, sector)
     summary = tenant_context.summary_dict() if tenant_context is not None else {}
     scale_note = ""
     if summary:

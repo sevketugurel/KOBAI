@@ -107,6 +107,7 @@ export interface AnalysisResult {
   created_at: string;
   completed_at: string | null;
   error: string | null;
+  approved?: boolean;
 }
 
 export interface InvoiceUploadOut {
@@ -365,6 +366,22 @@ export const v2 = {
       ? mockV2.downloadAnalysisReport(slug, jobId)
       : _blob(
           `/v2/${encodeURIComponent(slug)}/analyze/${encodeURIComponent(jobId)}/report`,
+        ),
+  approveAnalysis: (slug: string, jobId: string) =>
+    isMockMode
+      ? Promise.resolve({ job_id: jobId, approved: true })
+      : _json<{ job_id: string; approved: boolean }>(
+          `/v2/${encodeURIComponent(slug)}/analyze/${encodeURIComponent(jobId)}/approve`,
+          { method: "POST", body: "{}" },
+        ),
+  loadDemo: (slug: string) =>
+    isMockMode
+      ? mockV2.startAnalysis(slug, { document_ids: [], period: null, include_all_tenant_data: true }).then(
+          (r) => ({ ...r, invoice_count: 24, document_ids: [] as string[] }),
+        )
+      : _json<{ job_id: string; status: "pending"; invoice_count: number; document_ids: string[] }>(
+          `/v2/${encodeURIComponent(slug)}/demo/load`,
+          { method: "POST", body: JSON.stringify({}) },
         ),
 
   // v2 chat — tenant + session-scoped, SSE

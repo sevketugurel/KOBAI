@@ -1,5 +1,40 @@
-SGK İşveren Primi
-İşveren payı brüt ücretin %20.5'idir (genel sağlık sigortası dahil 22.5%).
-Sigortalı (işçi) payı brüt ücretin %14'üdür.
-İşveren primler her ayın 26'sına kadar bildirir, 30'una kadar öder.
-5510 sayılı Sosyal Sigortalar ve Genel Sağlık Sigortası Kanunu kapsamındadır.
+5510 Sayılı Sosyal Sigortalar ve Genel Sağlık Sigortası Kanunu — İşveren Prim Oranları 2026
+Kaynak: SGK resmi sitesi — İşveren Prim Oranları (13.01.2026); Genel Bilgi (12.01.2026); 5510 sayılı Kanun md. 4/1-a, md. 81.
+
+HİZMET AKDİNE TABİ ÇALIŞANLAR (4/1-a) — 01.01.2008'DEN İTİBAREN GEÇERLİ ORANLAR (2026)
+
+| Sigorta kolu | İşveren (%) | Çalışan (%) | Toplam (%) |
+| Malullük, yaşlılık, ölüm (MYÖ) | 12 | 9 | 21 |
+| Genel sağlık sigortası (GSS) | 7,5 | 5 | 12,5 |
+| Kısa vadeli sigorta kolları (KVSK) | 2,25 | — | 2,25 |
+| İşsizlik sigortası | 2 | 1 | 3 |
+| TOPLAM | 23,75 | 15 | 38,75 |
+
+Not: 2025'te MYÖ işveren payı %11 iken 2026'da %12'ye yükselmiştir. Eski kaynaklardaki %20,5 veya %22,5 işveren payı artık geçerli değildir.
+
+PRİM BİLDİRİM VE ÖDEME SÜRELERİ
+- Aylık prim ve hizmet belgesi: İzleyen ayın 26. günü sonuna kadar (elektronik ortam).
+- Prim ödemesi: İzleyen ayın son gününe kadar (genelde ayın 30 veya 31'i).
+- Muhtasar beyanname (ücret stopajı): İzleyen ayın 26. günü akşamına kadar.
+
+PRİME ESAS KAZANÇ TAVANI (2026)
+- Aylık tavan: 297.270 TL (brüt asgari ücretin 9 katı; önceki dönemde 7,5 kat uygulanıyordu).
+- Aylık taban: 33.030 TL (2026 brüt asgari ücret).
+- Günlük tavan: 9.909 TL; günlük taban: 1.101 TL.
+Tavan üzerindeki ücretler için prim yalnızca tavan tutarı üzerinden hesaplanır.
+
+İŞVEREN PRİM İNDİRİMLERİ (5510 md. 81)
+
+Madde 81 (ı) — Malullük, yaşlılık ve ölüm sigortası işveren hissesinden indirim:
+- İmalat sektörü (NACE Rev.2, bölüm C, kodlar 10–32): 5 puan indirim → net işveren MYÖ payı %7 (toplam işveren payı yaklaşık %18,75).
+- İmalat dışı sektörler (2026): 2 puan indirim (önceki 4 puandan düşürüldü) → net işveren MYÖ payı %10 (toplam işveren payı yaklaşık %21,75).
+- İndirimsiz tam işveren payı: %23,75.
+
+Madde 81 (j) — 4/1-b kapsamı (tarım, orman vb. belirli işler): 5 puanlık ayrı indirim rejimi.
+
+Diğer teşvikler (özet): Yatırım teşvik belgesi kapsamı prim desteği; genç, kadın ve engelli istihdamı teşvikleri (4447, 4857); AR-GE personeli prim teşviki (5746); 2026 asgari ücret desteği (5510 geçici md. 112).
+
+YASAKLAMA (5510 ek md. 14)
+Kayıt dışı istihdam veya sahte sigortalılık tespitinde işveren belirtilen teşviklerden 1 ay ile 1 yıl arasında yararlanamaz; tekrarda süre uzar. Asgari ücret desteğinde doğrudan 1 yıl yasaklama uygulanır.
+
+KOBİ notu: Brüt ücret × işveren oranı = aylık işveren SGK maliyeti. Asgari ücrette işveren maliyeti (imalat, 5 puan indirimli): yaklaşık 39.223 TL/ay; diğer sektörler (2 puan): yaklaşık 40.214 TL/ay.

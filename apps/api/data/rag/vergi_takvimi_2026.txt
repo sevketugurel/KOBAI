@@ -1,0 +1,41 @@
+2026 Vergi Takvimi — KOBİ Beyan ve Ödeme Tarihleri (Özet)
+Kaynak: GİB Vergi Takvimi (gib.gov.tr/vergi-takvimi); VUK md. 18 (tatil uzatması); 149 Seri No.lu Sirküler (KDV süre uzatımı).
+
+KDV (tüm KDV mükellefleri)
+- Beyan ve ödeme: İlgili ayı izleyen ayın 28. günü sonu (GİB sirküler uygulaması; kanuni md. 41/46'da 26. gün).
+- Örnek: Şubat 2026 dönemi KDV → 28 Mart 2026; Ocak 2026 dönemi (Şubat sonu tatil) → 2 Mart 2026 Pazartesi.
+
+MUHTASAR VE SGK (çalışanı olan işletmeler)
+- Aylık muhtasar beyanname: İzleyen ayın 26. günü akşamına kadar.
+- SGK prim belgesi: İzleyen ayın 26. günü.
+- SGK prim ödemesi: İzleyen ayın son günü.
+
+BA-BS FORMLARI
+- Alış ve satış bildirimi: İlgili ayı izleyen ayın son iş günü.
+
+GELİR VERGİSİ (şahıs şirketi, serbest meslek)
+- 2025 yılı kazancı yıllık beyan: 31 Mart 2026 sonuna kadar.
+- 1. taksit ödeme: Beyan ile birlikte (31 Mart 2026).
+- 2. taksit ödeme: 31 Temmuz 2026.
+
+KURUMLAR VERGİSİ (A.Ş., Ltd. Şti.)
+- 2025 hesap dönemi beyan ve ödeme: 1–30 Nisan 2026.
+
+GEÇİCİ VERGİ
+- 1. dönem: 17 Mayıs 2026
+- 2. dönem: 17 Ağustos 2026
+- 3. dönem: 16 Kasım 2026
+
+DAMGA VERGİSİ
+- Aylık beyan: İzleyen ayın 26. günü (muhtasar ile benzer dönem).
+
+ÖNEMLİ NOTLAR
+- Son gün cumartesi, pazar veya resmi tatile denk gelirse süre izleyen ilk iş gününe uzar (VUK md. 18).
+- e-Beyanname işlemleri genelde ilgili gün saat 23:59'a kadar tamamlanmalıdır.
+- 2025 yılında vergi cezalarının önemli kısmı beyan süresi gecikmesinden kaynaklanmaktadır; takvim proaktif kullanılmalıdır.
+
+KOBİ pratik kontrol listesi (aylık)
+1. KDV beyanı ve ödemesi (28. gün veya uzatılmış iş günü)
+2. Muhtasar + SGK prim (26. gün beyan, ay sonu ödeme)
+3. BA-BS (ay sonu iş günü)
+4. Geçici vergi dönemlerinde ek beyan (Mayıs, Ağustos, Kasım)
