@@ -44,6 +44,14 @@ def _sse_event(payload: str) -> str:
     return f"data: {safe}\n\n"
 
 
+SYSTEM_GUIDANCE = (
+    "Sistem yönergesi: Mevcut tenant verisi yeterliyse kullanıcıdan tekrar veri isteme. "
+    "Eksikse hangi tablo/veri eksik olduğunu açıkça söyle. KDV sorularında öncelik sırası: "
+    "tax_calendar_items pending/overdue tutarları, sonra fatura KDV toplamları, sonra POS/banka açıklayıcı sinyalleri. "
+    "Yanıtı yalnızca bu tenant bağlamıyla sınırla."
+)
+
+
 async def _build_context(
     *,
     tenant_id: str,
@@ -54,7 +62,7 @@ async def _build_context(
     job_repo: JobRepo,
     tenant_data: TenantDataService,
 ) -> str:
-    parts: list[str] = []
+    parts: list[str] = [SYSTEM_GUIDANCE]
     try:
         if job_id:
             job = await job_repo.get_job(tenant_id=tenant_id, job_id=job_id)
@@ -77,6 +85,28 @@ async def _build_context(
     try:
         tenant_context = await tenant_data.build_context(tenant_id=tenant_id)
         parts.append("Güncel structured tenant bağlamı:\n" + tenant_context.summary_text())
+        kdv_items = [
+            item for item in tenant_context.tax_calendar_items
+            if item.tax_type == "kdv" and item.status in ("pending", "overdue")
+        ]
+        if kdv_items:
+            parts.append(
+                "KDV öncelikli bağlam:\n"
+                + json.dumps(
+                    [
+                        {
+                            "title": item.title,
+                            "period": item.period,
+                            "status": item.status,
+                            "due_date": str(item.due_date),
+                            "amount": str(item.amount) if item.amount is not None else None,
+                            "currency": item.currency,
+                        }
+                        for item in kdv_items
+                    ],
+                    ensure_ascii=False,
+                )
+            )
     except Exception as e:  # noqa: BLE001
         log.warning("tenant structured context okunamadı tenant=%s: %s", tenant_id, e)
     try:

@@ -2,7 +2,7 @@
 import time
 from datetime import datetime
 from operator import add
-from typing import TypedDict, Any, Annotated
+from typing import Awaitable, Callable, TypedDict, Any, Annotated
 from langgraph.graph import StateGraph, END
 
 from schemas.invoice import InvoiceData
@@ -32,10 +32,23 @@ class AgentState(TypedDict, total=False):
     human_approved: bool
 
 
-def _step(*, agent: str, action: str, t0: float, input_data: dict | None = None, output: Any, confidence: float = 4.0) -> AgentStep:
+TraceSink = Callable[[AgentStep], Awaitable[None]]
+
+
+def _step(
+    *,
+    agent: str,
+    action: str,
+    t0: float,
+    input_data: dict | None = None,
+    output: Any,
+    confidence: float = 4.0,
+    status: str = "completed",
+) -> AgentStep:
     return AgentStep(
         agent_name=agent,
         action=action,
+        status=status,
         input=input_data or {},
         output={"summary": str(output)[:200]},
         duration_ms=int((time.perf_counter() - t0) * 1000),
@@ -107,8 +120,12 @@ async def _tax_node(state: AgentState) -> dict:
 
 async def _kosgeb_node(state: AgentState) -> dict:
     t0 = time.perf_counter()
-    out = suggest_kosgeb(sector=state["sector"], company_type=state["company_type"])
     ctx = state.get("tenant_context")
+    out = suggest_kosgeb(
+        sector=state["sector"],
+        company_type=state["company_type"],
+        tenant_context=ctx,
+    )
     return {
         "kosgeb": out,
         "trace": [
@@ -158,14 +175,57 @@ async def run_pipeline(
     *, invoices: list[InvoiceData], company_type: str, sector: str, period: str,
     job_id: str, auto_approve: bool = True, tenant_id: str | None = None,
     tenant_context: TenantAnalysisContext | None = None,
+    trace_sink: TraceSink | None = None,
 ) -> AnalysisResult:
-    init: AgentState = {
+    state: AgentState = {
         "job_id": job_id, "tenant_id": tenant_id, "invoices": invoices,
         "tenant_context": tenant_context,
         "company_type": company_type, "sector": sector, "period": period,
         "trace": [], "human_approved": auto_approve,
     }
-    final = await _graph.ainvoke(init)
+    nodes = [
+        ("nakit_akisi", "3 aylık nakit akışı projeksiyonu oluşturuluyor", _cashflow_node),
+        ("risk", "Finansal anomaliler ve eşik değerleri kontrol ediliyor", _risk_node),
+        ("mevzuat_rag", "Güncel vergi mevzuatı ve teşvikler taranıyor", _tax_node),
+        ("kosgeb", "Sektörel KOSGEB destekleri ve hibe kriterleri inceleniyor", _kosgeb_node),
+    ]
+    trace: list[AgentStep] = []
+    for agent_name, action, node in nodes:
+        running = AgentStep(
+            agent_name=agent_name,
+            action=action,
+            status="running",
+            input={"job_id": job_id, "tenant_id": tenant_id},
+            output={"summary": "Çalışıyor"},
+            duration_ms=0,
+            confidence=1.0,
+        )
+        trace.append(running)
+        if trace_sink is not None:
+            await trace_sink(running)
+        try:
+            update = await node(state)
+        except Exception as exc:
+            failed = AgentStep(
+                agent_name=agent_name,
+                action=action,
+                status="failed",
+                input={"job_id": job_id, "tenant_id": tenant_id},
+                output={"summary": str(exc)[:200]},
+                duration_ms=0,
+                confidence=1.0,
+            )
+            trace.append(failed)
+            if trace_sink is not None:
+                await trace_sink(failed)
+            raise
+        completed_steps = update.pop("trace", [])
+        for step in completed_steps:
+            trace.append(step)
+            if trace_sink is not None:
+                await trace_sink(step)
+        state.update(update)
+    final = state
     risk = final.get("risk", {"risk_score": 1, "risk_label": "green", "explanation": "n/a"})
     return AnalysisResult(
         job_id=job_id, status="completed", invoices=invoices,
@@ -174,6 +234,6 @@ async def run_pipeline(
         risk_explanation=risk["explanation"],
         tax_recommendations=final.get("tax_recs", []),
         kosgeb_suggestions=final.get("kosgeb", []),
-        agent_trace=final.get("trace", []),
+        agent_trace=trace,
         created_at=datetime.utcnow(), completed_at=datetime.utcnow(),
     )

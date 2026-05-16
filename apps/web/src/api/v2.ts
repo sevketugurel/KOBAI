@@ -58,6 +58,7 @@ export interface InvoiceData {
 export interface AgentStep {
   agent_name: string;
   action: string;
+  status?: "running" | "completed" | "failed";
   input: Record<string, unknown>;
   output: Record<string, unknown>;
   duration_ms: number;
@@ -114,8 +115,9 @@ export interface InvoiceUploadOut {
 }
 
 export interface AnalyzeRequestV2 {
-  document_ids: string[];
+  document_ids?: string[];
   period?: string | null;
+  include_all_tenant_data?: boolean;
 }
 
 export interface JobStartedOut {

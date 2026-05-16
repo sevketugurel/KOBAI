@@ -10,6 +10,7 @@ class AgentStep(BaseModel):
     model_config = ConfigDict(extra="forbid")
     agent_name: str = Field(description="Ajan kimliği")
     action: str = Field(description="Eylem açıklaması")
+    status: Literal["running", "completed", "failed"] = "completed"
     input: dict[str, Any] = Field(default_factory=dict)
     output: dict[str, Any] = Field(default_factory=dict)
     duration_ms: int = Field(ge=0)

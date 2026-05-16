@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import datetime
+from inspect import signature
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Response, UploadFile, status
@@ -60,7 +61,7 @@ class InvoiceUploadOut(BaseModel):
 
 class AnalyzeRequestV2(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    document_ids: list[str] = Field(min_length=1, max_length=100)
+    document_ids: list[str] = Field(default_factory=list, max_length=100)
     period: str | None = None  # "2025-06" formatı, opsiyonel
     include_all_tenant_data: bool = True
 
@@ -140,10 +141,28 @@ async def upload_invoice(
 async def _run(*, repo: JobRepo, tenant_id: str, job_id: str, document_ids: list[str],
                company_type: str, sector: str, period: str,
                include_all_tenant_data: bool = True) -> None:
+    async def append_trace(step: AgentStep) -> None:
+        try:
+            current = await repo.get_job(tenant_id=tenant_id, job_id=job_id)
+        except JobNotFound:
+            return
+        updated = current.model_copy(
+            update={
+                "status": "processing",
+                "agent_trace": [*current.agent_trace, step],
+            }
+        )
+        await repo.set_job_result(tenant_id=tenant_id, job_id=job_id, result=updated)
+
     try:
-        await repo.update_job_status(tenant_id=tenant_id, job_id=job_id, status="processing")
+        current = await repo.get_job(tenant_id=tenant_id, job_id=job_id)
+        await repo.set_job_result(
+            tenant_id=tenant_id,
+            job_id=job_id,
+            result=current.model_copy(update={"status": "processing"}),
+        )
         invoices = await repo.get_invoices(tenant_id=tenant_id, document_ids=document_ids)
-        if not invoices:
+        if document_ids and not invoices:
             raise ValueError("hiç geçerli fatura bulunamadı (document_ids tenant'a ait olmayabilir)")
         tenant_context: TenantAnalysisContext | None = None
         try:
@@ -157,6 +176,10 @@ async def _run(*, repo: JobRepo, tenant_id: str, job_id: str, document_ids: list
             await get_tenant_rag_indexer().index_context(tenant_context)
         except Exception as e:  # noqa: BLE001
             log.warning("tenant context/RAG hazırlanamadı tenant=%s job=%s: %s", tenant_id, job_id, e)
+        if not invoices and tenant_context is not None:
+            invoices = tenant_context.invoices
+        if not invoices and (tenant_context is None or not tenant_context.has_financial_data()):
+            raise ValueError("Analiz için tenant verisi bulunamadı.")
         kwargs = {
             "invoices": invoices,
             "company_type": company_type,
@@ -168,6 +191,8 @@ async def _run(*, repo: JobRepo, tenant_id: str, job_id: str, document_ids: list
         }
         if tenant_context is not None:
             kwargs["tenant_context"] = tenant_context
+        if "trace_sink" in signature(run_pipeline).parameters:
+            kwargs["trace_sink"] = append_trace
         result = await run_pipeline(**kwargs)
         await repo.set_job_result(tenant_id=tenant_id, job_id=job_id, result=result)
     except Exception as e:  # noqa: BLE001

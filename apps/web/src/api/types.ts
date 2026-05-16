@@ -25,6 +25,7 @@ export interface InvoiceData {
 export interface AgentStep {
   agent_name: string;
   action: string;
+  status?: "running" | "completed" | "failed";
   input: Record<string, unknown>;
   output: Record<string, unknown>;
   duration_ms: number;

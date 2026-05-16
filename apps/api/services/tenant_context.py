@@ -91,6 +91,15 @@ class TenantAnalysisContext(BaseModel):
     def selected_or_all_invoices(self) -> list[InvoiceData]:
         return self.invoices
 
+    def has_financial_data(self) -> bool:
+        return bool(
+            self.invoices
+            or self.bank_transactions
+            or self.pos_transactions
+            or self.tax_calendar_items
+            or self.past_analyses
+        )
+
     def monthly_totals(self) -> list[dict[str, Any]]:
         monthly: dict[str, dict[str, float]] = defaultdict(
             lambda: {
@@ -185,6 +194,15 @@ class TenantAnalysisContext(BaseModel):
             lines.append(f"En yoğun gider tarafları: {s['top_expense_vendors']}.")
         if s["monthly"]:
             lines.append(f"Aylık özet: {s['monthly'][-6:]}.")
+        pending_taxes = [
+            item for item in self.tax_calendar_items if item.status in ("pending", "overdue")
+        ]
+        if pending_taxes:
+            tax_lines = [
+                f"{item.title} ({item.tax_type}, {item.status}, vade {item.due_date}, tutar {_to_float(item.amount):.2f} TRY)"
+                for item in pending_taxes[:10]
+            ]
+            lines.append(f"Bekleyen/gecikmiş vergi detayları: {tax_lines}.")
         if self.past_analyses:
             last = self.past_analyses[0]
             lines.append(

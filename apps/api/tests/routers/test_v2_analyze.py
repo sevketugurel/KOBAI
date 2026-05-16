@@ -222,9 +222,15 @@ def test_analysis_report_returns_tenant_scoped_pdf(client_for, job_repo, mock_pi
     assert forbidden.status_code == 403
 
 
-def test_analyze_with_empty_doc_ids_rejected(client_for) -> None:
+def test_analyze_with_empty_doc_ids_starts_and_fails_without_tenant_data(client_for) -> None:
     r = client_for(USER_A).post("/v2/acme-co/analyze", json={"document_ids": []})
-    assert r.status_code == 422  # Pydantic min_length=1
+    assert r.status_code == 202
+    job_id = r.json()["job_id"]
+    g = client_for(USER_A).get(f"/v2/acme-co/analyze/{job_id}")
+    assert g.status_code == 200
+    body = g.json()
+    assert body["status"] == "failed"
+    assert body["error"] == "Analiz için tenant verisi bulunamadı."
 
 
 def test_analyze_with_foreign_doc_ids_fails(client_for, job_repo, mock_pipeline) -> None:

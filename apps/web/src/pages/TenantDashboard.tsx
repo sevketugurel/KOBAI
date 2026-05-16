@@ -162,7 +162,7 @@ function AnalysisControlPanel({
             <p className="text-xs text-navy-500">
               {isMockMode
                 ? "Mock modda demo analizi belge yüklemeden de başlatılabilir."
-                : "Gerçek analiz için önce tenant'a ait PDF fatura yükleyin."}
+                : "Fatura olmadan da banka, POS ve vergi takvimi verileriyle analiz başlatılabilir."}
             </p>
           ) : (
             uploaded.map((item) => (
@@ -183,7 +183,7 @@ function AnalysisControlPanel({
           <button
             type="button"
             onClick={onStart}
-            disabled={startPending || (!isMockMode && selectedDocumentIds.length === 0)}
+            disabled={startPending}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-navy-700 px-3 text-sm font-medium text-white transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Sparkles size={16} />
@@ -466,11 +466,10 @@ export default function TenantDashboard() {
 
   const start = useMutation({
     mutationFn: async () => {
-      const documentIds =
-        selectedDocumentIds.length > 0 ? selectedDocumentIds : [`mock-${slug}-invoice-doc`];
       return v2.startAnalysis(slug, {
-        document_ids: documentIds,
+        document_ids: selectedDocumentIds,
         period: new Date().toISOString().slice(0, 7),
+        include_all_tenant_data: true,
       });
     },
     onSuccess: (result) => {
