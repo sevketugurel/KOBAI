@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Building2,
@@ -63,10 +63,14 @@ export default function TenantDashboard() {
   const { slug = "" } = useParams<{ slug: string }>();
   const { data, isLoading, isError } = useTenantDashboard(slug);
   const summary = data as DashboardSummary | undefined;
+  const [activityFilter, setActivityFilter] = useState<"all" | DashboardActivity["type"]>("all");
 
   const netFlow = toNumber(summary?.net_flow_this_month);
   const posSales = toNumber(summary?.pos_sales_this_month);
   const sessionId = useMemo(() => getOrCreateSessionId(slug), [slug]);
+  const filteredActivities = (summary?.recent_activities ?? []).filter(
+    (a) => activityFilter === "all" || a.type === activityFilter,
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 space-y-8 animate-fade-in">
@@ -161,7 +165,34 @@ export default function TenantDashboard() {
         </Card>
 
         <Card>
-          <Card.Header title="Son Aktiviteler" subtitle="Banka ve POS hareketleri" />
+          <Card.Header
+            title="Son Aktiviteler"
+            subtitle="Banka, POS ve vergi hareketleri"
+            action={
+              <div className="flex rounded-lg border border-border bg-background p-1">
+                {[
+                  ["all", "Tümü"],
+                  ["bank", "Banka"],
+                  ["pos", "POS"],
+                  ["tax", "Vergi"],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setActivityFilter(key as typeof activityFilter)}
+                    className={
+                      "rounded-md px-2 py-1 text-xs transition-colors " +
+                      (activityFilter === key
+                        ? "bg-navy-900 text-white"
+                        : "text-neutral-600 hover:bg-navy-50")
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            }
+          />
           <Card.Body>
             {isLoading ? (
               <div className="space-y-3">
@@ -169,15 +200,15 @@ export default function TenantDashboard() {
                   <div key={i} className="skeleton h-10" />
                 ))}
               </div>
-            ) : !summary || summary.recent_activities.length === 0 ? (
+            ) : !summary || filteredActivities.length === 0 ? (
               <EmptyState
                 icon={<Building2 size={28} />}
                 title="Aktivite yok"
-                message="Banka veya POS hareketi henüz kaydedilmedi."
+                message="Seçili filtre için hareket bulunmuyor."
               />
             ) : (
               <ul className="space-y-3">
-                {summary.recent_activities.map((a, i) => {
+                {filteredActivities.map((a, i) => {
                   const amount = toNumber(a.amount);
                   const positive = amount >= 0;
                   return (

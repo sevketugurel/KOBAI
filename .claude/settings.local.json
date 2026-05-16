@@ -23,7 +23,13 @@
       "Bash(python -m pytest tests/routers/test_v2_dashboard.py -v)",
       "Bash(pytest tests/routers/test_v2_dashboard.py -v)",
       "Bash(pytest tests/routers/test_v2_pos.py -x --no-header)",
-      "Bash(pytest tests/routers/ tests/services/ -x --no-header -q)"
+      "Bash(pytest tests/routers/ tests/services/ -x --no-header -q)",
+      "Bash(python -m pytest tests/routers/test_v2_analyze.py -x)",
+      "Bash(.venv/bin/pytest tests/routers/test_v2_analyze.py -x)",
+      "Bash(.venv/bin/pytest)",
+      "Bash(.venv/bin/pytest tests/routers/test_v2_dashboard.py::test_dashboard_summary_aggregates_current_month tests/routers/test_v2_pos.py::test_summary_sales_minus_refunds)",
+      "Bash(.venv/bin/pytest tests/services/test_storage.py tests/routers/test_v2_integrations.py tests/routers/test_v2_analyze.py)",
+      "Bash(.venv/bin/pytest tests/services/test_storage.py::test_build_object_path_sanitizes_unsafe_filename -x)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { v2, type TenantOut } from "../api/v2";
+import { isMockMode, v2, type TenantOut } from "../api/v2";
 import { useAuth } from "../auth/AuthContext";
 
 export interface UseTenantResult {
@@ -14,7 +14,7 @@ export interface UseTenantResult {
 /** URL slug'ını alır, /v2/tenants/{slug} sorgular. JWT yoksa idle. */
 export function useTenant(slug: string | undefined): UseTenantResult {
   const { session, loading: authLoading } = useAuth();
-  const enabled = Boolean(slug) && Boolean(session);
+  const enabled = Boolean(slug) && (Boolean(session) || isMockMode);
 
   const q = useQuery({
     queryKey: ["tenant", slug],
@@ -39,6 +39,6 @@ export function useMyTenants() {
   return useQuery({
     queryKey: ["my-tenants"],
     queryFn: v2.listMyTenants,
-    enabled: Boolean(session) && !loading,
+    enabled: (Boolean(session) || isMockMode) && !loading,
   });
 }

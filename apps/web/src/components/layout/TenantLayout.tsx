@@ -1,6 +1,7 @@
 import { Navigate, NavLink, Outlet, useParams } from "react-router-dom";
 
 import { useAuth } from "../../auth/AuthContext";
+import { isMockMode } from "../../api/v2";
 import { useTenant } from "../../hooks/useTenant";
 
 /** /:slug/* altındaki tüm v2 rotaları için guard + tenant context. */
@@ -10,7 +11,7 @@ export default function TenantLayout() {
   const { tenant, loading, status } = useTenant(slug);
 
   if (authLoading) return <FullPage>Yükleniyor…</FullPage>;
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user && !isMockMode) return <Navigate to="/login" replace />;
   if (loading) return <FullPage>Tenant yükleniyor…</FullPage>;
 
   if (status === "forbidden") {
@@ -27,12 +28,14 @@ export default function TenantLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
+      <header className="flex flex-col gap-3 border-b border-border bg-surface px-6 py-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <span className="font-display text-lg">{tenant.display_name}</span>
-          <span className="ml-3 text-xs text-neutral-500">/{tenant.slug}</span>
+          <div className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+            İşletme / {tenant.slug}
+          </div>
+          <span className="font-display text-lg text-navy-900">{tenant.display_name}</span>
         </div>
-        <nav className="flex gap-4 text-sm">
+        <nav className="flex flex-wrap gap-2 text-sm">
           <SidebarLink to={`/${tenant.slug}/dashboard`} label="Dashboard" />
           <SidebarLink to={`/${tenant.slug}/integrations`} label="Entegrasyonlar" />
           <SidebarLink to={`/${tenant.slug}/tax-calendar`} label="Vergi Takvimi" />
@@ -51,7 +54,12 @@ function SidebarLink({ to, label }: { to: string; label: string }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        isActive ? "font-medium text-navy-900" : "text-neutral-600 hover:text-navy-900"
+        [
+          "rounded-full px-3 py-1.5 transition-colors",
+          isActive
+            ? "bg-navy-900 font-medium text-white"
+            : "text-neutral-600 hover:bg-navy-50 hover:text-navy-900",
+        ].join(" ")
       }
     >
       {label}

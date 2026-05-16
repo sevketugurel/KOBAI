@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Send, Sparkles } from "lucide-react";
 import { useV2Chat } from "../../hooks/useV2Chat";
+import { isMockMode } from "../../api/v2";
 import { cn } from "../../lib/utils";
 
 const SAMPLES = [
@@ -17,7 +18,7 @@ interface ChatPanelV2Props {
 }
 
 export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanelV2Props) {
-  const { messages, sendMessage, isStreaming, isLoadingHistory } = useV2Chat({
+  const { messages, sendMessage, isStreaming, isLoadingHistory, error } = useV2Chat({
     slug,
     sessionId,
     jobId,
@@ -69,7 +70,9 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
         ) : messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-navy-600">
-              Örnek sorulardan başlayabilirsiniz.
+              {isMockMode
+                ? "Mock demo verileriyle örnek sorulardan başlayabilirsiniz."
+                : "Doküman yüklenmediyse yanıtlar sınırlı olabilir; örnek sorulardan başlayabilirsiniz."}
             </p>
             <div className="flex flex-wrap gap-2">
               {SAMPLES.map((s) => (
@@ -130,6 +133,12 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
             </div>
           </div>
         )}
+
+        {error ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            AI paneli şu anda yanıt veremiyor. Mock modunda demo yanıtı, gerçek API modunda ise RAG dokümanları ve chat servisi beklenir.
+          </div>
+        ) : null}
 
         <div ref={bottomRef} />
       </div>

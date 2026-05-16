@@ -50,6 +50,24 @@ python scripts/generate_demo_data.py
 
 UI'da: Sürükle-bırak ile birkaç PDF yükleyin → Wizard'ı (Şahıs Şirketi, Gıda & İçecek, Son 6 ay) doldurun → Dashboard'da Kasım ayı stok yüklemesinden kaynaklı negatif nakit uyarısını ve trafik ışığı riskini görün.
 
+### Tenant v2 Mock Demo
+
+Tenant sayfalarını backend/Supabase bağlantısı olmadan deterministik veriyle açmak için web uygulamasını mock modda başlatın:
+
+```bash
+cd apps/web
+VITE_USE_MOCK=true npm run dev
+```
+
+Örnek rotalar:
+
+- `http://localhost:5173/kuzey-market/dashboard`
+- `http://localhost:5173/kuzey-market/integrations`
+- `http://localhost:5173/kuzey-market/tax-calendar`
+- `http://localhost:5173/kuzey-market/pos`
+
+`VITE_USE_MOCK` kapalıyken mevcut v2 API endpointleri ve Supabase oturumu kullanılmaya devam eder.
+
 ## Ajan Mimarisi
 
 | Ajan | Sorumluluk | Çıktı |

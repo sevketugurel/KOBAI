@@ -1,7 +1,9 @@
 /** v2 tenant-aware API çağrıları. v1 client.ts korunur; Faz 1'de paralel yaşar. */
 import { supabase } from "../auth/supabaseClient";
+import { mockV2 } from "./mockV2";
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000";
+export const isMockMode = import.meta.env.VITE_USE_MOCK === "true";
 
 export interface TenantOut {
   id: string;
@@ -117,29 +119,45 @@ async function _multipart<T>(path: string, file: File): Promise<T> {
 
 export const v2 = {
   registerTenant: (payload: TenantCreate) =>
-    _json<TenantOut>("/v2/tenants", { method: "POST", body: JSON.stringify(payload) }),
-  listMyTenants: () => _json<TenantOut[]>("/v2/tenants/me"),
-  getTenant: (slug: string) => _json<TenantOut>(`/v2/tenants/${encodeURIComponent(slug)}`),
+    isMockMode
+      ? mockV2.registerTenant(payload)
+      : _json<TenantOut>("/v2/tenants", { method: "POST", body: JSON.stringify(payload) }),
+  listMyTenants: () =>
+    isMockMode ? mockV2.listMyTenants() : _json<TenantOut[]>("/v2/tenants/me"),
+  getTenant: (slug: string) =>
+    isMockMode
+      ? mockV2.getTenant(slug)
+      : _json<TenantOut>(`/v2/tenants/${encodeURIComponent(slug)}`),
   updateTenant: (slug: string, patch: Partial<Pick<TenantCreate, "display_name" | "sector" | "tax_number">>) =>
-    _json<TenantOut>(`/v2/tenants/${encodeURIComponent(slug)}`, {
-      method: "PUT",
-      body: JSON.stringify(patch),
-    }),
+    isMockMode
+      ? mockV2.updateTenant(slug, patch)
+      : _json<TenantOut>(`/v2/tenants/${encodeURIComponent(slug)}`, {
+          method: "PUT",
+          body: JSON.stringify(patch),
+        }),
   listMembers: (slug: string) =>
-    _json<MembershipOut[]>(`/v2/tenants/${encodeURIComponent(slug)}/members`),
+    isMockMode
+      ? mockV2.listMembers(slug)
+      : _json<MembershipOut[]>(`/v2/tenants/${encodeURIComponent(slug)}/members`),
 
   // Faz 3 — entegrasyonlar
   uploadBankStatement: (slug: string, file: File) =>
-    _multipart<BankImportResult>(
-      `/v2/${encodeURIComponent(slug)}/integrations/bank-statement`,
-      file,
-    ),
+    isMockMode
+      ? mockV2.uploadBankStatement(slug, file)
+      : _multipart<BankImportResult>(
+          `/v2/${encodeURIComponent(slug)}/integrations/bank-statement`,
+          file,
+        ),
   listIntegrations: (slug: string) =>
-    _json<Integration[]>(`/v2/${encodeURIComponent(slug)}/integrations`),
+    isMockMode
+      ? mockV2.listIntegrations(slug)
+      : _json<Integration[]>(`/v2/${encodeURIComponent(slug)}/integrations`),
   listBankTransactions: (slug: string, limit = 100) =>
-    _json<BankTransaction[]>(
-      `/v2/${encodeURIComponent(slug)}/bank-transactions?limit=${limit}`,
-    ),
+    isMockMode
+      ? mockV2.listBankTransactions(slug, limit)
+      : _json<BankTransaction[]>(
+          `/v2/${encodeURIComponent(slug)}/bank-transactions?limit=${limit}`,
+        ),
 
   // Faz 4 — vergi takvimi (PR'da v2 client'a eklenmemişti; restore)
   listTaxCalendar: (slug: string, opts?: { upcomingDays?: number; status?: TaxStatus }) => {
@@ -147,50 +165,65 @@ export const v2 = {
     if (opts?.upcomingDays) q.set("upcoming_days", String(opts.upcomingDays));
     if (opts?.status) q.set("status_filter", opts.status);
     const qs = q.toString();
+    if (isMockMode) return mockV2.listTaxCalendar(slug, opts);
     return _json<TaxCalendarItem[]>(
       `/v2/${encodeURIComponent(slug)}/tax-calendar${qs ? "?" + qs : ""}`,
     );
   },
   patchTaxCalendarItem: (slug: string, itemId: string, patch: TaxCalendarPatch) =>
-    _json<TaxCalendarItem>(
-      `/v2/${encodeURIComponent(slug)}/tax-calendar/${encodeURIComponent(itemId)}`,
-      { method: "PATCH", body: JSON.stringify(patch) },
-    ),
+    isMockMode
+      ? mockV2.patchTaxCalendarItem(slug, itemId, patch)
+      : _json<TaxCalendarItem>(
+          `/v2/${encodeURIComponent(slug)}/tax-calendar/${encodeURIComponent(itemId)}`,
+          { method: "PATCH", body: JSON.stringify(patch) },
+        ),
 
   // Faz 6 — sanal POS
   getPosConfig: (slug: string) =>
-    _json<PosConfigOut>(`/v2/${encodeURIComponent(slug)}/integrations/pos`),
+    isMockMode
+      ? mockV2.getPosConfig(slug)
+      : _json<PosConfigOut>(`/v2/${encodeURIComponent(slug)}/integrations/pos`),
   putPosConfig: (slug: string, payload: PosConfigIn) =>
-    _json<PosConfigOut>(`/v2/${encodeURIComponent(slug)}/integrations/pos`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    }),
+    isMockMode
+      ? mockV2.putPosConfig(slug, payload)
+      : _json<PosConfigOut>(`/v2/${encodeURIComponent(slug)}/integrations/pos`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        }),
   listPosTransactions: (slug: string, limit = 100) =>
-    _json<PosTransaction[]>(
-      `/v2/${encodeURIComponent(slug)}/pos/transactions?limit=${limit}`,
-    ),
+    isMockMode
+      ? mockV2.listPosTransactions(slug, limit)
+      : _json<PosTransaction[]>(
+          `/v2/${encodeURIComponent(slug)}/pos/transactions?limit=${limit}`,
+        ),
   getPosSummary: (slug: string, targetDate?: string) => {
     const qs = targetDate ? `?target_date=${encodeURIComponent(targetDate)}` : "";
+    if (isMockMode) return mockV2.getPosSummary(slug, targetDate);
     return _json<PosDailySummary>(`/v2/${encodeURIComponent(slug)}/pos/summary${qs}`);
   },
 
   // Sprint B — tenant dashboard özeti
   getDashboardSummary: (slug: string) =>
-    _json<DashboardSummary>(
-      `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
-    ),
+    isMockMode
+      ? mockV2.getDashboardSummary(slug)
+      : _json<DashboardSummary>(
+          `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
+        ),
 
   // v2 chat — tenant + session-scoped, SSE
   getChatHistory: (slug: string, sessionId: string, limit = 50) =>
-    _json<ChatMessageV2[]>(
-      `/v2/${encodeURIComponent(slug)}/chat/${encodeURIComponent(sessionId)}/history?limit=${limit}`,
-    ),
+    isMockMode
+      ? mockV2.getChatHistory(slug, sessionId, limit)
+      : _json<ChatMessageV2[]>(
+          `/v2/${encodeURIComponent(slug)}/chat/${encodeURIComponent(sessionId)}/history?limit=${limit}`,
+        ),
   streamChatV2: async (
     slug: string,
     payload: ChatRequestV2,
     onChunk: (text: string) => void,
     signal?: AbortSignal,
   ): Promise<void> => {
+    if (isMockMode) return mockV2.streamChatV2(slug, payload, onChunk, signal);
     const r = await fetch(`${BASE_URL}/v2/${encodeURIComponent(slug)}/chat`, {
       method: "POST",
       headers: {
