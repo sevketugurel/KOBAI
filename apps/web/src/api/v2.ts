@@ -191,6 +191,28 @@ export interface Integration {
   last_error: string | null;
 }
 
+// Faz 7 — event-driven ajan snapshot'ı
+export type AgentName = "nakit_akisi" | "risk" | "mevzuat_rag" | "kosgeb";
+export type AgentSnapshotStatus =
+  | "idle"
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "stale";
+
+export interface AgentSnapshot {
+  agent_name: AgentName;
+  status: AgentSnapshotStatus;
+  input_version_hash: string | null;
+  output: Record<string, unknown> | null;
+  trace: Array<Record<string, unknown>>;
+  missing: string[];
+  error: string | null;
+  last_event: string | null;
+  updated_at: string | null;
+}
+
 async function _multipart<T>(path: string, file: File): Promise<T> {
   const fd = new FormData();
   fd.append("file", file);
@@ -341,6 +363,14 @@ export const v2 = {
       ? mockV2.getDashboardSummary(slug)
       : _json<DashboardSummary>(
           `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
+        ),
+
+  // Faz 7 — event-driven ajan snapshot listesi
+  getAgentSnapshots: (slug: string): Promise<AgentSnapshot[]> =>
+    isMockMode
+      ? Promise.resolve([])
+      : _json<AgentSnapshot[]>(
+          `/v2/tenants/${encodeURIComponent(slug)}/agents/snapshots`,
         ),
 
   // v2 analyze — tenant-scoped invoice upload + LangGraph analysis

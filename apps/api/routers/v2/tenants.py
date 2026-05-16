@@ -21,6 +21,7 @@ from schemas.tenant import (
     TenantOut,
     TenantUpdate,
 )
+from services.agent_events import AgentEvent, get_event_bus
 from services.tax_calendar import build_initial_calendar
 
 import logging
@@ -105,7 +106,15 @@ async def update_tenant(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="yalnızca owner/admin tenant düzenleyebilir",
         )
-    return await repo.update(ctx.tenant_slug, patch)
+    updated = await repo.update(ctx.tenant_slug, patch)
+    changed = patch.model_dump(exclude_unset=True)
+    if changed:
+        await get_event_bus().emit(AgentEvent(
+            tenant_id=ctx.tenant_id,
+            event_type="tenant.profile.updated",
+            payload={"changed": sorted(changed.keys())},
+        ))
+    return updated
 
 
 @router.get("/{slug}/members", response_model=list[MembershipOut])

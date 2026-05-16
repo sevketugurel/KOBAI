@@ -36,6 +36,7 @@ from schemas.tenant import TenantContext
 from services.gemini import GeminiParseError, GeminiService
 from services.pdf_generator import build_analysis_pdf
 from services.tenant_context import TenantAnalysisContext, get_tenant_data_service
+from services.agent_events import AgentEvent, get_event_bus
 from services.tenant_rag import get_tenant_rag_indexer, refresh_tenant_rag
 
 log = logging.getLogger(__name__)
@@ -138,6 +139,17 @@ async def upload_invoice(
         invoice=invoice,
     )
     await _refresh_tenant_rag(tenant_id=ctx.tenant_id)
+    bus = get_event_bus()
+    await bus.emit(AgentEvent(
+        tenant_id=ctx.tenant_id,
+        event_type="invoice.created",
+        payload={"document_id": document_id, "source": "upload"},
+    ))
+    await bus.emit(AgentEvent(
+        tenant_id=ctx.tenant_id,
+        event_type="tenant_rag.indexed",
+        payload={"reason": "invoice"},
+    ))
     return InvoiceUploadOut(document_id=document_id, invoice=invoice)
 
 
@@ -250,6 +262,11 @@ async def start_analysis(
         period=req.period or datetime.utcnow().strftime("%Y-%m"),
         include_all_tenant_data=req.include_all_tenant_data,
     )
+    await get_event_bus().emit(AgentEvent(
+        tenant_id=ctx.tenant_id,
+        event_type="analysis.requested",
+        payload={"job_id": job_id, "period": req.period},
+    ))
     return JobStartedOut(job_id=job_id, status="pending")
 
 

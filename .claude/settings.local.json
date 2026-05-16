@@ -31,7 +31,19 @@
       "Bash(.venv/bin/pytest tests/services/test_storage.py tests/routers/test_v2_integrations.py tests/routers/test_v2_analyze.py)",
       "Bash(.venv/bin/pytest tests/services/test_storage.py::test_build_object_path_sanitizes_unsafe_filename -x)",
       "Bash(python -m pytest tests/agents/test_kosgeb.py -q)",
-      "Bash(bash -n /Users/sevketugurel/Desktop/KOBAI/scripts/e2e_demo.sh)"
+      "Bash(bash -n /Users/sevketugurel/Desktop/KOBAI/scripts/e2e_demo.sh)",
+      "Bash(xargs ls -1)",
+      "Bash(python -m pytest tests/agents/test_readiness.py -x -q)",
+      "Bash(pytest --version)",
+      "Bash(/Users/sevketugurel/Desktop/KOBAI/apps/api/.venv/bin/python -m pytest tests/agents/test_readiness.py -x -q)",
+      "Skill(superpowers:using-superpowers)",
+      "Bash(xargs ls -la)",
+      "Bash(python -m pytest tests/agents/ tests/routers/test_v2_agents.py tests/routers/test_v2_emit_wiring.py -x --tb=short)",
+      "Bash(.venv/bin/python -m pytest tests/agents/ tests/routers/test_v2_agents.py tests/routers/test_v2_emit_wiring.py -x --tb=short)",
+      "Bash(.venv/bin/python -m pytest tests/agents/ tests/routers/test_v2_agents.py tests/routers/test_v2_emit_wiring.py --tb=short)",
+      "Bash(.venv/bin/python -m pytest tests/routers/ -x --tb=short)",
+      "Bash(.venv/bin/python -m pytest tests/ --tb=short -q)",
+      "Skill(superpowers:finishing-a-development-branch)"
     ]
   }
 }
