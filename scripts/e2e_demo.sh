@@ -57,9 +57,14 @@ done
 log "4/7 assertions"
 echo "${RESULT}" | jq -e '.cash_flow_forecast | length >= 1' >/dev/null || fail "cash_flow_forecast boş"
 echo "${RESULT}" | jq -e '.kosgeb_suggestions | length >= 1' >/dev/null || fail "KOSGEB önerisi yok (BUG-1 regresyonu?)"
-echo "${RESULT}" | jq -e '.tax_recommendations | length >= 1' >/dev/null || fail "tax_recommendations boş"
+echo "${RESULT}" | jq -e '.tax_recommendations | length >= 1' >/dev/null || fail "tax_recommendations boş (RAG çalışmadı?)"
 echo "${RESULT}" | jq -e '[.tax_recommendations[] | select(.source != null and .source != "")] | length >= 1' >/dev/null \
   || fail "tax_recommendations citation'sız"
+# 4 ajan × (running+completed) = 8. Daha az ise bir ajan koşmamış demektir.
+TRACE_LEN=$(echo "${RESULT}" | jq '.agent_trace | length')
+[[ "${TRACE_LEN}" -ge 8 ]] || fail "agent_trace=${TRACE_LEN} (>=8 bekleniyordu — ajan eksik)"
+echo "${RESULT}" | jq -e '[.agent_trace[] | select(.status == "failed")] | length == 0' >/dev/null \
+  || fail "agent_trace'te failed adım var (ajan partial fail)"
 
 # 5. Chat — KDV + global mevzuat (BUG-2 regression guard)
 log "5/7 chat"

@@ -166,3 +166,54 @@ def test_demo_load_rejects_non_demo_slug(client: TestClient, monkeypatch) -> Non
     # _FakeTenantRepo yalnız kuzey-market biliyor.
     r = client.post("/v2/baska-tenant/demo/load")
     assert r.status_code in (403, 404)
+
+
+# ── Gerçek pipeline e2e — yalnız RAG/Gemini stub'lı ─────────────────────────
+
+
+@pytest.fixture
+def client_real_pipeline(monkeypatch):
+    """run_pipeline stub'sız çalışır; sadece MevzuatRagAgent (Chroma/Gemini)
+    stub'lanır. nakit_akisi, risk, kosgeb gerçekten koşar.
+    """
+    job_repo = _FakeJobRepo()
+    tenant_repo = _FakeTenantRepo()
+
+    from agents import orchestrator
+    from unittest.mock import AsyncMock, MagicMock
+
+    fake_rag = MagicMock()
+    fake_rag.analyze = AsyncMock(return_value=[{
+        "recommendation": "KDV beyanını ayın 26'sından önce hazırlayın.",
+        "source": "KDV", "article": "KDV Md. 41", "confidence": 4.3,
+        "scope": "global", "action": "review",
+    }])
+    monkeypatch.setattr(orchestrator, "MevzuatRagAgent", lambda **_kw: fake_rag)
+
+    app.dependency_overrides[require_auth] = lambda: AuthPrincipal(user_id=USER_ID, email="x@y")
+    app.dependency_overrides[get_job_repo] = lambda: job_repo
+    app.dependency_overrides[get_tenant_repo] = lambda: tenant_repo
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+def test_real_pipeline_demo_load_completes_with_eight_trace_steps(client_real_pipeline) -> None:
+    """24 demo faturasıyla gerçek nakit/risk/kosgeb çalışır; 4 ajan × 2 adım = 8 trace."""
+    loaded = client_real_pipeline.post("/v2/kuzey-market/demo/load")
+    assert loaded.status_code == 202, loaded.text
+    job_id = loaded.json()["job_id"]
+
+    got = client_real_pipeline.get(f"/v2/kuzey-market/analyze/{job_id}").json()
+    assert got["status"] == "completed", got.get("error")
+
+    assert len(got["cash_flow_forecast"]) == 3
+    assert got["risk_label"] in {"green", "yellow", "red"}
+    assert got["risk_score"] in {1, 3, 5}
+    assert len(got["kosgeb_suggestions"]) >= 1
+    assert len(got["tax_recommendations"]) >= 1
+
+    # 4 ajan × (running + completed) = 8 adım — partial-failure olmadığında.
+    statuses = [s["status"] for s in got["agent_trace"]]
+    assert statuses.count("running") == 4
+    assert statuses.count("completed") == 4
+    assert "failed" not in statuses

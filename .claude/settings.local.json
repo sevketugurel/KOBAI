@@ -30,7 +30,8 @@
       "Bash(.venv/bin/pytest tests/routers/test_v2_dashboard.py::test_dashboard_summary_aggregates_current_month tests/routers/test_v2_pos.py::test_summary_sales_minus_refunds)",
       "Bash(.venv/bin/pytest tests/services/test_storage.py tests/routers/test_v2_integrations.py tests/routers/test_v2_analyze.py)",
       "Bash(.venv/bin/pytest tests/services/test_storage.py::test_build_object_path_sanitizes_unsafe_filename -x)",
-      "Bash(python -m pytest tests/agents/test_kosgeb.py -q)"
+      "Bash(python -m pytest tests/agents/test_kosgeb.py -q)",
+      "Bash(bash -n /Users/sevketugurel/Desktop/KOBAI/scripts/e2e_demo.sh)"
     ]
   }
 }

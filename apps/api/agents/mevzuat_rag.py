@@ -9,6 +9,7 @@ işareti vardır — UI istisnasız kaynağı net göstermeli.
 from __future__ import annotations
 
 import asyncio
+import logging
 from datetime import date
 
 from rag.collections import global_mevzuat_collection, tenant_docs_collection
@@ -16,6 +17,8 @@ from rag.retriever import RagRetriever
 from schemas.invoice import InvoiceData
 from services.gemini import GeminiService
 from services.tenant_context import TenantAnalysisContext
+
+log = logging.getLogger(__name__)
 
 
 def _build_retrievers(tenant_id: str | None) -> list[RagRetriever]:
@@ -184,11 +187,21 @@ class MevzuatRagAgent:
         self._gemini = gemini or GeminiService()
 
     async def _query(self, query: str, *, n_results: int = 3) -> list[dict]:
-        # Paralel sorgu — global ve private aynı anda çalışır
+        # Paralel sorgu — global ve private aynı anda çalışır.
+        # return_exceptions=True: tek retriever (örn. Chroma) çökse bile
+        # diğerlerinin sonuçları kullanılabilir olmalı; aksi halde demo'da
+        # tek bağlantı hatası tüm tax_recommendations'ı sıfırlar.
         batches = await asyncio.gather(
-            *[r.search(query, n_results=n_results) for r in self._retrievers]
+            *[r.search(query, n_results=n_results) for r in self._retrievers],
+            return_exceptions=True,
         )
-        return _merge_by_confidence(list(batches), top_n=n_results)
+        valid: list[list[dict]] = []
+        for b in batches:
+            if isinstance(b, BaseException):
+                log.warning("retriever sorgusu başarısız: %s", b)
+                continue
+            valid.append(b)
+        return _merge_by_confidence(valid, top_n=n_results)
 
     async def search_tax_law(self, query: str) -> list[dict]:
         return await self._query(f"Gelir vergisi: {query}")

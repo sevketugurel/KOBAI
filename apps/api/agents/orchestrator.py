@@ -1,10 +1,13 @@
 """LangGraph orchestrator — parse → cashflow → risk → tax_rag → kosgeb → approve → report."""
+import logging
 import time
 from contextvars import ContextVar
 from datetime import datetime
 from operator import add
 from typing import Awaitable, Callable, TypedDict, Any, Annotated
 from langgraph.graph import StateGraph, END
+
+log = logging.getLogger(__name__)
 
 from schemas.invoice import InvoiceData
 from schemas.analysis import AnalysisResult, AgentStep
@@ -61,6 +64,19 @@ def _running_step(*, agent: str, action: str, job_id: str, tenant_id: str | None
     )
 
 
+def _failed_step(*, agent: str, action: str, t0: float, exc: BaseException,
+                 job_id: str, tenant_id: str | None) -> AgentStep:
+    return AgentStep(
+        agent_name=agent,
+        action=action,
+        status="failed",
+        input={"job_id": job_id, "tenant_id": tenant_id},
+        output={"summary": f"{type(exc).__name__}: {exc}"[:200]},
+        duration_ms=int((time.perf_counter() - t0) * 1000),
+        confidence=1.0,
+    )
+
+
 def _step(
     *,
     agent: str,
@@ -84,18 +100,22 @@ def _step(
 
 async def _cashflow_node(state: AgentState) -> dict:
     action = "3 aylık nakit akışı projeksiyonu oluşturuluyor"
-    running = _running_step(
-        agent="nakit_akisi", action=action,
-        job_id=state.get("job_id", ""), tenant_id=state.get("tenant_id"),
-    )
+    job_id = state.get("job_id", "")
+    tenant_id = state.get("tenant_id")
+    running = _running_step(agent="nakit_akisi", action=action, job_id=job_id, tenant_id=tenant_id)
     await _emit(running)
     t0 = time.perf_counter()
     ctx = state.get("tenant_context")
-    out = await NakitAkisiAgent().forecast(state["invoices"], tenant_context=ctx)
+    try:
+        out = await NakitAkisiAgent().forecast(state["invoices"], tenant_context=ctx)
+    except Exception as exc:  # noqa: BLE001
+        log.exception("nakit_akisi node fail")
+        failed = _failed_step(agent="nakit_akisi", action=action, t0=t0, exc=exc,
+                              job_id=job_id, tenant_id=tenant_id)
+        await _emit(failed)
+        return {"trace": [running, failed]}
     completed = _step(
-        agent="nakit_akisi",
-        action=action,
-        t0=t0,
+        agent="nakit_akisi", action=action, t0=t0,
         input_data={
             "invoice_count": len(state["invoices"]),
             "bank_tx_count": len(ctx.bank_transactions) if ctx else 0,
@@ -109,18 +129,22 @@ async def _cashflow_node(state: AgentState) -> dict:
 
 async def _risk_node(state: AgentState) -> dict:
     action = "Finansal anomaliler ve eşik değerleri kontrol ediliyor"
-    running = _running_step(
-        agent="risk", action=action,
-        job_id=state.get("job_id", ""), tenant_id=state.get("tenant_id"),
-    )
+    job_id = state.get("job_id", "")
+    tenant_id = state.get("tenant_id")
+    running = _running_step(agent="risk", action=action, job_id=job_id, tenant_id=tenant_id)
     await _emit(running)
     t0 = time.perf_counter()
     ctx = state.get("tenant_context")
-    out = await RiskAgent().assess(state["invoices"], state["forecast"], tenant_context=ctx)
+    try:
+        out = await RiskAgent().assess(state["invoices"], state.get("forecast", []), tenant_context=ctx)
+    except Exception as exc:  # noqa: BLE001
+        log.exception("risk node fail")
+        failed = _failed_step(agent="risk", action=action, t0=t0, exc=exc,
+                              job_id=job_id, tenant_id=tenant_id)
+        await _emit(failed)
+        return {"trace": [running, failed]}
     completed = _step(
-        agent="risk",
-        action=action,
-        t0=t0,
+        agent="risk", action=action, t0=t0,
         input_data={
             "invoice_count": len(state["invoices"]),
             "tax_calendar_count": len(ctx.tax_calendar_items) if ctx else 0,
@@ -133,18 +157,22 @@ async def _risk_node(state: AgentState) -> dict:
 
 async def _tax_node(state: AgentState) -> dict:
     action = "Güncel vergi mevzuatı ve teşvikler taranıyor"
-    running = _running_step(
-        agent="mevzuat_rag", action=action,
-        job_id=state.get("job_id", ""), tenant_id=state.get("tenant_id"),
-    )
+    job_id = state.get("job_id", "")
+    tenant_id = state.get("tenant_id")
+    running = _running_step(agent="mevzuat_rag", action=action, job_id=job_id, tenant_id=tenant_id)
     await _emit(running)
     t0 = time.perf_counter()
-    agent = MevzuatRagAgent(tenant_id=state.get("tenant_id"))
-    out = await agent.analyze(state["invoices"], tenant_context=state.get("tenant_context"))
+    try:
+        agent = MevzuatRagAgent(tenant_id=tenant_id)
+        out = await agent.analyze(state["invoices"], tenant_context=state.get("tenant_context"))
+    except Exception as exc:  # noqa: BLE001
+        log.exception("mevzuat_rag node fail")
+        failed = _failed_step(agent="mevzuat_rag", action=action, t0=t0, exc=exc,
+                              job_id=job_id, tenant_id=tenant_id)
+        await _emit(failed)
+        return {"trace": [running, failed]}
     completed = _step(
-        agent="mevzuat_rag",
-        action=action,
-        t0=t0,
+        agent="mevzuat_rag", action=action, t0=t0,
         input_data={"query": "vergi istisnaları ve KDV avantajları"},
         output=f"{len(out)} adet mevzuat önerisi bulundu",
     )
@@ -154,22 +182,26 @@ async def _tax_node(state: AgentState) -> dict:
 
 async def _kosgeb_node(state: AgentState) -> dict:
     action = "Sektörel KOSGEB destekleri ve hibe kriterleri inceleniyor"
-    running = _running_step(
-        agent="kosgeb", action=action,
-        job_id=state.get("job_id", ""), tenant_id=state.get("tenant_id"),
-    )
+    job_id = state.get("job_id", "")
+    tenant_id = state.get("tenant_id")
+    running = _running_step(agent="kosgeb", action=action, job_id=job_id, tenant_id=tenant_id)
     await _emit(running)
     t0 = time.perf_counter()
     ctx = state.get("tenant_context")
-    out = suggest_kosgeb(
-        sector=state["sector"],
-        company_type=state["company_type"],
-        tenant_context=ctx,
-    )
+    try:
+        out = suggest_kosgeb(
+            sector=state["sector"],
+            company_type=state["company_type"],
+            tenant_context=ctx,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.exception("kosgeb node fail")
+        failed = _failed_step(agent="kosgeb", action=action, t0=t0, exc=exc,
+                              job_id=job_id, tenant_id=tenant_id)
+        await _emit(failed)
+        return {"trace": [running, failed]}
     completed = _step(
-        agent="kosgeb",
-        action=action,
-        t0=t0,
+        agent="kosgeb", action=action, t0=t0,
         input_data={
             "sector": state["sector"],
             "type": state["company_type"],

@@ -171,3 +171,46 @@ async def test_analyze_returns_empty_when_all_retrieval_hits_are_empty(six_month
     assert recs == []
     assert fake_retriever.search.await_count == 3
     fake_gemini.generate_text.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_analyze_tolerates_failing_retriever_when_other_succeeds(six_month_invoices):
+    """A2: bir retriever (örn. Chroma erişilemez) hata atsa bile analyze()
+    diğer retriever sonuçlarını kullanmaya devam etmeli. asyncio.gather
+    `return_exceptions=False` ise tek hata her iki tarafı öldürür.
+    """
+    broken_retriever = MagicMock()
+    broken_retriever.search = AsyncMock(side_effect=RuntimeError("chroma unreachable"))
+
+    good_retriever = MagicMock()
+    good_retriever.search = AsyncMock(return_value=[
+        {"text": "KDV beyanı süresi.", "metadata": {"law_name": "KDV"},
+         "source_citation": "KDV Md. 41", "confidence": 4.5, "scope": "global"},
+    ])
+
+    fake_gemini = MagicMock()
+    fake_gemini.generate_text = AsyncMock(return_value="KDV beyanını zamanında yapın.")
+
+    agent = MevzuatRagAgent(
+        retrievers=[broken_retriever, good_retriever],
+        gemini=fake_gemini,
+    )
+
+    # analyze() üç sorgu (KDV/GVK/SGK) çalıştırır; her birinde broken_retriever
+    # hata fırlatır ama good_retriever'ın sonuçları kullanılabilir olmalı.
+    recs = await agent.analyze(six_month_invoices)
+    assert len(recs) >= 1
+    assert recs[0]["scope"] == "global"
+
+
+@pytest.mark.asyncio
+async def test_analyze_returns_empty_when_all_retrievers_fail(six_month_invoices):
+    """A2 (tam çöküş): tüm retriever'lar fail → exception fırlatmadan [] dönmeli."""
+    broken = MagicMock()
+    broken.search = AsyncMock(side_effect=RuntimeError("chroma unreachable"))
+    fake_gemini = MagicMock()
+    fake_gemini.generate_text = AsyncMock()
+    agent = MevzuatRagAgent(retrievers=[broken, broken], gemini=fake_gemini)
+    recs = await agent.analyze(six_month_invoices)
+    assert recs == []
+    fake_gemini.generate_text.assert_not_awaited()
