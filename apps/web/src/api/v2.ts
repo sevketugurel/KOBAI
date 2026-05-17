@@ -104,6 +104,32 @@ export interface RecommendedAction {
   source_agent: string;
 }
 
+export type AIPageKind = "dashboard" | "integrations" | "tax-calendar" | "pos";
+
+export interface AIInsightCard {
+  id: string;
+  title: string;
+  detail: string;
+  tone?: "neutral" | "success" | "warning" | "danger";
+  badge?: string;
+}
+
+export interface AIQuickAction {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
+export interface TenantPageAIView {
+  page: AIPageKind;
+  title: string;
+  subtitle: string;
+  summary: string;
+  insights: AIInsightCard[];
+  quick_actions: AIQuickAction[];
+  sample_prompts: string[];
+}
+
 export interface AnalysisResult {
   job_id: string;
   status: JobStatus;
@@ -294,6 +320,210 @@ async function getTenantWithDemoClaim(slug: string): Promise<TenantOut> {
   }
 }
 
+async function getTenantPageAIViewFallback(
+  slug: string,
+  page: AIPageKind,
+): Promise<TenantPageAIView> {
+  const dashboard = await _json<DashboardSummary>(
+    `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
+  );
+
+  const actionPrompt =
+    dashboard.recommended_actions?.[0]?.detail ??
+    "Bu tenant için bugün hangi finansal aksiyonu öne almalıyım?";
+
+  if (page === "integrations") {
+    const [integrations, transactions] = await Promise.all([
+      _json<Integration[]>(`/v2/${encodeURIComponent(slug)}/integrations`),
+      _json<BankTransaction[]>(
+        `/v2/${encodeURIComponent(slug)}/bank-transactions?limit=20`,
+      ),
+    ]);
+    const failing = integrations.filter((item) => item.last_error);
+    const lastTxn = transactions[0];
+    return {
+      page,
+      title: "AI Entegrasyon Özeti",
+      subtitle: "Bağlantı sağlığı ve veri akışı sinyalleri",
+      summary:
+        failing.length > 0
+          ? `${failing.length} entegrasyonda takip gerektiren hata var.`
+          : "Bağlantılar aktif görünüyor; veri akışı düzenli izlenmeli.",
+      insights: [
+        {
+          id: "integration-health",
+          title: "Bağlantı Sağlığı",
+          detail:
+            failing.length > 0
+              ? `${failing.map((item) => item.provider).join(", ")} için hata veya yetki yenileme ihtiyacı görünüyor.`
+              : `${integrations.filter((item) => item.is_active).length} aktif entegrasyon veri taşıyor.`,
+          tone: failing.length > 0 ? "warning" : "success",
+        },
+        {
+          id: "bank-activity",
+          title: "Son Veri Akışı",
+          detail: lastTxn
+            ? `En son banka hareketi ${lastTxn.description ?? "işlem"} olarak içeri alınmış.`
+            : "Henüz işlenmiş banka hareketi görünmüyor.",
+          tone: lastTxn ? "neutral" : "warning",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "integration-risk",
+          label: "Bağlantı riskini sor",
+          prompt: "Entegrasyonlar içinde bugün en kritik operasyonel risk nedir?",
+        },
+        {
+          id: "sync-priority",
+          label: "Sync önceliği çıkar",
+          prompt: "Bu entegrasyonları bugün hangi sırayla kontrol etmeliyim?",
+        },
+      ],
+      sample_prompts: [
+        "Bugün hangi entegrasyon daha fazla risk taşıyor?",
+        "Banka ve POS veri akışında kopukluk görüyor musun?",
+        "Hangi bağlantıyı önce stabilize etmeliyim?",
+      ],
+    };
+  }
+
+  if (page === "tax-calendar") {
+    const items = await _json<TaxCalendarItem[]>(
+      `/v2/${encodeURIComponent(slug)}/tax-calendar`,
+    );
+    const open = items.filter((item) => item.status !== "paid");
+    const overdue = open.filter((item) => item.status === "overdue");
+    const next = open.sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+    return {
+      page,
+      title: "AI Vergi Öncelikleri",
+      subtitle: "Ödeme sırası ve nakit etkisi",
+      summary: next
+        ? `${next.title} sonraki kritik ödeme adımı olarak öne çıkıyor.`
+        : "Yakın tarihli açık vergi kalemi görünmüyor.",
+      insights: [
+        {
+          id: "tax-next",
+          title: "Sıradaki Kalem",
+          detail: next
+            ? `${next.title} için vade ${next.due_date} ve tutar ${next.amount ?? "0"} ${next.currency}.`
+            : "Tüm vergi kalemleri kapalı görünüyor.",
+          tone: next?.status === "overdue" ? "danger" : "warning",
+        },
+        {
+          id: "tax-overdue",
+          title: "Gecikme Riski",
+          detail:
+            overdue.length > 0
+              ? `${overdue.length} kalem gecikmiş durumda; ceza riskine göre sıralama gerekli.`
+              : "Gecikmiş vergi kalemi görünmüyor.",
+          tone: overdue.length > 0 ? "danger" : "success",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "payment-order",
+          label: "Ödeme sırası üret",
+          prompt: "Vergi kalemlerini nakit etkisine göre hangi sırayla ödemeliyim?",
+        },
+        {
+          id: "tax-risk",
+          label: "Ceza riskini sor",
+          prompt: "Vergi takviminde bugün en çok ceza riski taşıyan kalem hangisi?",
+        },
+      ],
+      sample_prompts: [
+        "Bu hafta hangi vergi ödemesini önce kapatmalıyım?",
+        "Gecikmiş kalemlerin nakit akışına etkisi ne olur?",
+        "KDV ve SGK'yı aynı haftada nasıl planlamalıyım?",
+      ],
+    };
+  }
+
+  if (page === "pos") {
+    const [summary, transactions] = await Promise.all([
+      _json<PosDailySummary>(`/v2/${encodeURIComponent(slug)}/pos/summary`),
+      _json<PosTransaction[]>(
+        `/v2/${encodeURIComponent(slug)}/pos/transactions?limit=20`,
+      ),
+    ]);
+    const pending = transactions.filter((item) => item.status === "pending").length;
+    const refunds = transactions.filter((item) => item.txn_type === "refund").length;
+    return {
+      page,
+      title: "AI POS Analizi",
+      subtitle: "Tahsilat kalitesi ve işlem sinyalleri",
+      summary:
+        Number(summary.net_amount) > 0
+          ? `POS tarafı pozitif net akış üretiyor; işlem kalitesi yine de izlenmeli.`
+          : "POS akışı zayıflıyor; işlem dönüşümü ve iade paterni gözden geçirilmeli.",
+      insights: [
+        {
+          id: "pos-net",
+          title: "Net Tahsilat",
+          detail: `Bugün net POS akışı ${summary.net_amount} TRY seviyesinde.`,
+          tone: Number(summary.net_amount) > 0 ? "success" : "warning",
+        },
+        {
+          id: "pos-quality",
+          title: "İşlem Kalitesi",
+          detail:
+            pending > 0 || refunds > 0
+              ? `${pending} bekleyen ve ${refunds} iade işlemi izlenmeli.`
+              : "Bekleyen veya iade baskısı oluşturan belirgin sinyal görünmüyor.",
+          tone: pending > 0 ? "warning" : "neutral",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "pos-risk",
+          label: "POS riskini sor",
+          prompt: "POS tarafında bugün en kritik tahsilat riski nedir?",
+        },
+        {
+          id: "failed-sales",
+          label: "Kayıp satışları incele",
+          prompt: "Bekleyen veya başarısız POS işlemlerinden ne öğrenmeliyim?",
+        },
+      ],
+      sample_prompts: [
+        "POS işlemlerinde kayıp tahsilat sinyali var mı?",
+        "İade ve bekleyen işlemler ne anlatıyor?",
+        "Bugünkü POS performansına göre hangi aksiyonu almalıyım?",
+      ],
+    };
+  }
+
+  return {
+    page,
+    title: "AI Dashboard Özeti",
+    subtitle: "Risk, aksiyon ve operasyon sinyalleri",
+    summary:
+      dashboard.recommended_actions?.[0]?.detail ??
+      "Bugünün finansal öncelikleri dashboard sinyallerinden türetilir.",
+    insights: (dashboard.recommended_actions ?? []).slice(0, 2).map((action, index) => ({
+      id: `dashboard-${index}`,
+      title: action.title,
+      detail: action.detail,
+      tone: action.priority === "high" ? "danger" : action.priority === "medium" ? "warning" : "success",
+      badge: action.due_hint,
+    })),
+    quick_actions: [
+      {
+        id: "dashboard-priority",
+        label: "Önceliği sor",
+        prompt: actionPrompt,
+      },
+    ],
+    sample_prompts: [
+      "Bugün en kritik finansal riskim ne?",
+      "Bu hafta hangi ödemeleri öne almalıyım?",
+      "Tahsilat ve POS tarafında nerede sorun görüyor musun?",
+    ],
+  };
+}
+
 export const v2 = {
   registerTenant: (payload: TenantCreate) =>
     isMockMode
@@ -386,6 +616,10 @@ export const v2 = {
       : _json<DashboardSummary>(
           `/v2/tenants/${encodeURIComponent(slug)}/dashboard/summary`,
         ),
+  getTenantPageAIView: (slug: string, page: AIPageKind) =>
+    isMockMode
+      ? mockV2.getTenantPageAIView(slug, page)
+      : getTenantPageAIViewFallback(slug, page),
 
   // Faz 7 — event-driven ajan snapshot listesi
   getAgentSnapshots: (slug: string): Promise<AgentSnapshot[]> =>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Send, Sparkles } from "lucide-react";
 import { useV2Chat } from "../../hooks/useV2Chat";
-import { isMockMode } from "../../api/v2";
+import { isMockMode, type AIQuickAction } from "../../api/v2";
 import { cn } from "../../lib/utils";
 
 const SAMPLES = [
@@ -29,9 +29,21 @@ interface ChatPanelV2Props {
   slug: string;
   sessionId: string;
   jobId?: string | null;
+  title?: string;
+  introCopy?: string;
+  samplePrompts?: string[];
+  quickActions?: AIQuickAction[];
 }
 
-export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanelV2Props) {
+export default function ChatPanelV2({
+  slug,
+  sessionId,
+  jobId = null,
+  title = "AI Danışman",
+  introCopy,
+  samplePrompts = SAMPLES,
+  quickActions = [],
+}: ChatPanelV2Props) {
   const { messages, sendMessage, isStreaming, isLoadingHistory, error } = useV2Chat({
     slug,
     sessionId,
@@ -64,7 +76,7 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
           </div>
           <div>
             <div className="font-display font-semibold text-navy-900 text-sm">
-              AI Danışman
+              {title}
             </div>
             <div className="flex items-center gap-1.5 text-2xs text-emerald-600">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />{" "}
@@ -84,12 +96,26 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
         ) : messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-navy-600">
-              {isMockMode
+              {introCopy ?? (isMockMode
                 ? "Mock copilot verisiyle risk, tahsilat ve vergi önceliklerinden başlayabilirsiniz."
-                : "Copilot dashboard, vergi, banka, POS ve ajan snapshot verilerini okuyarak yanıt verir; örnek sorularla başlayabilirsiniz."}
+                : "Copilot dashboard, vergi, banka, POS ve ajan snapshot verilerini okuyarak yanıt verir; örnek sorularla başlayabilirsiniz.")}
             </p>
+            {quickActions.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {quickActions.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={() => sendMessage(action.prompt)}
+                    className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-navy-700 transition-colors hover:bg-navy-50"
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
-              {SAMPLES.map((s) => (
+              {samplePrompts.map((s) => (
                 <button
                   key={s}
                   type="button"

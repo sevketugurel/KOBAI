@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { AlertTriangle, CalendarDays, CheckCircle2, Clock } from "lucide-react";
 
 import { v2, type TaxCalendarItem, type TaxStatus, type TaxType } from "../api/v2";
+import TenantCopilotRail from "../components/copilot/TenantCopilotRail";
 import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
+import { useTenantPageAI } from "../hooks/useTenantPageAI";
+import { getOrCreateSessionId } from "../lib/chatSession";
 import { formatTRY } from "../lib/utils";
 
 const TAX_TYPE_LABELS: Record<TaxType, string> = {
@@ -40,6 +44,8 @@ function daysUntil(iso: string): number {
 export default function TaxCalendarPage() {
   const { slug = "" } = useParams<{ slug: string }>();
   const qc = useQueryClient();
+  const sessionId = useMemo(() => getOrCreateSessionId(slug), [slug]);
+  const aiView = useTenantPageAI(slug, "tax-calendar");
 
   const items = useQuery({
     queryKey: ["tax-calendar", slug],
@@ -67,49 +73,58 @@ export default function TaxCalendarPage() {
   const nextItem = [...pending, ...overdue].sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Vergi Takvimi"
-        subtitle="KDV, Muhtasar, SGK, Geçici Vergi ve yıllık beyannameler için ödeme görünümü."
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="space-y-8">
+        <PageHeader
+          title="Vergi Takvimi"
+          subtitle="KDV, Muhtasar, SGK, Geçici Vergi ve yıllık beyannameler için ödeme görünümü."
+        />
+
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <KpiCard label="Açık Tutar" value={formatTRY(pendingAmount)} icon={<CalendarDays size={20} />} />
+          <KpiCard label="Yaklaşan" value={`${pending.length} kalem`} icon={<Clock size={20} />} />
+          <KpiCard label="Gecikmiş" value={`${overdue.length} kalem`} icon={<AlertTriangle size={20} />} />
+          <KpiCard label="Ödenmiş" value={`${paid.length} kalem`} icon={<CheckCircle2 size={20} />} />
+        </section>
+
+        {nextItem ? (
+          <Card>
+            <Card.Body>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+                    Sıradaki ödeme
+                  </p>
+                  <h2 className="mt-1 font-display text-lg text-navy-900">{nextItem.title}</h2>
+                  <p className="mt-1 text-sm text-neutral-600">
+                    {TAX_TYPE_LABELS[nextItem.tax_type]} · {nextItem.period ?? "Dönem yok"} · {formatTRY(Number(nextItem.amount ?? 0))}
+                  </p>
+                </div>
+                <div className="text-left md:text-right">
+                  <StatusBadge
+                    variant={nextItem.status === "overdue" ? "danger" : "warning"}
+                    label={STATUS_LABELS[nextItem.status]}
+                  />
+                  <p className="mt-2 font-mono text-sm text-navy-900">
+                    {DATE_FMT.format(new Date(nextItem.due_date))}
+                  </p>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        ) : null}
+
+        <TaxSection title="Gecikmiş" rows={overdue} onPaid={(id) => markPaid.mutate({ itemId: id })} />
+        <TaxSection title="Yaklaşan" rows={pending} onPaid={(id) => markPaid.mutate({ itemId: id })} />
+        <TaxSection title="Ödenmiş" rows={paid} muted />
+      </div>
+
+      <TenantCopilotRail
+        slug={slug}
+        sessionId={sessionId}
+        view={aiView.data}
+        loading={aiView.isLoading}
       />
-
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard label="Açık Tutar" value={formatTRY(pendingAmount)} icon={<CalendarDays size={20} />} />
-        <KpiCard label="Yaklaşan" value={`${pending.length} kalem`} icon={<Clock size={20} />} />
-        <KpiCard label="Gecikmiş" value={`${overdue.length} kalem`} icon={<AlertTriangle size={20} />} />
-        <KpiCard label="Ödenmiş" value={`${paid.length} kalem`} icon={<CheckCircle2 size={20} />} />
-      </section>
-
-      {nextItem ? (
-        <Card>
-          <Card.Body>
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-                  Sıradaki ödeme
-                </p>
-                <h2 className="mt-1 font-display text-lg text-navy-900">{nextItem.title}</h2>
-                <p className="mt-1 text-sm text-neutral-600">
-                  {TAX_TYPE_LABELS[nextItem.tax_type]} · {nextItem.period ?? "Dönem yok"} · {formatTRY(Number(nextItem.amount ?? 0))}
-                </p>
-              </div>
-              <div className="text-left md:text-right">
-                <StatusBadge
-                  variant={nextItem.status === "overdue" ? "danger" : "warning"}
-                  label={STATUS_LABELS[nextItem.status]}
-                />
-                <p className="mt-2 font-mono text-sm text-navy-900">
-                  {DATE_FMT.format(new Date(nextItem.due_date))}
-                </p>
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
-      ) : null}
-
-      <TaxSection title="Gecikmiş" rows={overdue} onPaid={(id) => markPaid.mutate({ itemId: id })} />
-      <TaxSection title="Yaklaşan" rows={pending} onPaid={(id) => markPaid.mutate({ itemId: id })} />
-      <TaxSection title="Ödenmiş" rows={paid} muted />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import { CreditCard, RefreshCw, ReceiptText, TrendingUp } from "lucide-react";
 
@@ -10,7 +10,10 @@ import {
   type PosProvider,
   type PosTransaction,
 } from "../api/v2";
+import TenantCopilotRail from "../components/copilot/TenantCopilotRail";
 import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
+import { useTenantPageAI } from "../hooks/useTenantPageAI";
+import { getOrCreateSessionId } from "../lib/chatSession";
 import { formatDateTime, formatTRY } from "../lib/utils";
 
 const DATE_TIME = new Intl.DateTimeFormat("tr-TR", {
@@ -109,6 +112,8 @@ export default function POSPage() {
   }
 
   const c = cfg.data;
+  const sessionId = useMemo(() => getOrCreateSessionId(slug), [slug]);
+  const aiView = useTenantPageAI(slug, "pos");
   const webhookFull = c?.webhook_url
     ? `${window.location.origin.replace(/:\d+$/, ":8000")}${c.webhook_url}`
     : null;
@@ -123,149 +128,158 @@ export default function POSPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Sanal POS"
-        subtitle="Online ödeme terminalleri, günlük özet ve işlem akışı."
-      />
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="space-y-8">
+        <PageHeader
+          title="Sanal POS"
+          subtitle="Online ödeme terminalleri, günlük özet ve işlem akışı."
+        />
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard
-          label="Bugün Net"
-          value={formatTRY(Number(summary.data?.net_amount ?? 0))}
-          icon={<CreditCard size={20} />}
-          loading={summary.isLoading}
-        />
-        <KpiCard
-          label="Haftalık Net"
-          value={formatTRY(weekNet)}
-          icon={<TrendingUp size={20} />}
-          loading={txns.isLoading}
-        />
-        <KpiCard
-          label="Bu Ay POS"
-          value={formatTRY(monthNet)}
-          icon={<ReceiptText size={20} />}
-          loading={txns.isLoading}
-        />
-        <KpiCard
-          label="Başarılı Satış"
-          value={String(saleItems)}
-          icon={<RefreshCw size={20} />}
-          loading={txns.isLoading}
-        />
-      </section>
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <KpiCard
+            label="Bugün Net"
+            value={formatTRY(Number(summary.data?.net_amount ?? 0))}
+            icon={<CreditCard size={20} />}
+            loading={summary.isLoading}
+          />
+          <KpiCard
+            label="Haftalık Net"
+            value={formatTRY(weekNet)}
+            icon={<TrendingUp size={20} />}
+            loading={txns.isLoading}
+          />
+          <KpiCard
+            label="Bu Ay POS"
+            value={formatTRY(monthNet)}
+            icon={<ReceiptText size={20} />}
+            loading={txns.isLoading}
+          />
+          <KpiCard
+            label="Başarılı Satış"
+            value={String(saleItems)}
+            icon={<RefreshCw size={20} />}
+            loading={txns.isLoading}
+          />
+        </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <Card>
-          <Card.Header title="Terminaller" subtitle="Sağlayıcı ve kanal bazlı satış dağılımı" />
-          <Card.Body>
-            <div className="grid gap-3 md:grid-cols-3">
-              {terminals.map((terminal) => (
-                <div key={terminal.name} className="rounded-lg border border-border bg-background p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-semibold text-navy-900">{terminal.name}</h3>
-                      <p className="mt-1 text-xs text-neutral-500">{terminal.provider}</p>
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <Card>
+            <Card.Header title="Terminaller" subtitle="Sağlayıcı ve kanal bazlı satış dağılımı" />
+            <Card.Body>
+              <div className="grid gap-3 md:grid-cols-3">
+                {terminals.map((terminal) => (
+                  <div key={terminal.name} className="rounded-lg border border-border bg-background p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-navy-900">{terminal.name}</h3>
+                        <p className="mt-1 text-xs text-neutral-500">{terminal.provider}</p>
+                      </div>
+                      <StatusBadge
+                        variant={terminal.status === "Aktif" ? "success" : "warning"}
+                        label={terminal.status}
+                        dot={terminal.status === "Aktif"}
+                      />
                     </div>
-                    <StatusBadge
-                      variant={terminal.status === "Aktif" ? "success" : "warning"}
-                      label={terminal.status}
-                      dot={terminal.status === "Aktif"}
-                    />
+                    <p className="mt-4 font-mono text-lg font-semibold text-navy-900">
+                      {formatTRY(terminal.amount)}
+                    </p>
                   </div>
-                  <p className="mt-4 font-mono text-lg font-semibold text-navy-900">
-                    {formatTRY(terminal.amount)}
-                  </p>
+                ))}
+              </div>
+            </Card.Body>
+          </Card>
+
+          <Card>
+            <Card.Header title="Yapılandırma" subtitle="Webhook ve sağlayıcı durumu" />
+            <Card.Body>
+              {cfg.isLoading && <div className="skeleton h-20" />}
+              {c && (
+                <div className="space-y-2 text-sm text-neutral-700">
+                  <p>Sağlayıcı: <strong>{c.provider ?? "—"}</strong></p>
+                  <p>Aktif: <strong>{c.is_active ? "Evet" : "Hayır"}</strong></p>
+                  <p>Son webhook: {c.last_sync_at ? formatDateTime(c.last_sync_at) : "—"}</p>
                 </div>
-              ))}
-            </div>
-          </Card.Body>
-        </Card>
+              )}
+
+              {webhookFull && (
+                <div className="mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  <strong>Webhook URL:</strong>{" "}
+                  <code className="font-mono">{webhookFull}</code>
+                  <br />
+                  HMAC-SHA256, header: <code>X-Pos-Signature</code>
+                </div>
+              )}
+
+              <form onSubmit={onSubmit} className="mt-4 space-y-2 text-sm">
+                <select
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value as PosProvider)}
+                  className="w-full rounded border border-neutral-300 px-2 py-1.5"
+                >
+                  <option value="iyzico_checkout">iyzico Checkout</option>
+                  <option value="craftgate">Craftgate</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="API Key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  required={!isMockMode}
+                  className="w-full rounded border border-neutral-300 px-2 py-1.5"
+                />
+                <input
+                  type="password"
+                  placeholder="Secret Key"
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value)}
+                  required={!isMockMode}
+                  className="w-full rounded border border-neutral-300 px-2 py-1.5"
+                />
+                <input
+                  type="text"
+                  placeholder="Webhook Secret (8-128 karakter)"
+                  value={webhookSecret}
+                  onChange={(e) => setWebhookSecret(e.target.value)}
+                  required={!isMockMode}
+                  minLength={8}
+                  className="w-full rounded border border-neutral-300 px-2 py-1.5 font-mono"
+                />
+                {okMsg && <p className="text-emerald-700">{okMsg}</p>}
+                {err && <p className="text-red-600">{err}</p>}
+                <Button
+                  type="submit"
+                  loading={save.isPending}
+                  size="sm"
+                >
+                  Kaydet
+                </Button>
+              </form>
+            </Card.Body>
+          </Card>
+        </section>
 
         <Card>
-          <Card.Header title="Yapılandırma" subtitle="Webhook ve sağlayıcı durumu" />
+          <Card.Header title="Son İşlemler" subtitle="Satış, iade ve bekleyen POS hareketleri" />
           <Card.Body>
-        {cfg.isLoading && <div className="skeleton h-20" />}
-        {c && (
-          <div className="space-y-2 text-sm text-neutral-700">
-            <p>Sağlayıcı: <strong>{c.provider ?? "—"}</strong></p>
-            <p>Aktif: <strong>{c.is_active ? "Evet" : "Hayır"}</strong></p>
-            <p>Son webhook: {c.last_sync_at ? formatDateTime(c.last_sync_at) : "—"}</p>
-          </div>
-        )}
-
-        {webhookFull && (
-          <div className="mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-            <strong>Webhook URL:</strong>{" "}
-            <code className="font-mono">{webhookFull}</code>
-            <br />
-            HMAC-SHA256, header: <code>X-Pos-Signature</code>
-          </div>
-        )}
-
-        <form onSubmit={onSubmit} className="mt-4 space-y-2 text-sm">
-          <select
-            value={provider}
-            onChange={(e) => setProvider(e.target.value as PosProvider)}
-            className="w-full rounded border border-neutral-300 px-2 py-1.5"
-          >
-            <option value="iyzico_checkout">iyzico Checkout</option>
-            <option value="craftgate">Craftgate</option>
-          </select>
-          <input
-            type="text"
-            placeholder="API Key"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            required={!isMockMode}
-            className="w-full rounded border border-neutral-300 px-2 py-1.5"
-          />
-          <input
-            type="password"
-            placeholder="Secret Key"
-            value={secretKey}
-            onChange={(e) => setSecretKey(e.target.value)}
-            required={!isMockMode}
-            className="w-full rounded border border-neutral-300 px-2 py-1.5"
-          />
-          <input
-            type="text"
-            placeholder="Webhook Secret (8-128 karakter)"
-            value={webhookSecret}
-            onChange={(e) => setWebhookSecret(e.target.value)}
-            required={!isMockMode}
-            minLength={8}
-            className="w-full rounded border border-neutral-300 px-2 py-1.5 font-mono"
-          />
-          {okMsg && <p className="text-emerald-700">{okMsg}</p>}
-          {err && <p className="text-red-600">{err}</p>}
-          <Button
-            type="submit"
-            loading={save.isPending}
-            size="sm"
-          >
-            Kaydet
-          </Button>
-        </form>
+            {txns.isLoading && <div className="skeleton h-48" />}
+            {txns.data && txns.data.length === 0 && (
+              <EmptyState
+                icon={<CreditCard size={32} />}
+                title="Henüz işlem yok"
+                message="Webhook üzerinden gelen POS hareketleri burada listelenir."
+              />
+            )}
+            {txns.data && txns.data.length > 0 && <TxTable rows={txns.data} />}
           </Card.Body>
         </Card>
-      </section>
+      </div>
 
-      <Card>
-        <Card.Header title="Son İşlemler" subtitle="Satış, iade ve bekleyen POS hareketleri" />
-        <Card.Body>
-        {txns.isLoading && <div className="skeleton h-48" />}
-        {txns.data && txns.data.length === 0 && (
-          <EmptyState
-            icon={<CreditCard size={32} />}
-            title="Henüz işlem yok"
-            message="Webhook üzerinden gelen POS hareketleri burada listelenir."
-          />
-        )}
-        {txns.data && txns.data.length > 0 && <TxTable rows={txns.data} />}
-        </Card.Body>
-      </Card>
+      <TenantCopilotRail
+        slug={slug}
+        sessionId={sessionId}
+        view={aiView.data}
+        loading={aiView.isLoading}
+      />
     </div>
   );
 }

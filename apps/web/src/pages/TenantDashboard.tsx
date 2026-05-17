@@ -39,6 +39,7 @@ import ChatPanelV2 from "../components/chat/ChatPanelV2";
 import AgentTrace from "../components/dashboard/AgentTrace";
 import { useTenantDashboard } from "../hooks/useTenantDashboard";
 import { useAgentSnapshots, getSnapshot } from "../hooks/useAgentSnapshots";
+import { getOrCreateSessionId } from "../lib/chatSession";
 import type { AgentSnapshot } from "../api/v2";
 import { cn, formatDate, formatDateTime, formatRelative, formatTRY } from "../lib/utils";
 import { isMockMode, v2 } from "../api/v2";
@@ -70,17 +71,6 @@ function activityIcon(type: DashboardActivity["type"]) {
   if (type === "bank") return <Building2 size={16} />;
   if (type === "pos") return <CreditCard size={16} />;
   return <Calendar size={16} />;
-}
-
-function getOrCreateSessionId(slug: string): string {
-  if (typeof window === "undefined" || !slug) return "default";
-  const key = `kobai.chat.session.${slug}`;
-  let id = window.localStorage.getItem(key);
-  if (!id) {
-    id = (window.crypto?.randomUUID?.() ?? `s-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    window.localStorage.setItem(key, id);
-  }
-  return id;
 }
 
 function getStoredJobId(slug: string): string | null {

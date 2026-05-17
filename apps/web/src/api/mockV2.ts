@@ -1,4 +1,7 @@
 import type {
+  AIPageKind,
+  AIQuickAction,
+  AIInsightCard,
   BankImportResult,
   BankTransaction,
   ChatMessageV2,
@@ -18,6 +21,7 @@ import type {
   TaxCalendarItem,
   TaxCalendarPatch,
   TaxStatus,
+  TenantPageAIView,
   TenantCreate,
   TenantOut,
 } from "./v2";
@@ -467,6 +471,200 @@ function mockAnalysis(slug: string, jobId = `mock-job-${slug}`): AnalysisResult 
   };
 }
 
+function pageAIView(slug: string, page: AIPageKind): TenantPageAIView {
+  const dashboard = dashboardSummary(slug);
+  const taxes = taxCalendar(slug);
+  const integrationsRows = integrations(slug);
+  const posRows = posTransactions(slug);
+  const bankRows = bankTransactions(slug);
+
+  const basePrompts = {
+    dashboard: [
+      "Bugün en kritik finansal riskim ne?",
+      "Bu hafta hangi ödemeleri öne almalıyım?",
+      "Tahsilat ve POS tarafında nerede sorun görüyor musun?",
+    ],
+    integrations: [
+      "Bugün hangi entegrasyon daha fazla risk taşıyor?",
+      "Banka ve POS veri akışında kopukluk görüyor musun?",
+      "Hangi bağlantıyı önce stabilize etmeliyim?",
+    ],
+    "tax-calendar": [
+      "Bu hafta hangi vergi ödemesini önce kapatmalıyım?",
+      "Gecikmiş kalemlerin nakit akışına etkisi ne olur?",
+      "KDV ve SGK'yı aynı haftada nasıl planlamalıyım?",
+    ],
+    pos: [
+      "POS işlemlerinde kayıp tahsilat sinyali var mı?",
+      "İade ve bekleyen işlemler ne anlatıyor?",
+      "Bugünkü POS performansına göre hangi aksiyonu almalıyım?",
+    ],
+  } satisfies Record<AIPageKind, string[]>;
+
+  if (page === "integrations") {
+    const failing = integrationsRows.filter((item) => item.last_error);
+    const lastImport = bankRows[0];
+    const insights: AIInsightCard[] = [
+      {
+        id: "integration-health",
+        title: "Bağlantı Sağlığı",
+        detail:
+          failing.length > 0
+            ? `${failing.map((item) => item.provider).join(", ")} bağlantısında müdahale gerektiren durum var.`
+            : `${integrationsRows.filter((item) => item.is_active).length} aktif servis düzenli veri akışı sağlıyor.`,
+        tone: failing.length > 0 ? "warning" : "success",
+      },
+      {
+        id: "bank-sync",
+        title: "Son Veri Akışı",
+        detail: lastImport
+          ? `${lastImport.description ?? "Banka hareketi"} son import zincirinde içeri alınmış görünüyor.`
+          : "Henüz banka import verisi görünmüyor.",
+        tone: lastImport ? "neutral" : "warning",
+      },
+    ];
+    const quickActions: AIQuickAction[] = [
+      {
+        id: "integration-priority",
+        label: "Kontrol sırası",
+        prompt: "Bu entegrasyonları bugün hangi sırayla kontrol etmeliyim?",
+      },
+      {
+        id: "integration-risk",
+        label: "Riski özetle",
+        prompt: "Entegrasyonlarda bugün en kritik operasyonel risk nedir?",
+      },
+    ];
+    return {
+      page,
+      title: "AI Entegrasyon Özeti",
+      subtitle: "Bağlantı sağlığı ve veri akışı sinyalleri",
+      summary:
+        failing.length > 0
+          ? "Bir veya daha fazla bağlantıda takip gerektiren sinyal var."
+          : "Bağlantılar çalışıyor; veri tazeliği ve hata sinyalleri normal aralıkta.",
+      insights,
+      quick_actions: quickActions,
+      sample_prompts: basePrompts[page],
+    };
+  }
+
+  if (page === "tax-calendar") {
+    const open = taxes.filter((item) => item.status !== "paid");
+    const overdue = open.filter((item) => item.status === "overdue");
+    const next = [...open].sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+    return {
+      page,
+      title: "AI Vergi Öncelikleri",
+      subtitle: "Ödeme sırası ve ceza baskısı",
+      summary: next
+        ? `${next.title} yakın vade baskısı nedeniyle ilk sıraya alınmalı.`
+        : "Açık vergi yükümlülüğü görünmüyor.",
+      insights: [
+        {
+          id: "tax-next",
+          title: "Sıradaki Kritik Kalem",
+          detail: next
+            ? `${next.title} için ${next.due_date} vadeli ${next.amount} ${next.currency} ödeme bekleniyor.`
+            : "Açık kalem yok.",
+          tone: next?.status === "overdue" ? "danger" : "warning",
+        },
+        {
+          id: "tax-overdue",
+          title: "Gecikme Riski",
+          detail:
+            overdue.length > 0
+              ? `${overdue.length} kalem gecikmiş; nakit uygun olsa da önce ceza riski azaltılmalı.`
+              : "Gecikmiş vergi kalemi görünmüyor.",
+          tone: overdue.length > 0 ? "danger" : "success",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "tax-order",
+          label: "Ödeme sırası",
+          prompt: "Vergi kalemlerini nakit etkisine göre hangi sırayla ödemeliyim?",
+        },
+        {
+          id: "tax-penalty",
+          label: "Ceza riski",
+          prompt: "Vergi takviminde bugün en çok ceza riski taşıyan kalem hangisi?",
+        },
+      ],
+      sample_prompts: basePrompts[page],
+    };
+  }
+
+  if (page === "pos") {
+    const pending = posRows.filter((item) => item.status === "pending").length;
+    const refunds = posRows.filter((item) => item.txn_type === "refund").length;
+    const summary = posSummary(slug);
+    return {
+      page,
+      title: "AI POS Analizi",
+      subtitle: "Tahsilat kalitesi ve işlem performansı",
+      summary:
+        Number(summary.net_amount) > 0
+          ? "POS akışı pozitif; yine de bekleyen ve iade paternleri izlenmeli."
+          : "POS performansı beklenen seviyenin altında; kanal kalitesi gözden geçirilmeli.",
+      insights: [
+        {
+          id: "pos-net",
+          title: "Net Tahsilat",
+          detail: `Bugünkü net POS akışı ${summary.net_amount} TRY seviyesinde.`,
+          tone: Number(summary.net_amount) > 0 ? "success" : "warning",
+        },
+        {
+          id: "pos-quality",
+          title: "İşlem Kalitesi",
+          detail:
+            pending > 0 || refunds > 0
+              ? `${pending} bekleyen ve ${refunds} iade işlemi dönüşüm kaybı sinyali veriyor.`
+              : "İşlem akışında belirgin kalite sorunu görünmüyor.",
+          tone: pending > 0 ? "warning" : "neutral",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "pos-risk",
+          label: "Riski özetle",
+          prompt: "POS tarafında bugün en kritik tahsilat riski nedir?",
+        },
+        {
+          id: "pos-conversion",
+          label: "Dönüşümü incele",
+          prompt: "Bekleyen veya iade işlemlerine göre hangi aksiyonu almalıyım?",
+        },
+      ],
+      sample_prompts: basePrompts[page],
+    };
+  }
+
+  return {
+    page,
+    title: "AI Dashboard Özeti",
+    subtitle: "Risk, aksiyon ve operasyon sinyalleri",
+    summary:
+      dashboard.recommended_actions?.[0]?.detail ??
+      "Dashboard sinyalleri yeni aksiyon ürettikçe bu alan güncellenir.",
+    insights: (dashboard.recommended_actions ?? []).slice(0, 2).map((action, index) => ({
+      id: `dashboard-${index}`,
+      title: action.title,
+      detail: action.detail,
+      tone: action.priority === "high" ? "danger" : action.priority === "medium" ? "warning" : "success",
+      badge: action.due_hint,
+    })),
+    quick_actions: [
+      {
+        id: "dashboard-priority",
+        label: "Önceliği sor",
+        prompt: "Bugün en kritik finansal önceliği tek cümlede özetler misin?",
+      },
+    ],
+    sample_prompts: basePrompts[page],
+  };
+}
+
 export const mockV2 = {
   registerTenant: async (payload: TenantCreate): Promise<TenantOut> => tenant(payload.slug),
   listMyTenants: async (): Promise<TenantOut[]> => [tenant("kuzey-market"), tenant("atlas-mobilya")],
@@ -541,6 +739,8 @@ export const mockV2 = {
   getPosSummary: async (slug: string, targetDate?: string): Promise<PosDailySummary> =>
     posSummary(slug, targetDate ?? MOCK_TODAY),
   getDashboardSummary: async (slug: string): Promise<DashboardSummary> => dashboardSummary(slug),
+  getTenantPageAIView: async (slug: string, page: AIPageKind): Promise<TenantPageAIView> =>
+    pageAIView(slug, page),
   uploadInvoice: async (slug: string, _file?: File): Promise<InvoiceUploadOut> => ({
     document_id: `${tenantId(slug)}_invoice_doc`,
     invoice: mockInvoice(slug),

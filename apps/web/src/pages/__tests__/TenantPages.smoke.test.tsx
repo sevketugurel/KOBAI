@@ -181,7 +181,75 @@ const mocks = vi.hoisted(() => {
     completed_at: "2026-05-16T09:00:00Z",
     error: null,
   };
-  return { tenantId, taxes, posTransactions, integrations, bankTransactions, dashboard, posSummary, analysis };
+  const pageAI = {
+    integrations: {
+      page: "integrations",
+      title: "AI Entegrasyon Özeti",
+      subtitle: "Bağlantı sağlığı ve veri akışı sinyalleri",
+      summary: "Bağlantılar çalışıyor; veri tazeliği ve hata sinyalleri normal aralıkta.",
+      insights: [
+        {
+          id: "integration-health",
+          title: "Bağlantı Sağlığı",
+          detail: "2 aktif servis düzenli veri akışı sağlıyor.",
+          tone: "success",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "integration-priority",
+          label: "Kontrol sırası",
+          prompt: "Bu entegrasyonları bugün hangi sırayla kontrol etmeliyim?",
+        },
+      ],
+      sample_prompts: ["Bugün hangi entegrasyon daha fazla risk taşıyor?"],
+    },
+    "tax-calendar": {
+      page: "tax-calendar",
+      title: "AI Vergi Öncelikleri",
+      subtitle: "Ödeme sırası ve ceza baskısı",
+      summary: "KDV Beyannamesi yakın vade baskısı nedeniyle ilk sıraya alınmalı.",
+      insights: [
+        {
+          id: "tax-next",
+          title: "Sıradaki Kritik Kalem",
+          detail: "KDV Beyannamesi için 2026-05-26 vadeli ödeme bekleniyor.",
+          tone: "warning",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "tax-order",
+          label: "Ödeme sırası",
+          prompt: "Vergi kalemlerini nakit etkisine göre hangi sırayla ödemeliyim?",
+        },
+      ],
+      sample_prompts: ["Bu hafta hangi vergi ödemesini önce kapatmalıyım?"],
+    },
+    pos: {
+      page: "pos",
+      title: "AI POS Analizi",
+      subtitle: "Tahsilat kalitesi ve işlem performansı",
+      summary: "POS akışı pozitif; yine de bekleyen ve iade paternleri izlenmeli.",
+      insights: [
+        {
+          id: "pos-net",
+          title: "Net Tahsilat",
+          detail: "Bugünkü net POS akışı 750.00 TRY seviyesinde.",
+          tone: "success",
+        },
+      ],
+      quick_actions: [
+        {
+          id: "pos-risk",
+          label: "Riski özetle",
+          prompt: "POS tarafında bugün en kritik tahsilat riski nedir?",
+        },
+      ],
+      sample_prompts: ["POS işlemlerinde kayıp tahsilat sinyali var mı?"],
+    },
+  };
+  return { tenantId, taxes, posTransactions, integrations, bankTransactions, dashboard, posSummary, analysis, pageAI };
 });
 
 vi.mock("../../auth/AuthContext", () => ({
@@ -204,6 +272,10 @@ vi.mock("../../api/v2", () => ({
     downloadAnalysisReport: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
     getChatHistory: vi.fn().mockResolvedValue([]),
     streamChatV2: vi.fn(),
+    getTenantPageAIView: vi.fn().mockImplementation(
+      (_slug: string, page: "integrations" | "tax-calendar" | "pos") =>
+        Promise.resolve(mocks.pageAI[page]),
+    ),
     listIntegrations: vi.fn().mockResolvedValue(mocks.integrations),
     listBankTransactions: vi.fn().mockResolvedValue(mocks.bankTransactions),
     uploadBankStatement: vi.fn(),
@@ -267,6 +339,7 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByRole("heading", { name: "Entegrasyonlar" })).toBeInTheDocument();
     expect(await screen.findByText("iyzico Checkout")).toBeInTheDocument();
     expect(await screen.findByText("Tahsilat")).toBeInTheDocument();
+    expect(await screen.findByText("AI Entegrasyon Özeti")).toBeInTheDocument();
   });
 
   it("renders tax calendar with pending rows", async () => {
@@ -274,6 +347,7 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByRole("heading", { name: "Vergi Takvimi" })).toBeInTheDocument();
     expect(await screen.findAllByText("KDV Beyannamesi")).not.toHaveLength(0);
     expect(screen.getByText("SGK Prim Ödemesi")).toBeInTheDocument();
+    expect(await screen.findByText("AI Vergi Öncelikleri")).toBeInTheDocument();
   });
 
   it("renders POS with summary and transactions", async () => {
@@ -281,6 +355,7 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByRole("heading", { name: "Sanal POS" })).toBeInTheDocument();
     expect(await screen.findByText("Web Checkout")).toBeInTheDocument();
     expect(await screen.findByText("Satış")).toBeInTheDocument();
+    expect(await screen.findByText("AI POS Analizi")).toBeInTheDocument();
   });
 
   it("keeps dashboard POS and tax numbers consistent with source page data", () => {
