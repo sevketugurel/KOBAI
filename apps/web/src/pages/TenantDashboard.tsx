@@ -44,10 +44,13 @@ import { cn, formatDate, formatDateTime, formatRelative, formatTRY } from "../li
 import { isMockMode, v2 } from "../api/v2";
 import type {
   AnalysisResult,
+  RecommendedAction,
   DashboardActivity,
   DashboardSummary,
   InvoiceUploadOut,
   RiskLabel,
+  RiskPriority,
+  RiskTimeHorizon,
   TaxCalendarItem,
 } from "../api/v2";
 
@@ -100,6 +103,27 @@ function riskCopy(label?: RiskLabel) {
 
 function confidenceLabel(value: number) {
   return `${Math.round(value * 20)}% güven`;
+}
+
+function priorityCopy(priority?: RiskPriority) {
+  if (priority === "high") return { label: "Yüksek", className: "bg-red-50 text-red-700 border-red-200" };
+  if (priority === "low") return { label: "Düşük", className: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  return { label: "Orta", className: "bg-amber-50 text-amber-700 border-amber-200" };
+}
+
+function horizonCopy(horizon?: RiskTimeHorizon) {
+  if (horizon === "immediate") return "Hemen";
+  if (horizon === "this_month") return "Bu ay";
+  return "Bu hafta";
+}
+
+function sourceAgentLabel(sourceAgent: string) {
+  if (sourceAgent === "tax_calendar") return "Vergi Takvimi";
+  if (sourceAgent === "collections_agent") return "Tahsilat Ajanı";
+  if (sourceAgent === "supplier_dependency_agent") return "Tedarikçi Ajanı";
+  if (sourceAgent === "margin_agent") return "Marj Ajanı";
+  if (sourceAgent === "risk") return "Risk Ajanı";
+  return sourceAgent;
 }
 
 function AnalysisBadge({ analysis }: { analysis?: AnalysisResult }) {
@@ -293,21 +317,33 @@ function CashFlowPanel({
 function RiskPanel({
   analysis,
   snapshot,
+  snapshotLoading,
 }: {
   analysis?: AnalysisResult;
   snapshot?: AgentSnapshot;
+  snapshotLoading: boolean;
 }) {
   const snapshotOutput =
     snapshot?.status === "completed" && snapshot.output
       ? (snapshot.output as {
           label?: RiskLabel;
           score?: number;
+          risk_label?: RiskLabel;
+          risk_score?: number;
           explanation?: string;
+          risk_key_drivers?: string[];
+          risk_recommended_actions?: RecommendedAction[];
+          risk_priority?: RiskPriority;
+          risk_time_horizon?: RiskTimeHorizon;
         })
       : null;
-  const label = snapshotOutput?.label ?? analysis?.risk_label;
-  const score = snapshotOutput?.score ?? analysis?.risk_score;
+  const label = snapshotOutput?.risk_label ?? snapshotOutput?.label ?? analysis?.risk_label;
+  const score = snapshotOutput?.risk_score ?? snapshotOutput?.score ?? analysis?.risk_score;
   const explanation = snapshotOutput?.explanation ?? analysis?.risk_explanation;
+  const keyDrivers = snapshotOutput?.risk_key_drivers ?? analysis?.risk_key_drivers ?? [];
+  const actions = snapshotOutput?.risk_recommended_actions ?? analysis?.risk_recommended_actions ?? [];
+  const priority = snapshotOutput?.risk_priority ?? analysis?.risk_priority;
+  const timeHorizon = snapshotOutput?.risk_time_horizon ?? analysis?.risk_time_horizon;
   const risk = riskCopy(label);
   const hasData = label != null || score != null || explanation;
   const missingCta = !hasData ? <AgentMissingCTA snapshot={snapshot} /> : null;
@@ -315,22 +351,125 @@ function RiskPanel({
     <Card>
       <Card.Header title="Risk Değerlendirmesi" subtitle="Risk ajanı skoru ve açıklaması" />
       <Card.Body className="space-y-4">
-        {missingCta ?? (
-          <>
-            <div className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-2", risk.className)}>
-              {label === "green" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
-              <span className="text-sm font-semibold">{risk.label} Risk</span>
-            </div>
-            <div>
-              <p className="font-mono text-4xl font-semibold text-navy-900">
-                {score ?? "-"}
-                <span className="text-base text-navy-400">/5</span>
-              </p>
-              <p className="mt-2 text-sm leading-6 text-navy-600">
-                {explanation ?? "Analiz tamamlandığında dönem risk açıklaması burada gösterilir."}
-              </p>
-            </div>
-          </>
+        {snapshotLoading ? (
+          <div className="space-y-3">
+            <div className="skeleton h-10 w-28" />
+            <div className="skeleton h-12 w-24" />
+            <div className="skeleton h-20" />
+          </div>
+        ) : null}
+        {!snapshotLoading
+          ? (
+              missingCta ?? (
+                <>
+                  <div className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-2", risk.className)}>
+                    {label === "green" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
+                    <span className="text-sm font-semibold">{risk.label} Risk</span>
+                  </div>
+                  <div>
+                    <p className="font-mono text-4xl font-semibold text-navy-900">
+                      {score ?? "-"}
+                      <span className="text-base text-navy-400">/5</span>
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-navy-600">
+                      {explanation ?? "Analiz tamamlandığında dönem risk açıklaması burada gösterilir."}
+                    </p>
+                  </div>
+                  {(priority || timeHorizon) ? (
+                    <div className="flex flex-wrap gap-2">
+                      {priority ? (
+                        <span className={cn("badge border", priorityCopy(priority).className)}>
+                          Öncelik: {priorityCopy(priority).label}
+                        </span>
+                      ) : null}
+                      {timeHorizon ? (
+                        <span className="badge bg-navy-50 text-navy-700">
+                          Zaman: {horizonCopy(timeHorizon)}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {keyDrivers.length > 0 ? (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-navy-500">
+                        Ana Sürücüler
+                      </p>
+                      <ul className="mt-2 space-y-2">
+                        {keyDrivers.slice(0, 3).map((driver) => (
+                          <li key={driver} className="rounded-lg bg-surface-muted px-3 py-2 text-sm text-navy-700">
+                            {driver}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {actions.length > 0 ? (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-navy-500">
+                        Önerilen Aksiyonlar
+                      </p>
+                      <ul className="mt-2 space-y-2">
+                        {actions.slice(0, 2).map((action) => (
+                          <li key={action.title} className="rounded-lg border border-border px-3 py-2">
+                            <p className="text-sm font-medium text-navy-900">{action.title}</p>
+                            <p className="mt-1 text-xs leading-5 text-navy-600">{action.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </>
+              )
+            )
+          : null}
+      </Card.Body>
+    </Card>
+  );
+}
+
+function RecommendedActionsPanel({
+  actions,
+  isLoading,
+}: {
+  actions: RecommendedAction[];
+  isLoading: boolean;
+}) {
+  return (
+    <Card>
+      <Card.Header
+        title="AI'nin Bugün Dikkat Çektiği Konular"
+        subtitle="Risk ve operasyon sinyallerinden türetilen ilk aksiyonlar"
+      />
+      <Card.Body>
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="skeleton h-20" />
+            ))}
+          </div>
+        ) : actions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-surface-muted/70 px-4 py-4 text-sm text-navy-600">
+            Copilot bugün için yeni bir aksiyon önermedi. Dashboard ve ajan snapshot verileri geldikçe burası güncellenir.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {actions.map((action) => {
+              const priority = priorityCopy(action.priority);
+              return (
+                <article key={`${action.source_agent}-${action.title}`} className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold text-navy-900">{action.title}</h3>
+                    <span className={cn("badge border", priority.className)}>{priority.label}</span>
+                    <span className="badge bg-navy-50 text-navy-700">{action.due_hint}</span>
+                    <span className="badge bg-surface-muted text-navy-700">
+                      {sourceAgentLabel(action.source_agent)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-navy-600">{action.detail}</p>
+                </article>
+              );
+            })}
+          </div>
         )}
       </Card.Body>
     </Card>
@@ -533,7 +672,10 @@ export default function TenantDashboard() {
   const qc = useQueryClient();
   const { data, isLoading, isError } = useTenantDashboard(slug);
   const summary = data as DashboardSummary | undefined;
-  const { data: agentSnapshots } = useAgentSnapshots(slug);
+  const {
+    data: agentSnapshots,
+    isLoading: snapshotsLoading,
+  } = useAgentSnapshots(slug);
   const cashSnapshot = getSnapshot(agentSnapshots, "nakit_akisi");
   const riskSnapshot = getSnapshot(agentSnapshots, "risk");
   const taxSnapshot = getSnapshot(agentSnapshots, "mevzuat_rag");
@@ -553,6 +695,7 @@ export default function TenantDashboard() {
   const filteredActivities = (summary?.recent_activities ?? []).filter(
     (a) => activityFilter === "all" || a.type === activityFilter,
   );
+  const recommendedActions = summary?.recommended_actions ?? [];
 
   const analysis = useQuery({
     queryKey: ["tenant-analysis", slug, activeJobId],
@@ -693,8 +836,17 @@ export default function TenantDashboard() {
         <main className="min-w-0 space-y-6">
           <section className="grid gap-6 xl:grid-cols-3">
             <CashFlowPanel analysis={analysisData} snapshot={cashSnapshot} />
-            <RiskPanel analysis={analysisData} snapshot={riskSnapshot} />
+            <RiskPanel
+              analysis={analysisData}
+              snapshot={riskSnapshot}
+              snapshotLoading={snapshotsLoading}
+            />
           </section>
+
+          <RecommendedActionsPanel
+            actions={recommendedActions}
+            isLoading={isLoading}
+          />
 
           <section className="grid gap-6 xl:grid-cols-2">
             <TaxRecommendationsPanel analysis={analysisData} snapshot={taxSnapshot} />

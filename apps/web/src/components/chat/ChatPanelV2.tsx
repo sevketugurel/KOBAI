@@ -6,9 +6,9 @@ import { isMockMode } from "../../api/v2";
 import { cn } from "../../lib/utils";
 
 const SAMPLES = [
-  "Bu ay ne kadar KDV ödeyeceğim?",
-  "KOSGEB'e başvurabilir miyim?",
-  "En büyük gider kalemim ne?",
+  "Bugün en kritik finansal riskim ne?",
+  "Bu hafta hangi ödemeleri öne almalıyım?",
+  "Tahsilat ve POS tarafında nerede sorun görüyor musun?",
 ];
 
 function MessageContent({ content }: { content: string }) {
@@ -85,8 +85,8 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
           <div className="space-y-3">
             <p className="text-sm text-navy-600">
               {isMockMode
-                ? "Mock demo verileriyle örnek sorulardan başlayabilirsiniz."
-                : "Doküman yüklenmediyse yanıtlar sınırlı olabilir; örnek sorulardan başlayabilirsiniz."}
+                ? "Mock copilot verisiyle risk, tahsilat ve vergi önceliklerinden başlayabilirsiniz."
+                : "Copilot dashboard, vergi, banka, POS ve ajan snapshot verilerini okuyarak yanıt verir; örnek sorularla başlayabilirsiniz."}
             </p>
             <div className="flex flex-wrap gap-2">
               {SAMPLES.map((s) => (
@@ -168,7 +168,7 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
               submit();
             }
           }}
-          placeholder="Bir şey sorun..."
+          placeholder="Bugünün finansal önceliğini sorun..."
           className="flex-1 resize-none rounded-2xl px-4 py-2 border border-border bg-background text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-500 max-h-32"
         />
         <button

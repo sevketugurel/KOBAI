@@ -292,6 +292,22 @@ function dashboardSummary(slug: string): DashboardSummary {
     recent_activities: [...bankActivities, ...posActivities, ...taxActivities]
       .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
       .slice(0, 8),
+    recommended_actions: [
+      {
+        title: "KDV ve SGK çıkışlarını sırala",
+        detail: "Bu hafta vadesi yaklaşan vergi kalemlerini tahsilat planıyla eşleştirip önce cezaya açık kalemleri kapatın.",
+        priority: "high",
+        due_hint: "Bu hafta",
+        source_agent: "risk",
+      },
+      {
+        title: "Başarısız POS işlemlerini gözden geçir",
+        detail: "Başarısız satış denemelerini kanal ve banka bazında inceleyip kayıp tahsilatı azaltın.",
+        priority: "medium",
+        due_hint: "Bu ay",
+        source_agent: "collections_agent",
+      },
+    ],
     updated_at: MOCK_NOW.toISOString(),
   };
 }
@@ -362,6 +378,28 @@ function mockAnalysis(slug: string, jobId = `mock-job-${slug}`): AnalysisResult 
     risk_label: "yellow",
     risk_explanation:
       "POS satışları sağlıklı ancak Mayıs sonunda KDV ve SGK çıkışları nakit tamponunu azaltıyor.",
+    risk_key_drivers: [
+      "Mayıs sonunda biriken KDV ve SGK çıkışları nakit tamponunu daraltıyor.",
+      "Gecikmiş muhtasar kalemi operasyonel takip baskısı yaratıyor.",
+    ],
+    risk_recommended_actions: [
+      {
+        title: "Vergi ödeme sırasını netleştirin",
+        detail: "KDV, SGK ve gecikmiş muhtasar kalemlerini aynı haftada çıkacak nakit ihtiyacına göre önceliklendirin.",
+        priority: "high",
+        due_hint: "Bu hafta",
+        source_agent: "risk",
+      },
+      {
+        title: "Tahsilat tamponu oluşturun",
+        detail: "Önümüzdeki vergi haftası için en hızlı tahsil edilebilecek müşteri bakiyelerini öne çekin.",
+        priority: "medium",
+        due_hint: "Bu ay",
+        source_agent: "collections_agent",
+      },
+    ],
+    risk_priority: "high",
+    risk_time_horizon: "this_week",
     tax_recommendations: [
       {
         recommendation:

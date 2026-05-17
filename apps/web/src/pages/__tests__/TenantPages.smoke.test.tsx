@@ -91,6 +91,15 @@ const mocks = vi.hoisted(() => {
     upcoming_tax_count: taxes.length,
     integration_count: integrations.length,
     upcoming_taxes: taxes,
+    recommended_actions: [
+      {
+        title: "KDV çıkışını öne alın",
+        detail: "Bu hafta KDV ve SGK ödemelerini tahsilat planına bağlayın.",
+        priority: "high",
+        due_hint: "Bu hafta",
+        source_agent: "risk",
+      },
+    ],
     recent_activities: [
       {
         id: "act-1",
@@ -130,6 +139,18 @@ const mocks = vi.hoisted(() => {
     risk_score: 2,
     risk_label: "yellow",
     risk_explanation: "Tahsilat akışı iyi, vergi çıkışı izlenmeli.",
+    risk_key_drivers: ["Vergi çıkışları bu hafta nakit tamponunu daraltıyor."],
+    risk_recommended_actions: [
+      {
+        title: "Vergi çıkışını planlayın",
+        detail: "KDV ve SGK kalemleri için bu hafta nakit sıralaması yapın.",
+        priority: "high",
+        due_hint: "Bu hafta",
+        source_agent: "risk",
+      },
+    ],
+    risk_priority: "high",
+    risk_time_horizon: "this_week",
     tax_recommendations: [
       {
         recommendation: "KDV beyanı öncesi POS ve banka hareketlerini mutabık hale getirin.",
@@ -176,6 +197,7 @@ vi.mock("../../api/v2", () => ({
   V2ApiError: class V2ApiError extends Error {},
   v2: {
     getDashboardSummary: vi.fn().mockResolvedValue(mocks.dashboard),
+    getAgentSnapshots: vi.fn().mockResolvedValue([]),
     uploadInvoice: vi.fn(),
     startAnalysis: vi.fn().mockResolvedValue({ job_id: "mock-job-acme-co", status: "pending" }),
     getAnalysis: vi.fn().mockResolvedValue(mocks.analysis),
@@ -234,6 +256,7 @@ describe("tenant v2 pages", () => {
     expect(screen.getByText("Tahsilat")).toBeInTheDocument();
     expect(await screen.findByText("Nakit Akışı Projeksiyonu")).toBeInTheDocument();
     expect(screen.getByText("Risk Değerlendirmesi")).toBeInTheDocument();
+    expect(screen.getByText("AI'nin Bugün Dikkat Çektiği Konular")).toBeInTheDocument();
     expect(screen.getByText("RAG Vergi Önerileri")).toBeInTheDocument();
     expect(screen.getByText("Ajan Akışı")).toBeInTheDocument();
     expect(screen.getByText("Belge ve Analiz")).toBeInTheDocument();

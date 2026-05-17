@@ -93,6 +93,17 @@ export interface KosgebSuggestion {
   url?: string;
 }
 
+export type RiskPriority = "low" | "medium" | "high";
+export type RiskTimeHorizon = "immediate" | "this_week" | "this_month";
+
+export interface RecommendedAction {
+  title: string;
+  detail: string;
+  priority: RiskPriority;
+  due_hint: string;
+  source_agent: string;
+}
+
 export interface AnalysisResult {
   job_id: string;
   status: JobStatus;
@@ -101,6 +112,10 @@ export interface AnalysisResult {
   risk_score: number;
   risk_label: RiskLabel;
   risk_explanation: string;
+  risk_key_drivers?: string[];
+  risk_recommended_actions?: RecommendedAction[];
+  risk_priority?: RiskPriority;
+  risk_time_horizon?: RiskTimeHorizon;
   tax_recommendations: TaxRecommendation[];
   kosgeb_suggestions: KosgebSuggestion[];
   agent_trace: AgentStep[];
@@ -192,7 +207,14 @@ export interface Integration {
 }
 
 // Faz 7 — event-driven ajan snapshot'ı
-export type AgentName = "nakit_akisi" | "risk" | "mevzuat_rag" | "kosgeb";
+export type AgentName =
+  | "nakit_akisi"
+  | "risk"
+  | "mevzuat_rag"
+  | "kosgeb"
+  | "collections_agent"
+  | "supplier_dependency_agent"
+  | "margin_agent";
 export type AgentSnapshotStatus =
   | "idle"
   | "pending"
@@ -577,5 +599,6 @@ export interface DashboardSummary {
   integration_count: number;
   upcoming_taxes: TaxCalendarItem[];
   recent_activities: DashboardActivity[];
+  recommended_actions?: RecommendedAction[];
   updated_at: string;
 }

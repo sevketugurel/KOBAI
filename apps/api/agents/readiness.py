@@ -22,6 +22,9 @@ AGENT_NAMES: tuple[AgentName, ...] = (
     "risk",
     "mevzuat_rag",
     "kosgeb",
+    "collections_agent",
+    "supplier_dependency_agent",
+    "margin_agent",
 )
 
 
@@ -88,11 +91,38 @@ def _ready_kosgeb(ctx: TenantAnalysisContext) -> tuple[bool, list[str]]:
     return (not missing), missing
 
 
+def _ready_collections_agent(ctx: TenantAnalysisContext) -> tuple[bool, list[str]]:
+    if any(inv.category == "gelir" for inv in ctx.invoices):
+        return True, []
+    if any(tx.direction == "credit" for tx in ctx.bank_transactions):
+        return True, []
+    if any(tx.status == "success" and tx.txn_type == "sale" for tx in ctx.pos_transactions):
+        return True, []
+    return False, ["Tahsilat analizi için gelir faturası, banka tahsilatı veya başarılı POS satışı gerekli."]
+
+
+def _ready_supplier_dependency_agent(ctx: TenantAnalysisContext) -> tuple[bool, list[str]]:
+    if any(inv.category != "gelir" for inv in ctx.invoices):
+        return True, []
+    return False, ["Tedarikçi bağımlılığı için en az 1 gider faturası gerekli."]
+
+
+def _ready_margin_agent(ctx: TenantAnalysisContext) -> tuple[bool, list[str]]:
+    if ctx.invoices:
+        return True, []
+    if any(tx.status == "success" and tx.txn_type == "sale" for tx in ctx.pos_transactions):
+        return True, []
+    return False, ["Marj görünümü için fatura veya başarılı POS satış verisi gerekli."]
+
+
 _CHECKERS = {
     "nakit_akisi": _ready_nakit_akisi,
     "risk": _ready_risk,
     "mevzuat_rag": _ready_mevzuat_rag,
     "kosgeb": _ready_kosgeb,
+    "collections_agent": _ready_collections_agent,
+    "supplier_dependency_agent": _ready_supplier_dependency_agent,
+    "margin_agent": _ready_margin_agent,
 }
 
 
@@ -142,6 +172,8 @@ def compute_version_hash(
     if agent_name == "kosgeb":
         base["sector"] = ctx.tenant_profile.get("sector") or ""
         base["company_type"] = ctx.tenant_profile.get("company_type") or ""
+    if agent_name in ("collections_agent", "supplier_dependency_agent", "margin_agent"):
+        base["invoice_months"] = sorted({inv.date.strftime("%Y-%m") for inv in ctx.invoices})
     if agent_name == "mevzuat_rag":
         # Tenant RAG indeksinin güncelliği invoice/bank max tarih kombinasyonu
         # üzerinden indirekt yakalanır; ayrıca son past_analysis sayısı eklenir.

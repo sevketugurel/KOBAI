@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
+from decimal import Decimal
 from unittest.mock import AsyncMock
 
 import pytest
@@ -11,10 +12,15 @@ from fastapi.testclient import TestClient
 
 from main import app
 from middleware.tenant import AuthPrincipal, require_auth
+from repositories.agent_snapshot_repo import InMemoryAgentSnapshotRepo, get_agent_snapshot_repo
+from repositories.bank_repo import get_bank_repo
 from repositories.chat_repo import get_chat_repo
 from repositories.job_repo import get_job_repo
+from repositories.pos_repo import get_pos_repo
+from repositories.tax_repo import get_tax_repo
 from repositories.tenant_repo import MembershipOut, TenantOut, get_tenant_repo
 from schemas.chat_v2 import ChatMessageV2
+from schemas.tax import TaxCalendarItemOut
 from services.tenant_context import TenantAnalysisContext, get_tenant_data_service
 
 
@@ -82,7 +88,54 @@ class FakeTenantData:
         return TenantAnalysisContext(
             tenant_id=tenant_id,
             tenant_profile={"sector": "hizmet", "company_type": "sahis_sirketi"},
+            tax_calendar_items=[
+                TaxCalendarItemOut(
+                    id="tax-1",
+                    tenant_id=tenant_id,
+                    title="KDV",
+                    description=None,
+                    tax_type="kdv",
+                    due_date=datetime.now(timezone.utc).date(),
+                    amount=Decimal("1200.00"),
+                    currency="TRY",
+                    status="pending",
+                    period="2026-05",
+                    notes=None,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
+                )
+            ],
         )
+
+
+class FakeBankRepo:
+    async def list_transactions(self, *, tenant_id, limit=100):
+        return []
+    async def list_integrations(self, *, tenant_id):
+        return []
+    async def create_document(self, *a, **k): ...
+    async def bulk_insert_transactions(self, *a, **k): ...
+    async def upsert_integration(self, *a, **k): ...
+
+
+class FakePosRepo:
+    async def list_transactions(self, *, tenant_id, limit=100):
+        return []
+    async def daily_summary(self, *, tenant_id, target):
+        return {"date": str(target), "total_sales": "0", "total_refunds": "0", "net_amount": "0", "sale_count": 0, "refund_count": 0, "avg_ticket": None}
+    async def upsert_provider(self, *a, **k): ...
+    async def get_provider(self, *a, **k): ...
+    async def mark_webhook_received(self, *a, **k): ...
+    async def insert_transaction(self, *a, **k): ...
+
+
+class FakeTaxRepo:
+    async def list_items(self, *, tenant_id, status=None, upcoming_within_days=None):
+        return []
+    async def bulk_seed(self, *a, **k): return 0
+    async def patch_item(self, *a, **k): ...
+    async def mark_overdue_for_all_tenants(self, *a, **k): return 0
+    async def list_upcoming_across_tenants(self, *a, **k): return []
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────
@@ -135,7 +188,8 @@ def gemini_mock(monkeypatch):
     class FakeRetriever:
         def __init__(self, *a, **k): ...
         async def search(self, *a, **k): return []
-    monkeypatch.setattr(v2chat, "RagRetriever", FakeRetriever)
+    from services import chat_context_v2
+    monkeypatch.setattr(chat_context_v2, "RagRetriever", FakeRetriever)
     return fake
 
 
@@ -147,6 +201,10 @@ def client_for(chat_repo, tenant_repo, gemini_mock):
         app.dependency_overrides[get_tenant_repo] = lambda: tenant_repo
         app.dependency_overrides[get_job_repo] = lambda: FakeJobRepo()
         app.dependency_overrides[get_tenant_data_service] = lambda: FakeTenantData()
+        app.dependency_overrides[get_bank_repo] = lambda: FakeBankRepo()
+        app.dependency_overrides[get_pos_repo] = lambda: FakePosRepo()
+        app.dependency_overrides[get_tax_repo] = lambda: FakeTaxRepo()
+        app.dependency_overrides[get_agent_snapshot_repo] = lambda: InMemoryAgentSnapshotRepo()
         return TestClient(app)
     yield _make
     app.dependency_overrides.clear()
@@ -201,3 +259,13 @@ def test_invalid_session_id_empty_string_rejected(client_for) -> None:
     c = client_for(USER_A)
     r = c.post("/v2/acme-co/chat", json={"message": "x", "session_id": ""})
     assert r.status_code == 422
+
+
+def test_chat_context_mentions_tool_usage(client_for, gemini_mock) -> None:
+    c = client_for(USER_A)
+    r = c.post("/v2/acme-co/chat", json={"message": "KDV riski nedir?", "session_id": "tool-session"})
+    assert r.status_code == 200
+    context = gemini_mock.generate_text.await_args.kwargs["context"]
+    assert "Kullanılan tool verileri:" in context
+    assert "dashboard_summary" in context
+    assert "tax_calendar_items" in context

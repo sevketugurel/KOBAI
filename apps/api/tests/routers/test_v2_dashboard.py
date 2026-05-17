@@ -12,12 +12,14 @@ from fastapi.testclient import TestClient
 from main import app
 from middleware.tenant import AuthPrincipal, require_auth
 from repositories.bank_repo import get_bank_repo
+from repositories.agent_snapshot_repo import AgentSnapshot, InMemoryAgentSnapshotRepo, get_agent_snapshot_repo
 from repositories.pos_repo import get_pos_repo
 from repositories.tax_repo import get_tax_repo
 from repositories.tenant_repo import MembershipOut, TenantOut, get_tenant_repo
 from schemas.bank import BankTransactionOut
 from schemas.pos import PosTransactionOut
 from schemas.tax import TaxCalendarItemOut
+from services.dashboard_summary import build_dashboard_summary
 
 
 USER_A = str(uuid.uuid4())
@@ -176,27 +178,36 @@ def tenant_repo():
 
 @pytest.fixture
 def client_for(tenant_repo):
-    state = {"bank": FakeBankRepo(), "pos": FakePosRepo(), "tax": FakeTaxRepo()}
+    state = {
+        "bank": FakeBankRepo(),
+        "pos": FakePosRepo(),
+        "tax": FakeTaxRepo(),
+        "snapshots": InMemoryAgentSnapshotRepo(),
+    }
 
-    def _make(*, user_id, bank=None, pos=None, tax=None):
+    def _make(*, user_id, bank=None, pos=None, tax=None, snapshots=None):
         if bank is not None:
             state["bank"] = bank
         if pos is not None:
             state["pos"] = pos
         if tax is not None:
             state["tax"] = tax
+        if snapshots is not None:
+            state["snapshots"] = snapshots
         app.dependency_overrides[require_auth] = lambda: AuthPrincipal(user_id=user_id, email="x@y")
         app.dependency_overrides[get_tenant_repo] = lambda: tenant_repo
         app.dependency_overrides[get_bank_repo] = lambda: state["bank"]
         app.dependency_overrides[get_pos_repo] = lambda: state["pos"]
         app.dependency_overrides[get_tax_repo] = lambda: state["tax"]
+        app.dependency_overrides[get_agent_snapshot_repo] = lambda: state["snapshots"]
         return TestClient(app)
 
     yield _make
     app.dependency_overrides.clear()
 
 
-def test_dashboard_summary_aggregates_current_month(client_for):
+@pytest.mark.asyncio
+async def test_dashboard_summary_aggregates_current_month():
     today = date.today()
     first_of_month = today.replace(day=1)
     last_month = (first_of_month).replace(day=1)
@@ -241,19 +252,51 @@ def test_dashboard_summary_aggregates_current_month(client_for):
             ]
         }
     )
-    client = client_for(user_id=USER_A, bank=bank, pos=pos, tax=tax)
-
-    res = client.get("/v2/tenants/acme-co/dashboard/summary")
-    assert res.status_code == 200, res.text
-    body = res.json()
+    summary = await build_dashboard_summary(
+        tenant_id=TENANT_A,
+        bank_repo=bank,
+        pos_repo=pos,
+        tax_repo=tax,
+        snapshot_repo=InMemoryAgentSnapshotRepo(),
+        today=today,
+    )
+    body = summary.model_dump(mode="json")
     assert Decimal(body["net_flow_this_month"]) == Decimal("700")
     assert Decimal(body["pos_sales_this_month"]) == Decimal("500")
     assert body["upcoming_tax_count"] == 3
     assert body["integration_count"] == 1
     assert len(body["upcoming_taxes"]) == 3
+    assert body["recommended_actions"]
     titles = [t["title"] for t in body["upcoming_taxes"]]
     assert titles == ["KDV", "Muhtasar", "SGK"]
     assert len(body["recent_activities"]) <= 10
+
+
+@pytest.mark.asyncio
+async def test_dashboard_summary_prefers_risk_snapshot_actions(client_for):
+    snapshots = InMemoryAgentSnapshotRepo()
+    await snapshots.upsert(AgentSnapshot(
+        tenant_id=TENANT_A,
+        agent_name="risk",
+        status="completed",
+        input_version_hash="hash-1",
+        output={
+            "risk_recommended_actions": [
+                {
+                    "title": "Risk aksiyonu",
+                    "detail": "Öncelikli risk snapshot aksiyonu.",
+                    "priority": "high",
+                    "due_hint": "Bugün",
+                    "source_agent": "risk",
+                }
+            ]
+        },
+    ))
+    client = client_for(user_id=USER_A, snapshots=snapshots)
+    res = client.get("/v2/tenants/acme-co/dashboard/summary")
+    assert res.status_code == 200, res.text
+    body = res.json()
+    assert body["recommended_actions"][0]["title"] == "Risk aksiyonu"
 
 
 def test_dashboard_summary_returns_403_for_non_member(client_for):
@@ -279,3 +322,4 @@ def test_dashboard_summary_empty_state(client_for):
     assert body["integration_count"] == 0
     assert body["upcoming_taxes"] == []
     assert body["recent_activities"] == []
+    assert body["recommended_actions"] == []

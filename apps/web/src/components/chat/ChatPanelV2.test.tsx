@@ -15,6 +15,6 @@ vi.mock("../../hooks/useV2Chat", () => ({
 describe("ChatPanelV2", () => {
   it("renders example prompts when history is empty", () => {
     render(<ChatPanelV2 slug="acme" sessionId="s-1" />);
-    expect(screen.getByText(/KDV ödeyeceğim/i)).toBeInTheDocument();
+    expect(screen.getByText(/kritik finansal riskim/i)).toBeInTheDocument();
   });
 });

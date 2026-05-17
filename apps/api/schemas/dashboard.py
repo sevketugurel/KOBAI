@@ -13,6 +13,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from schemas.analysis import RecommendedAction
 from schemas.tax import TaxCalendarItemOut
 
 ActivityType = Literal["bank", "pos", "tax"]
@@ -44,5 +45,6 @@ class DashboardSummaryOut(BaseModel):
 
     upcoming_taxes: list[TaxCalendarItemOut]
     recent_activities: list[DashboardActivity]
+    recommended_actions: list[RecommendedAction] = Field(default_factory=list)
 
     updated_at: datetime
