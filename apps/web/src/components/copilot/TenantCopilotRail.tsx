@@ -3,6 +3,7 @@ import { Sparkles } from "lucide-react";
 import type { TenantPageAIView } from "../../api/v2";
 import ChatPanelV2 from "../chat/ChatPanelV2";
 import { Card } from "../ui";
+import AIActionButton from "./AIActionButton";
 
 function toneClass(tone?: TenantPageAIView["insights"][number]["tone"]) {
   if (tone === "success") return "border-emerald-200 bg-emerald-50/70";
@@ -52,6 +53,13 @@ export default function TenantCopilotRail({
                 <p className="mt-2 text-sm leading-6 text-navy-800">
                   {view?.summary ?? "Bu sayfadaki veriler geldikçe AI özeti burada görünür."}
                 </p>
+                {view?.entry_actions?.length ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {view.entry_actions.map((action) => (
+                      <AIActionButton key={action.id} action={action} />
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <div className="space-y-3">
@@ -67,6 +75,13 @@ export default function TenantCopilotRail({
                       ) : null}
                     </div>
                     <p className="mt-2 text-sm leading-6 text-navy-700">{insight.detail}</p>
+                    {insight.actions?.length ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {insight.actions.map((action) => (
+                          <AIActionButton key={action.id} action={action} />
+                        ))}
+                      </div>
+                    ) : null}
                   </article>
                 ))}
               </div>

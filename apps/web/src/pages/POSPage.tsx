@@ -10,10 +10,13 @@ import {
   type PosProvider,
   type PosTransaction,
 } from "../api/v2";
+import AIActionButton from "../components/copilot/AIActionButton";
+import { TenantAIActionProvider } from "../components/copilot/TenantAIActionContext";
 import TenantCopilotRail from "../components/copilot/TenantCopilotRail";
 import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
 import { useTenantPageAI } from "../hooks/useTenantPageAI";
 import { getOrCreateSessionId } from "../lib/chatSession";
+import { buildPosTerminalAIPrompt, buildPosTransactionAIPrompt } from "../lib/aiPrompts";
 import { formatDateTime, formatTRY } from "../lib/utils";
 
 const DATE_TIME = new Intl.DateTimeFormat("tr-TR", {
@@ -127,12 +130,16 @@ export default function POSPage() {
     { name: "Mobil Link", provider: "Craftgate", status: "Test", amount: monthNet * 0.1 },
   ];
 
+  const pageEntryAction = aiView.data?.entry_actions?.[0];
+
   return (
+    <TenantAIActionProvider>
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-8">
         <PageHeader
           title="Sanal POS"
           subtitle="Online ödeme terminalleri, günlük özet ve işlem akışı."
+          actions={pageEntryAction ? <AIActionButton action={pageEntryAction} /> : undefined}
         />
 
         <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -183,6 +190,16 @@ export default function POSPage() {
                     <p className="mt-4 font-mono text-lg font-semibold text-navy-900">
                       {formatTRY(terminal.amount)}
                     </p>
+                    <div className="mt-3">
+                      <AIActionButton
+                        action={{
+                          id: `terminal-explain-${terminal.name}`,
+                          label: "Terminal Performansını Yorumla",
+                          variant: "explain",
+                          prompt: buildPosTerminalAIPrompt(terminal),
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -281,6 +298,7 @@ export default function POSPage() {
         loading={aiView.isLoading}
       />
     </div>
+    </TenantAIActionProvider>
   );
 }
 
@@ -295,6 +313,7 @@ function TxTable({ rows }: { rows: PosTransaction[] }) {
             <th className="py-2 pr-3">Durum</th>
             <th className="py-2 pr-3">Kart</th>
             <th className="py-2 pr-3 text-right">Tutar</th>
+            <th className="py-2 pr-3 text-right">AI</th>
           </tr>
         </thead>
         <tbody>
@@ -321,6 +340,18 @@ function TxTable({ rows }: { rows: PosTransaction[] }) {
                 }`}
               >
                 {formatTRY(signedTxn(t))}
+              </td>
+              <td className="py-2 pr-3 text-right">
+                {["pending", "failed"].includes(t.status) || t.txn_type === "refund" ? (
+                  <AIActionButton
+                    action={{
+                      id: `pos-transaction-${t.id}`,
+                      label: t.txn_type === "refund" ? "Bu İşlemi Açıkla" : "Paterni Analiz Et",
+                      variant: t.txn_type === "refund" ? "explain" : "analyze",
+                      prompt: buildPosTransactionAIPrompt(t),
+                    }}
+                  />
+                ) : null}
               </td>
             </tr>
           ))}

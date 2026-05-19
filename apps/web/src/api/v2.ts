@@ -1,5 +1,13 @@
 /** v2 tenant-aware API çağrıları. v1 client.ts korunur; Faz 1'de paralel yaşar. */
 import { supabase } from "../auth/supabaseClient";
+import {
+  buildCashFlowScenarioPrompt,
+  buildDashboardActionPrompt,
+  buildDashboardRiskPrompt,
+  buildIntegrationAIPrompt,
+  buildPosTransactionAIPrompt,
+  buildTaxItemAIPrompt,
+} from "../lib/aiPrompts";
 import { mockV2 } from "./mockV2";
 
 const BASE_URL = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:8000";
@@ -105,6 +113,15 @@ export interface RecommendedAction {
 }
 
 export type AIPageKind = "dashboard" | "integrations" | "tax-calendar" | "pos";
+export type AIActionVariant = "analyze" | "recommend" | "explain" | "prioritize";
+
+export interface AIContextAction {
+  id: string;
+  label: string;
+  prompt: string;
+  variant?: AIActionVariant;
+  icon?: string;
+}
 
 export interface AIInsightCard {
   id: string;
@@ -112,6 +129,7 @@ export interface AIInsightCard {
   detail: string;
   tone?: "neutral" | "success" | "warning" | "danger";
   badge?: string;
+  actions?: AIContextAction[];
 }
 
 export interface AIQuickAction {
@@ -125,6 +143,7 @@ export interface TenantPageAIView {
   title: string;
   subtitle: string;
   summary: string;
+  entry_actions?: AIContextAction[];
   insights: AIInsightCard[];
   quick_actions: AIQuickAction[];
   sample_prompts: string[];
@@ -349,6 +368,19 @@ async function getTenantPageAIViewFallback(
         failing.length > 0
           ? `${failing.length} entegrasyonda takip gerektiren hata var.`
           : "Bağlantılar aktif görünüyor; veri akışı düzenli izlenmeli.",
+      entry_actions: [
+        {
+          id: "integration-health-analyze",
+          label: "Bağlantı Sağlığını Analiz Et",
+          variant: "analyze",
+          prompt: [
+            "Entegrasyon sağlığını analiz et.",
+            `Aktif bağlantı: ${integrations.filter((item) => item.is_active).length}.`,
+            `Hata veren bağlantı: ${failing.length}.`,
+            "Bağlantı risklerini ve kontrol sırasını özetle.",
+          ].join(" "),
+        },
+      ],
       insights: [
         {
           id: "integration-health",
@@ -358,6 +390,16 @@ async function getTenantPageAIViewFallback(
               ? `${failing.map((item) => item.provider).join(", ")} için hata veya yetki yenileme ihtiyacı görünüyor.`
               : `${integrations.filter((item) => item.is_active).length} aktif entegrasyon veri taşıyor.`,
           tone: failing.length > 0 ? "warning" : "success",
+          actions: failing[0]
+            ? [
+                {
+                  id: `integration-${failing[0].id}`,
+                  label: "Sorunu Yorumla",
+                  variant: "explain",
+                  prompt: buildIntegrationAIPrompt(failing[0]),
+                },
+              ]
+            : undefined,
         },
         {
           id: "bank-activity",
@@ -366,6 +408,19 @@ async function getTenantPageAIViewFallback(
             ? `En son banka hareketi ${lastTxn.description ?? "işlem"} olarak içeri alınmış.`
             : "Henüz işlenmiş banka hareketi görünmüyor.",
           tone: lastTxn ? "neutral" : "warning",
+          actions: [
+            {
+              id: "upload-explain",
+              label: "Ne Analiz Edilecek?",
+              variant: "explain",
+              prompt: [
+                "Ekstre yükleme sonrası analizleri açıkla.",
+                `Son hareket: ${lastTxn?.description ?? "bilinmiyor"}.`,
+                `Toplam son hareket sayısı: ${transactions.length}.`,
+                "Hangi kontrollerin ve eşleştirmelerin çalışacağını özetle.",
+              ].join(" "),
+            },
+          ],
         },
       ],
       quick_actions: [
@@ -402,6 +457,20 @@ async function getTenantPageAIViewFallback(
       summary: next
         ? `${next.title} sonraki kritik ödeme adımı olarak öne çıkıyor.`
         : "Yakın tarihli açık vergi kalemi görünmüyor.",
+      entry_actions: [
+        {
+          id: "payment-order",
+          label: "Ödeme Sırası Oluştur",
+          variant: "prioritize",
+          prompt: [
+            "Vergi kalemlerini sırala.",
+            ...open.map((item) =>
+              `${item.title} | vade: ${item.due_date} | tutar: ${item.amount ?? "0"} ${item.currency} | durum: ${item.status} | dönem: ${item.period ?? "yok"}.`,
+            ),
+            "Ceza riski ve nakit etkisine göre önceliklendir.",
+          ].join(" "),
+        },
+      ],
       insights: [
         {
           id: "tax-next",
@@ -410,6 +479,16 @@ async function getTenantPageAIViewFallback(
             ? `${next.title} için vade ${next.due_date} ve tutar ${next.amount ?? "0"} ${next.currency}.`
             : "Tüm vergi kalemleri kapalı görünüyor.",
           tone: next?.status === "overdue" ? "danger" : "warning",
+          actions: next
+            ? [
+                {
+                  id: `tax-next-${next.id}`,
+                  label: "Neden Öncelikli?",
+                  variant: "explain",
+                  prompt: buildTaxItemAIPrompt(next),
+                },
+              ]
+            : undefined,
         },
         {
           id: "tax-overdue",
@@ -419,6 +498,16 @@ async function getTenantPageAIViewFallback(
               ? `${overdue.length} kalem gecikmiş durumda; ceza riskine göre sıralama gerekli.`
               : "Gecikmiş vergi kalemi görünmüyor.",
           tone: overdue.length > 0 ? "danger" : "success",
+          actions: overdue[0]
+            ? [
+                {
+                  id: `tax-overdue-${overdue[0].id}`,
+                  label: "Bu Kalemi Analiz Et",
+                  variant: "analyze",
+                  prompt: buildTaxItemAIPrompt(overdue[0]),
+                },
+              ]
+            : undefined,
         },
       ],
       quick_actions: [
@@ -458,12 +547,39 @@ async function getTenantPageAIViewFallback(
         Number(summary.net_amount) > 0
           ? `POS tarafı pozitif net akış üretiyor; işlem kalitesi yine de izlenmeli.`
           : "POS akışı zayıflıyor; işlem dönüşümü ve iade paterni gözden geçirilmeli.",
+      entry_actions: [
+        {
+          id: "pos-risk",
+          label: "Bugünkü POS Riskini Analiz Et",
+          variant: "analyze",
+          prompt: [
+            "POS gün özetini analiz et.",
+            `Net tutar: ${summary.net_amount} TRY.`,
+            `Bekleyen işlem: ${pending}.`,
+            `İade işlem: ${refunds}.`,
+            "En kritik tahsilat riskini ve ilk aksiyonu yaz.",
+          ].join(" "),
+        },
+      ],
       insights: [
         {
           id: "pos-net",
           title: "Net Tahsilat",
           detail: `Bugün net POS akışı ${summary.net_amount} TRY seviyesinde.`,
           tone: Number(summary.net_amount) > 0 ? "success" : "warning",
+          actions: [
+            {
+              id: "pos-performance",
+              label: "Terminal Performansını Yorumla",
+              variant: "explain",
+              prompt: [
+                "Terminal performansını yorumla.",
+                `Sağlayıcı: iyzico_checkout.`,
+                `Bugün net POS akışı: ${summary.net_amount} TRY.`,
+                "Kanal verimini ve darboğaz ihtimallerini açıkla.",
+              ].join(" "),
+            },
+          ],
         },
         {
           id: "pos-quality",
@@ -473,6 +589,18 @@ async function getTenantPageAIViewFallback(
               ? `${pending} bekleyen ve ${refunds} iade işlemi izlenmeli.`
               : "Bekleyen veya iade baskısı oluşturan belirgin sinyal görünmüyor.",
           tone: pending > 0 ? "warning" : "neutral",
+          actions: transactions.find((item) => ["pending", "failed"].includes(item.status) || item.txn_type === "refund")
+            ? [
+                {
+                  id: "pos-pattern",
+                  label: "Paterni Analiz Et",
+                  variant: "analyze",
+                  prompt: buildPosTransactionAIPrompt(
+                    transactions.find((item) => ["pending", "failed"].includes(item.status) || item.txn_type === "refund")!,
+                  ),
+                },
+              ]
+            : undefined,
         },
       ],
       quick_actions: [
@@ -502,18 +630,60 @@ async function getTenantPageAIViewFallback(
     summary:
       dashboard.recommended_actions?.[0]?.detail ??
       "Bugünün finansal öncelikleri dashboard sinyallerinden türetilir.",
+    entry_actions: [
+      {
+        id: "dashboard-priority",
+        label: "Bugünün Önceliğini Aç",
+        variant: "prioritize",
+        prompt: dashboard.recommended_actions?.[0]
+          ? buildDashboardActionPrompt(dashboard.recommended_actions[0])
+          : actionPrompt,
+      },
+    ],
     insights: (dashboard.recommended_actions ?? []).slice(0, 2).map((action, index) => ({
       id: `dashboard-${index}`,
       title: action.title,
       detail: action.detail,
       tone: action.priority === "high" ? "danger" : action.priority === "medium" ? "warning" : "success",
       badge: action.due_hint,
+      actions: [
+        {
+          id: `dashboard-why-${index}`,
+          label: "Neden?",
+          variant: "explain",
+          prompt: buildDashboardActionPrompt(action),
+        },
+        {
+          id: `dashboard-plan-${index}`,
+          label: "Plan Oluştur",
+          variant: "recommend",
+          prompt: buildDashboardActionPrompt(action),
+        },
+      ],
     })),
     quick_actions: [
       {
         id: "dashboard-priority",
         label: "Önceliği sor",
         prompt: actionPrompt,
+      },
+      {
+        id: "dashboard-risk",
+        label: "Riski Derinleştir",
+        prompt: buildDashboardRiskPrompt({
+          riskLabel: "yellow",
+          riskScore: 3,
+          explanation: actionPrompt,
+        }),
+      },
+      {
+        id: "dashboard-cash",
+        label: "Senaryo Sor",
+        prompt: buildCashFlowScenarioPrompt({
+          nextNet: null,
+          upcomingTaxTotal: dashboard.upcoming_taxes.reduce((sum, item) => sum + Number(item.amount ?? 0), 0),
+          posSales: Number(dashboard.pos_sales_this_month),
+        }),
       },
     ],
     sample_prompts: [

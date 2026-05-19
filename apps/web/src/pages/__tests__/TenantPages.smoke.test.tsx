@@ -182,17 +182,71 @@ const mocks = vi.hoisted(() => {
     error: null,
   };
   const pageAI = {
+    dashboard: {
+      page: "dashboard",
+      title: "AI Dashboard Özeti",
+      subtitle: "Risk, aksiyon ve operasyon sinyalleri",
+      summary: "Bu hafta KDV ve SGK ödemelerini tahsilat planına bağlayın.",
+      entry_actions: [
+        {
+          id: "dashboard-priority",
+          label: "Bugünün Önceliğini Aç",
+          prompt: "Bugünün önceliğini açıkla.",
+          variant: "prioritize",
+        },
+      ],
+      insights: [
+        {
+          id: "dashboard-1",
+          title: "KDV çıkışını öne alın",
+          detail: "Bu hafta KDV ve SGK ödemelerini tahsilat planına bağlayın.",
+          tone: "danger",
+          actions: [
+            {
+              id: "dashboard-why",
+              label: "Neden?",
+              prompt: "Neden öne alayım?",
+              variant: "explain",
+            },
+          ],
+        },
+      ],
+      quick_actions: [
+        {
+          id: "dashboard-risk",
+          label: "Riski Derinleştir",
+          prompt: "Riski derinleştir.",
+        },
+      ],
+      sample_prompts: ["Bugün en kritik finansal riskim ne?"],
+    },
     integrations: {
       page: "integrations",
       title: "AI Entegrasyon Özeti",
       subtitle: "Bağlantı sağlığı ve veri akışı sinyalleri",
       summary: "Bağlantılar çalışıyor; veri tazeliği ve hata sinyalleri normal aralıkta.",
+      entry_actions: [
+        {
+          id: "integration-entry",
+          label: "Bağlantı Sağlığını Analiz Et",
+          prompt: "Bağlantı sağlığını analiz et.",
+          variant: "analyze",
+        },
+      ],
       insights: [
         {
           id: "integration-health",
           title: "Bağlantı Sağlığı",
           detail: "2 aktif servis düzenli veri akışı sağlıyor.",
           tone: "success",
+          actions: [
+            {
+              id: "integration-insight",
+              label: "Sorunu Yorumla",
+              prompt: "Sorunu yorumla.",
+              variant: "explain",
+            },
+          ],
         },
       ],
       quick_actions: [
@@ -209,12 +263,28 @@ const mocks = vi.hoisted(() => {
       title: "AI Vergi Öncelikleri",
       subtitle: "Ödeme sırası ve ceza baskısı",
       summary: "KDV Beyannamesi yakın vade baskısı nedeniyle ilk sıraya alınmalı.",
+      entry_actions: [
+        {
+          id: "tax-entry",
+          label: "Ödeme Sırası Oluştur",
+          prompt: "Ödeme sırası oluştur.",
+          variant: "prioritize",
+        },
+      ],
       insights: [
         {
           id: "tax-next",
           title: "Sıradaki Kritik Kalem",
           detail: "KDV Beyannamesi için 2026-05-26 vadeli ödeme bekleniyor.",
           tone: "warning",
+          actions: [
+            {
+              id: "tax-insight",
+              label: "Neden Öncelikli?",
+              prompt: "Neden öncelikli?",
+              variant: "explain",
+            },
+          ],
         },
       ],
       quick_actions: [
@@ -231,12 +301,28 @@ const mocks = vi.hoisted(() => {
       title: "AI POS Analizi",
       subtitle: "Tahsilat kalitesi ve işlem performansı",
       summary: "POS akışı pozitif; yine de bekleyen ve iade paternleri izlenmeli.",
+      entry_actions: [
+        {
+          id: "pos-entry",
+          label: "Bugünkü POS Riskini Analiz Et",
+          prompt: "POS riskini analiz et.",
+          variant: "analyze",
+        },
+      ],
       insights: [
         {
           id: "pos-net",
           title: "Net Tahsilat",
           detail: "Bugünkü net POS akışı 750.00 TRY seviyesinde.",
           tone: "success",
+          actions: [
+            {
+              id: "pos-insight",
+              label: "Terminal Performansını Yorumla",
+              prompt: "Terminal performansını yorumla.",
+              variant: "explain",
+            },
+          ],
         },
       ],
       quick_actions: [
@@ -273,7 +359,7 @@ vi.mock("../../api/v2", () => ({
     getChatHistory: vi.fn().mockResolvedValue([]),
     streamChatV2: vi.fn(),
     getTenantPageAIView: vi.fn().mockImplementation(
-      (_slug: string, page: "integrations" | "tax-calendar" | "pos") =>
+      (_slug: string, page: "dashboard" | "integrations" | "tax-calendar" | "pos") =>
         Promise.resolve(mocks.pageAI[page]),
     ),
     listIntegrations: vi.fn().mockResolvedValue(mocks.integrations),
@@ -332,6 +418,7 @@ describe("tenant v2 pages", () => {
     expect(screen.getByText("RAG Vergi Önerileri")).toBeInTheDocument();
     expect(screen.getByText("Ajan Akışı")).toBeInTheDocument();
     expect(screen.getByText("Belge ve Analiz")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bugünün Önceliğini Aç" })).toBeInTheDocument();
   });
 
   it("renders integrations with provider cards and bank transactions", async () => {
@@ -340,6 +427,7 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByText("iyzico Checkout")).toBeInTheDocument();
     expect(await screen.findByText("Tahsilat")).toBeInTheDocument();
     expect(await screen.findByText("AI Entegrasyon Özeti")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Bağlantı Sağlığını Analiz Et" }).length).toBeGreaterThan(0);
   });
 
   it("renders tax calendar with pending rows", async () => {
@@ -348,6 +436,7 @@ describe("tenant v2 pages", () => {
     expect(await screen.findAllByText("KDV Beyannamesi")).not.toHaveLength(0);
     expect(screen.getByText("SGK Prim Ödemesi")).toBeInTheDocument();
     expect(await screen.findByText("AI Vergi Öncelikleri")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Ödeme Sırası Oluştur" }).length).toBeGreaterThan(0);
   });
 
   it("renders POS with summary and transactions", async () => {
@@ -356,6 +445,7 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByText("Web Checkout")).toBeInTheDocument();
     expect(await screen.findByText("Satış")).toBeInTheDocument();
     expect(await screen.findByText("AI POS Analizi")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Bugünkü POS Riskini Analiz Et" }).length).toBeGreaterThan(0);
   });
 
   it("keeps dashboard POS and tax numbers consistent with source page data", () => {

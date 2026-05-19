@@ -5,10 +5,13 @@ import { useParams } from "react-router-dom";
 import { AlertCircle, Building2, CheckCircle2, Plug, RefreshCw, Unplug } from "lucide-react";
 
 import { V2ApiError, isMockMode, v2, type BankTransaction, type Integration } from "../api/v2";
+import AIActionButton from "../components/copilot/AIActionButton";
+import { TenantAIActionProvider } from "../components/copilot/TenantAIActionContext";
 import TenantCopilotRail from "../components/copilot/TenantCopilotRail";
 import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
 import { useTenantPageAI } from "../hooks/useTenantPageAI";
 import { getOrCreateSessionId } from "../lib/chatSession";
+import { buildIntegrationAIPrompt, buildUploadAnalysisPrompt } from "../lib/aiPrompts";
 import { formatDateTime, formatTRY } from "../lib/utils";
 
 const BANK_LABELS: Record<string, string> = {
@@ -123,12 +126,16 @@ export default function IntegrationsPage() {
     .filter((t) => t.direction === "debit")
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
+  const pageEntryAction = aiView.data?.entry_actions?.[0];
+
   return (
+    <TenantAIActionProvider>
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-8">
         <PageHeader
           title="Entegrasyonlar"
           subtitle="Banka, POS ve e-belge bağlantılarının son durumunu izleyin."
+          actions={pageEntryAction ? <AIActionButton action={pageEntryAction} /> : undefined}
         />
 
         <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -174,7 +181,25 @@ export default function IntegrationsPage() {
           </Card>
 
           <Card>
-            <Card.Header title="Ekstre Yükleme" subtitle="PDF banka ekstresi içe aktarımı" />
+            <Card.Header
+              title="Ekstre Yükleme"
+              subtitle="PDF banka ekstresi içe aktarımı"
+              action={
+                <AIActionButton
+                  action={{
+                    id: "upload-what-next",
+                    label: "Ne Analiz Edilecek?",
+                    variant: "explain",
+                    prompt: buildUploadAnalysisPrompt({
+                      importedCount: rows.length,
+                      duplicateCount: 0,
+                      periodStart: rows[rows.length - 1]?.transacted_at.slice(0, 10),
+                      periodEnd: rows[0]?.transacted_at.slice(0, 10),
+                    }),
+                  }}
+                />
+              }
+            />
             <Card.Body>
               <div
                 {...getRootProps()}
@@ -222,6 +247,7 @@ export default function IntegrationsPage() {
         loading={aiView.isLoading}
       />
     </div>
+    </TenantAIActionProvider>
   );
 }
 
@@ -258,6 +284,18 @@ function IntegrationCard({
           {active ? "Veriler düzenli olarak demo çalışma alanına akıyor." : "Bağlantı askıya alınmış durumda."}
         </p>
       )}
+      {integration.last_error ? (
+        <div className="mt-4">
+          <AIActionButton
+            action={{
+              id: `integration-explain-${integration.id}`,
+              label: "Sorunu Yorumla",
+              variant: "explain",
+              prompt: buildIntegrationAIPrompt(integration),
+            }}
+          />
+        </div>
+      ) : null}
       <Button
         type="button"
         variant={active ? "secondary" : "primary"}

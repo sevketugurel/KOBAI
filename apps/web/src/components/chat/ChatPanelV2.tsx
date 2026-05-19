@@ -4,6 +4,7 @@ import { Send, Sparkles } from "lucide-react";
 import { useV2Chat } from "../../hooks/useV2Chat";
 import { isMockMode, type AIQuickAction } from "../../api/v2";
 import { cn } from "../../lib/utils";
+import { useTenantAIActionEvent } from "../copilot/TenantAIActionContext";
 
 const SAMPLES = [
   "Bugün en kritik finansal riskim ne?",
@@ -51,10 +52,19 @@ export default function ChatPanelV2({
   });
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const externalAction = useTenantAIActionEvent();
+  const handledExternalNonceRef = useRef<number>(0);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView?.({ behavior: "smooth" });
   }, [messages.length, isStreaming]);
+
+  useEffect(() => {
+    if (!externalAction) return;
+    if (externalAction.nonce === handledExternalNonceRef.current) return;
+    handledExternalNonceRef.current = externalAction.nonce;
+    sendMessage(externalAction.action.prompt);
+  }, [externalAction, sendMessage]);
 
   const submit = () => {
     const text = input.trim();

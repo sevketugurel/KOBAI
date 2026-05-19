@@ -4,10 +4,13 @@ import { useParams } from "react-router-dom";
 import { AlertTriangle, CalendarDays, CheckCircle2, Clock } from "lucide-react";
 
 import { v2, type TaxCalendarItem, type TaxStatus, type TaxType } from "../api/v2";
+import AIActionButton from "../components/copilot/AIActionButton";
+import { TenantAIActionProvider } from "../components/copilot/TenantAIActionContext";
 import TenantCopilotRail from "../components/copilot/TenantCopilotRail";
 import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
 import { useTenantPageAI } from "../hooks/useTenantPageAI";
 import { getOrCreateSessionId } from "../lib/chatSession";
+import { buildTaxItemAIPrompt } from "../lib/aiPrompts";
 import { formatTRY } from "../lib/utils";
 
 const TAX_TYPE_LABELS: Record<TaxType, string> = {
@@ -72,12 +75,16 @@ export default function TaxCalendarPage() {
   );
   const nextItem = [...pending, ...overdue].sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
 
+  const pageEntryAction = aiView.data?.entry_actions?.[0];
+
   return (
+    <TenantAIActionProvider>
     <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-8">
         <PageHeader
           title="Vergi Takvimi"
           subtitle="KDV, Muhtasar, SGK, Geçici Vergi ve yıllık beyannameler için ödeme görünümü."
+          actions={pageEntryAction ? <AIActionButton action={pageEntryAction} /> : undefined}
         />
 
         <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -105,6 +112,16 @@ export default function TaxCalendarPage() {
                     variant={nextItem.status === "overdue" ? "danger" : "warning"}
                     label={STATUS_LABELS[nextItem.status]}
                   />
+                  <div className="mt-2">
+                    <AIActionButton
+                      action={{
+                        id: `tax-next-priority-${nextItem.id}`,
+                        label: "Neden Öncelikli?",
+                        variant: "explain",
+                        prompt: buildTaxItemAIPrompt(nextItem),
+                      }}
+                    />
+                  </div>
                   <p className="mt-2 font-mono text-sm text-navy-900">
                     {DATE_FMT.format(new Date(nextItem.due_date))}
                   </p>
@@ -126,6 +143,7 @@ export default function TaxCalendarPage() {
         loading={aiView.isLoading}
       />
     </div>
+    </TenantAIActionProvider>
   );
 }
 
@@ -157,6 +175,8 @@ function ItemList({
   onPaid?: (id: string) => void;
   muted?: boolean;
 }) {
+  const actionableStatuses = new Set<TaxStatus>(["pending", "overdue"]);
+
   if (rows.length === 0) {
     return (
       <EmptyState
@@ -225,6 +245,18 @@ function ItemList({
             </td>
             {onPaid ? (
               <td className="py-3 pr-3 text-right">
+              {actionableStatuses.has(it.status) ? (
+                <div className="mb-2">
+                  <AIActionButton
+                    action={{
+                      id: `tax-analyze-${it.id}`,
+                      label: "Bu Kalemi Analiz Et",
+                      variant: "analyze",
+                      prompt: buildTaxItemAIPrompt(it),
+                    }}
+                  />
+                </div>
+              ) : null}
               {onPaid && it.status !== "paid" && (
                 <Button
                   onClick={() => onPaid(it.id)}

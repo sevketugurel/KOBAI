@@ -35,9 +35,12 @@ import {
   PageHeader,
   StatusBadge,
 } from "../components/ui";
+import AIActionButton from "../components/copilot/AIActionButton";
+import { TenantAIActionProvider } from "../components/copilot/TenantAIActionContext";
 import ChatPanelV2 from "../components/chat/ChatPanelV2";
 import AgentTrace from "../components/dashboard/AgentTrace";
 import { useTenantDashboard } from "../hooks/useTenantDashboard";
+import { useTenantPageAI } from "../hooks/useTenantPageAI";
 import { useAgentSnapshots, getSnapshot } from "../hooks/useAgentSnapshots";
 import { getOrCreateSessionId } from "../lib/chatSession";
 import type { AgentSnapshot } from "../api/v2";
@@ -45,6 +48,7 @@ import { cn, formatDate, formatDateTime, formatRelative, formatTRY } from "../li
 import { isMockMode, v2 } from "../api/v2";
 import type {
   AnalysisResult,
+  AIContextAction,
   RecommendedAction,
   DashboardActivity,
   DashboardSummary,
@@ -54,6 +58,11 @@ import type {
   RiskTimeHorizon,
   TaxCalendarItem,
 } from "../api/v2";
+import {
+  buildCashFlowScenarioPrompt,
+  buildDashboardActionPrompt,
+  buildDashboardRiskPrompt,
+} from "../lib/aiPrompts";
 
 function toNumber(s: string | null | undefined): number {
   if (s == null) return 0;
@@ -255,9 +264,11 @@ function AgentMissingCTA({ snapshot }: { snapshot?: AgentSnapshot }) {
 function CashFlowPanel({
   analysis,
   snapshot,
+  action,
 }: {
   analysis?: AnalysisResult;
   snapshot?: AgentSnapshot;
+  action?: AIContextAction;
 }) {
   const snapshotRows =
     snapshot?.status === "completed" && Array.isArray((snapshot.output as { forecast?: unknown })?.forecast)
@@ -270,6 +281,7 @@ function CashFlowPanel({
       <Card.Header
         title="Nakit Akışı Projeksiyonu"
         subtitle="LangGraph nakit akışı ajanından 3 aylık görünüm"
+        action={action ? <AIActionButton action={action} /> : undefined}
       />
       <Card.Body className="h-80">
         {rows.length === 0 ? (
@@ -308,10 +320,12 @@ function RiskPanel({
   analysis,
   snapshot,
   snapshotLoading,
+  action,
 }: {
   analysis?: AnalysisResult;
   snapshot?: AgentSnapshot;
   snapshotLoading: boolean;
+  action?: AIContextAction;
 }) {
   const snapshotOutput =
     snapshot?.status === "completed" && snapshot.output
@@ -339,7 +353,11 @@ function RiskPanel({
   const missingCta = !hasData ? <AgentMissingCTA snapshot={snapshot} /> : null;
   return (
     <Card>
-      <Card.Header title="Risk Değerlendirmesi" subtitle="Risk ajanı skoru ve açıklaması" />
+      <Card.Header
+        title="Risk Değerlendirmesi"
+        subtitle="Risk ajanı skoru ve açıklaması"
+        action={action ? <AIActionButton action={action} /> : undefined}
+      />
       <Card.Body className="space-y-4">
         {snapshotLoading ? (
           <div className="space-y-3">
@@ -420,9 +438,11 @@ function RiskPanel({
 function RecommendedActionsPanel({
   actions,
   isLoading,
+  buildActions,
 }: {
   actions: RecommendedAction[];
   isLoading: boolean;
+  buildActions?: (action: RecommendedAction, index: number) => AIContextAction[];
 }) {
   return (
     <Card>
@@ -443,8 +463,9 @@ function RecommendedActionsPanel({
           </div>
         ) : (
           <div className="space-y-3">
-            {actions.map((action) => {
+            {actions.map((action, index) => {
               const priority = priorityCopy(action.priority);
+              const aiActions = buildActions?.(action, index) ?? [];
               return (
                 <article key={`${action.source_agent}-${action.title}`} className="rounded-xl border border-border p-4">
                   <div className="flex flex-wrap items-center gap-2">
@@ -456,6 +477,13 @@ function RecommendedActionsPanel({
                     </span>
                   </div>
                   <p className="mt-2 text-sm leading-6 text-navy-600">{action.detail}</p>
+                  {aiActions.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {aiActions.map((item) => (
+                        <AIActionButton key={item.id} action={item} />
+                      ))}
+                    </div>
+                  ) : null}
                 </article>
               );
             })}
@@ -682,6 +710,7 @@ export default function TenantDashboard() {
     0,
   );
   const sessionId = useMemo(() => getOrCreateSessionId(slug), [slug]);
+  const dashboardAI = useTenantPageAI(slug, "dashboard");
   const filteredActivities = (summary?.recent_activities ?? []).filter(
     (a) => activityFilter === "all" || a.type === activityFilter,
   );
@@ -777,7 +806,30 @@ export default function TenantDashboard() {
   const cashFlowNext =
     snapshotForecast?.[0]?.net ?? analysisData?.cash_flow_forecast?.[0]?.net ?? null;
 
+  const dashboardEntryAction = dashboardAI.data?.entry_actions?.[0];
+  const riskAction: AIContextAction = {
+    id: "dashboard-risk-deepen",
+    label: "Riski Derinleştir",
+    variant: "analyze",
+    prompt: buildDashboardRiskPrompt({
+      riskLabel: analysisData?.risk_label ?? null,
+      riskScore: analysisData?.risk_score ?? null,
+      explanation: analysisData?.risk_explanation ?? summary?.recommended_actions?.[0]?.detail ?? null,
+    }),
+  };
+  const cashScenarioAction: AIContextAction = {
+    id: "dashboard-cash-scenario",
+    label: "Senaryo Sor",
+    variant: "recommend",
+    prompt: buildCashFlowScenarioPrompt({
+      nextNet: cashFlowNext,
+      upcomingTaxTotal,
+      posSales,
+    }),
+  };
+
   return (
+    <TenantAIActionProvider>
     <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
       <PageHeader
         title={`${slug} Dashboard`}
@@ -786,6 +838,7 @@ export default function TenantDashboard() {
             ? `Son güncelleme: ${formatDateTime(summary.updated_at)}`
             : "Veriler yükleniyor..."
         }
+        actions={dashboardEntryAction ? <AIActionButton action={dashboardEntryAction} /> : undefined}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
@@ -825,17 +878,32 @@ export default function TenantDashboard() {
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(380px,1fr)]">
         <main className="min-w-0 space-y-6">
           <section className="grid gap-6 xl:grid-cols-3">
-            <CashFlowPanel analysis={analysisData} snapshot={cashSnapshot} />
+            <CashFlowPanel analysis={analysisData} snapshot={cashSnapshot} action={cashScenarioAction} />
             <RiskPanel
               analysis={analysisData}
               snapshot={riskSnapshot}
               snapshotLoading={snapshotsLoading}
+              action={riskAction}
             />
           </section>
 
           <RecommendedActionsPanel
             actions={recommendedActions}
             isLoading={isLoading}
+            buildActions={(action, index) => [
+              {
+                id: `dashboard-action-why-${index}`,
+                label: "Neden?",
+                variant: "explain",
+                prompt: buildDashboardActionPrompt(action),
+              },
+              {
+                id: `dashboard-action-plan-${index}`,
+                label: "Plan Oluştur",
+                variant: "recommend",
+                prompt: buildDashboardActionPrompt(action),
+              },
+            ]}
           />
 
           <section className="grid gap-6 xl:grid-cols-2">
@@ -940,9 +1008,19 @@ export default function TenantDashboard() {
             onApprove={() => approve.mutate()}
             onDownloadReport={() => report.mutate()}
           />
-          {slug ? <ChatPanelV2 slug={slug} sessionId={sessionId} jobId={activeJobId} /> : null}
+          {slug ? (
+            <ChatPanelV2
+              slug={slug}
+              sessionId={sessionId}
+              jobId={activeJobId}
+              introCopy={dashboardAI.data?.summary}
+              samplePrompts={dashboardAI.data?.sample_prompts}
+              quickActions={dashboardAI.data?.quick_actions}
+            />
+          ) : null}
         </aside>
       </div>
     </div>
+    </TenantAIActionProvider>
   );
 }
