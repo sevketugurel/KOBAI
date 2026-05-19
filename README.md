@@ -1,54 +1,110 @@
-# KOBİ Advisor — Türkiye KOBİ'leri için AI CFO
+<div align="center">
+
+# KOBİ Advisor
+
+**Türkiye KOBİ'leri için Yapay Zeka Destekli AI CFO**
 
 [![BTK Hackathon](https://img.shields.io/badge/BTK-Hackathon%2726-0066cc)](BTK-2026.pdf)
-[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)](apps/api)
+[![FastAPI](https://img.shields.io/badge/API-FastAPI%200.115-009688)](apps/api)
 [![React](https://img.shields.io/badge/UI-React%2018-61dafb)](apps/web)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776ab)](apps/api)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6)](apps/web)
+[![Gemini](https://img.shields.io/badge/Gemini-2.5%20Pro%20%2F%20Flash-8e75d1)](https://ai.google.dev/gemini-api)
+[![LangGraph](https://img.shields.io/badge/LangGraph-0.2-1c3c3c)](https://langchain-ai.github.io/langgraph/)
+[![ChromaDB](https://img.shields.io/badge/ChromaDB-0.5-ff6f3c)](https://www.trychroma.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20RLS-3ecf8e)](https://supabase.com)
 
-**KOBİ Advisor**, Türkiye'deki küçük ve orta ölçekli işletmeler için yapay zeka destekli finansal danışmanlık sunar: fatura PDF'lerini yapısal veriye dönüştürür, Türk vergi mevzuatını (GVK, KDV, SGK, VUK) RAG ile sorgular, nakit akışını tahmin eder, risk sinyalleri üretir ve kaynak atıflı önerilerle indirilebilir PDF raporu sunar.
+*Fatura PDF → ayrıştırma → 4 ajanlı analiz → dashboard + Türkçe sohbet + kaynak atıflı PDF rapor*
 
-> **Bağlam:** [BTK Hackathon'26 · Finans](BTK-2026.pdf) kapsamında 9–19 Mayıs 2026 arasında geliştirilmiştir. Jüri kriterleri: kullanıcı değeri, agentic yapılar, teknik mimari, UX ve çalışan demo. Büyük dil modeli olarak **Gemini** kullanımı hackathon şartıdır.
+</div>
 
 ---
 
 ## İçindekiler
 
-- [Problem ve çözüm](#problem-ve-çözüm)
-- [Özellikler](#özellikler)
+- [Proje hakkında](#proje-hakkında)
+- [Örnek kullanım senaryosu](#örnek-kullanım-senaryosu)
+- [Temel özellikler](#temel-özellikler)
 - [Mimari](#mimari)
 - [Ajan pipeline'ı](#ajan-pipelineı)
+- [Teknoloji stack](#teknoloji-stack)
 - [Proje yapısı](#proje-yapısı)
 - [Kurulum](#kurulum)
 - [Demo senaryoları](#demo-senaryoları)
 - [API özeti](#api-özeti)
 - [v1 (MVP) ve v2 (multi-tenant)](#v1-mvp-ve-v2-multi-tenant)
-- [Tech stack](#tech-stack)
 - [Testler](#testler)
 - [Dokümantasyon](#dokümantasyon)
 - [Hackathon faz planı](#hackathon-faz-planı)
 - [Bilinen sınırlamalar](#bilinen-sınırlamalar)
 - [Ekip](#ekip)
+- [Lisans](#lisans)
 
 ---
 
-## Problem ve çözüm
+## Proje hakkında
 
-| | |
-|---|---|
-| **Problem** | Türkiye'de ~3,5 milyon KOBİ'nin büyük kısmı profesyonel mali müşavire düzenli erişemiyor. Nakit, vergi (KDV/SGK/gelir vergisi) ve teşvik takibi manuel veya reaktif kalıyor. |
-| **Çözüm** | Fatura yükle → Gemini Vision ile ayrıştır → **LangGraph orchestrator** altında 4 özelleşmiş ajan → dashboard + Türkçe sohbet + PDF rapor. Öneriler mevzuat kaynağı ve güven skoru ile şeffaf. |
-| **Demo hikâyesi** | **Ahmet Usta Fırını** — 6 aylık fatura seti, mevsimsel stok yüklemesi, KDV ödeme dönemleri ve risk uyarıları (v2'de **Kuzey Market** tenant'ı ile de sunulur). |
+**KOBİ Advisor**, Türkiye'deki küçük ve orta ölçekli işletmelerin fatura tabanlı verilerini yapay zeka ile yapısal analize dönüştürerek, profesyonel mali müşavire erişimi olmayan girişimcilere **anlaşılır, kaynak atıflı ve uygulanabilir** finansal içgörü sunan bir AI CFO platformudur.
+
+### Proje özeti
+
+- **Proje adı:** KOBİ Advisor
+- **Amaç:** Fatura PDF'lerini saniyeler içinde yapısal veriye dönüştürmek; Türk vergi mevzuatına (GVK, KDV, SGK, VUK) dayalı RAG ile vergi yükümlülüklerini açıklamak; nakit akışını tahmin etmek; risk sinyalleri üretmek ve kaynak atıflı önerilerle indirilebilir PDF raporu sunmak.
+- **Çözdüğü sorun:** Türkiye'de yaklaşık **3,5 milyon KOBİ**'nin büyük çoğunluğu profesyonel mali müşavire düzenli erişemiyor. Nakit, vergi (KDV/SGK/gelir vergisi) ve teşvik takibi manuel veya reaktif kalıyor. KOBİ Advisor bu süreci **agentic** ve **şeffaf** bir mimaride otomatikleştirir.
+- **Hedef kitle:** Şahıs şirketi sahipleri, küçük işletme yöneticileri, esnaflar, mali müşavirlerine ek bir "second-opinion" katmanı isteyen serbest meslek erbabı.
+
+### Hackathon bağlamı
+
+[BTK Hackathon'26 · Finans](BTK-2026.pdf) kapsamında **9–19 Mayıs 2026** arasında geliştirilmiştir. Jüri kriterleri: kullanıcı değeri, agentic yapılar, teknik mimari, UX ve çalışan demo. Büyük dil modeli olarak **Gemini** kullanımı hackathon şartıdır.
 
 ---
 
-## Özellikler
+## Örnek kullanım senaryosu
 
-- **PDF fatura ayrıştırma** — Gemini 2.5 Flash Vision; eksik alanlar için `NOT_MENTIONED` sentinel'i
-- **Çok-ajanlı analiz** — Nakit akışı, risk, mevzuat RAG, KOSGEB uygunluk
-- **RAG** — 17+ Türk mevzuat belgesi, ChromaDB kalıcı koleksiyon (`kobi_mevzuat`)
-- **Dashboard** — KPI kartları, nakit akışı grafiği (Recharts), trafik ışığı risk, vergi önerileri, ajan trace paneli
-- **Türkçe sohbet** — SSE stream; analiz bağlamına göre yanıt
-- **PDF rapor** — ReportLab; human-in-the-loop onay kapısı (v2)
-- **v2 SaaS iskeleti** — Supabase Auth, multi-tenant, banka ekstresi, vergi takvimi, sanal POS webhook
+**Kullanıcı:** Ahmet Usta, küçük bir fırın işletmecisi. Geçen 6 ayın faturalarını PDF olarak biriktirdi ve KDV dönemine yaklaşırken nakit dengesini merak ediyor.
+
+**KOBİ Advisor süreci:**
+
+1. **PDF yükleme** — Kullanıcı 6 aylık fatura setini sürükle-bırak ile yükler.
+2. **Vision ayrıştırma** — Gemini 2.5 Flash, her faturayı `InvoiceData`'ya çevirir; eksik alanlar `NOT_MENTIONED` sentinel'i ile işaretlenir.
+3. **Onboarding** — Şirket türü (Şahıs / Limited), sektör (Gıda & İçecek), dönem aralığı seçilir.
+4. **LangGraph orchestrator** — 4 özelleşmiş ajan sırayla çalışır: nakit akışı → risk → mevzuat RAG → KOSGEB → onay kapısı.
+5. **Dashboard** — KPI kartları, nakit akışı grafiği, trafik ışığı risk paneli, kaynak atıflı vergi önerileri, KOSGEB uygunluk listesi ve **adım adım ajan trace'i**.
+6. **Sohbet** — *"Bu ay ne kadar KDV ödeyeceğim?"* gibi sorular SSE stream ile yanıtlanır.
+7. **PDF rapor** — ReportLab ile indirilebilir, kaynak atıflı, paylaşılabilir rapor.
+
+**Beklenen içgörü:** Kasım ayı stok yüklemesinden kaynaklı nakit baskısı; risk panelinde sarı/kırmızı uyarı; KDV beyan tarihi yaklaşırken proaktif uyarı.
+
+---
+
+## Temel özellikler
+
+### Yapay zeka yetenekleri
+
+- **Gemini Vision PDF ayrıştırma** — `gemini-2.5-flash`, sıcaklık 0; eksik alanlar için `NOT_MENTIONED` sentinel sözleşmesi (`None`, `""`, `"N/A"` kabul edilmez).
+- **LangGraph multi-agent orchestrator** — 4 özelleşmiş ajan + HITL onay düğümü; `AgentStep` trace'i UI'da panel olarak gösterilir.
+- **Gemini 2.5 Pro sentez** — sıcaklık 0.3; mevzuat snippet'lerini kaynak atıflı, **güven skorlu** önerilere dönüştürür.
+
+### RAG (Türk vergi mevzuatı)
+
+- **17+ resmi belge** — GVK, KDV, SGK, VUK ve ilgili tebliğler (`apps/api/data/rag/SOURCES.md`).
+- **ChromaDB kalıcı koleksiyon** — `kobi_mevzuat`; HTTP modunda docker-compose servisine bağlanır.
+- **gemini-embedding-2 (1536d MRL)** — `RETRIEVAL_DOCUMENT` / `RETRIEVAL_QUERY` task ayrımı.
+- **Atıflı sentez** — her öneri ilgili madde numarasını ve 1–5 arası güven skorunu içerir.
+
+### Dashboard ve etkileşim
+
+- **KPI kartları** ve **Recharts** ile nakit akışı grafiği.
+- **Trafik ışığı risk paneli** — eşik tabanlı (gelir ↓ %20/%40, gider ↑ %30/%50, üst üste 2 ay negatif nakit).
+- **Türkçe sohbet** — analiz bağlamına bağlı SSE stream.
+- **PDF rapor** — ReportLab; v2'de HITL onay kapısı.
+- **Ajan trace paneli** — *"Ajan ne yapıyor?"*: her adım canlı şeffaflıkla gösterilir.
+
+### v2 SaaS iskeleti
+
+- **Supabase Auth + Postgres RLS** — service-role + middleware'de zorunlu `tenant_id` enjeksiyonu, repository katmanında explicit filter.
+- **Multi-tenant RAG** — tenant koleksiyonu + global mevzuat.
+- **Ek modüller** — banka ekstresi içe aktarımı, vergi takvimi, iyzico sanal POS webhook'u.
 
 ---
 
@@ -92,6 +148,39 @@
                     └─────────────────────┘
 ```
 
+### Uçtan uca akış (sequence)
+
+```mermaid
+sequenceDiagram
+    participant U as Kullanıcı
+    participant W as Web (React)
+    participant A as API (FastAPI)
+    participant V as Gemini Vision
+    participant O as LangGraph Orchestrator
+    participant C as ChromaDB
+    participant G as Gemini 2.5 Pro
+
+    U->>W: PDF fatura yükle
+    W->>A: POST /upload
+    A->>V: Vision parse (gemini-2.5-flash)
+    V-->>A: InvoiceData (NOT_MENTIONED sentinel)
+    W->>A: POST /analyze → job_id
+    A->>O: StateGraph başlat
+    O->>O: cashflow_node (3 dönem MA)
+    O->>O: risk_node (eşik tabanlı)
+    O->>C: tax_node retrieval
+    C-->>O: kobi_mevzuat snippets
+    O->>G: Gemini 2.5 Pro sentez
+    G-->>O: Kaynak atıflı öneri
+    O->>O: kosgeb_node (kural)
+    O->>O: approve_node (HITL)
+    O-->>A: AnalysisResult + AgentStep trace
+    A-->>W: GET /analyze/{job_id} (polling)
+    U->>W: "Bu ay ne kadar KDV?"
+    W->>A: POST /chat (SSE stream)
+    W-->>U: Dashboard + chat + PDF rapor
+```
+
 Detaylı mimari kararlar: [`docs/architecture.md`](docs/architecture.md).
 
 ---
@@ -113,6 +202,45 @@ cashflow_node → risk_node → tax_node → kosgeb_node → approve_node → EN
 | **Onay (HITL)** | `approve_node` | Rapor öncesi insan onayı | v2'de `POST .../approve`; v1'de `auto_approve=True` |
 
 Her adım `AgentStep` log'u üretir; UI'da **Ajan ne yapıyor?** panelinde adım adım gösterilir.
+
+---
+
+## Teknoloji stack
+
+### Frontend
+- **React 18**, **TypeScript 5**, **Vite 5**
+- **Tailwind 3**, **Recharts** (grafikler), **Framer Motion** (geçişler), **react-dropzone** (PDF upload)
+
+### Backend
+- **FastAPI 0.115** + **Pydantic v2**
+- **LangGraph 0.2** — StateGraph + Annotated reducer ile ajan trace birikimi
+- **ReportLab** — PDF rapor üretimi
+- **tenacity** — Gemini retry/backoff
+
+### AI ve RAG
+- **Gemini 2.5 Flash** (Vision parse, T=0) — deterministik fatura çıkarımı
+- **Gemini 2.5 Pro** (text, T=0.3) — mevzuat sentezi, chat
+- **gemini-embedding-2** (1536d MRL, `RETRIEVAL_DOCUMENT` / `RETRIEVAL_QUERY`)
+- **ChromaDB 0.5.20** — HTTP modunda kalıcı koleksiyon (`kobi_mevzuat`)
+
+### Auth & DB (v2)
+- **Supabase** — Auth, Postgres + RLS, Storage, Realtime
+
+### Test
+- **pytest** + **pytest-asyncio** (~150+ test; Gemini/Chroma gerçek API çağrılmaz)
+- **Vitest** + **Testing Library** (frontend)
+
+### Infra
+- **docker-compose** — `api` + `chromadb` servisleri
+- v2 deploy hedefleri: Vercel (web), Railway / Cloud Run (API)
+
+### Model politikası
+
+Yasaklı modeller (`config.py` ile build-time engellenir):
+
+- `gemini-1.5-*`
+- `text-embedding-004`
+- `gemini-2.0-flash`
 
 ---
 
@@ -261,24 +389,6 @@ Hata gövdesi: `{ "detail": "Türkçe açıklama" }`.
 | API prefix | `/upload`, `/analyze`, … | `/v2/{slug}/...` |
 
 v1 endpoint'leri **dondurulmuştur**; yeni özellikler v2 altında geliştirilir. Yol haritası: [`docs/architecture.md`](docs/architecture.md) (Faz 0–7).
-
----
-
-## Tech stack
-
-| Katman | Teknoloji |
-|--------|-----------|
-| Frontend | React 18, TypeScript 5, Vite 5, Tailwind 3, Recharts, Framer Motion, react-dropzone |
-| Backend | FastAPI 0.115, Pydantic v2, LangGraph 0.2, ReportLab, tenacity |
-| AI | Gemini 2.5 Flash (Vision), Gemini 2.5 Pro (metin), gemini-embedding-2 (1536d) |
-| RAG | ChromaDB 0.5.20 (HTTP, kalıcı) |
-| Auth / DB (v2) | Supabase (Auth, Postgres RLS, Storage) |
-| Test | pytest + pytest-asyncio · Vitest + Testing Library |
-| Infra | docker-compose (api + chromadb) |
-
-### Model politikası
-
-Yasaklı modeller (`config.py` ile build-time engellenir): `gemini-1.5-*`, `text-embedding-004`, `gemini-2.0-flash`.
 
 ---
 
