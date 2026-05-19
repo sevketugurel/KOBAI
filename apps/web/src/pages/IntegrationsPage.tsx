@@ -1,11 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { useParams } from "react-router-dom";
 import { AlertCircle, Building2, CheckCircle2, Plug, RefreshCw, Unplug } from "lucide-react";
 
 import { V2ApiError, isMockMode, v2, type BankTransaction, type Integration } from "../api/v2";
+import AIActionButton from "../components/copilot/AIActionButton";
+import { TenantAIActionProvider } from "../components/copilot/TenantAIActionContext";
+import TenantCopilotRail from "../components/copilot/TenantCopilotRail";
 import { Button, Card, EmptyState, KpiCard, PageHeader, StatusBadge } from "../components/ui";
+import { useTenantPageAI } from "../hooks/useTenantPageAI";
+import { getOrCreateSessionId } from "../lib/chatSession";
+import { buildIntegrationAIPrompt, buildUploadAnalysisPrompt } from "../lib/aiPrompts";
 import { formatDateTime, formatTRY } from "../lib/utils";
 
 const BANK_LABELS: Record<string, string> = {
@@ -108,6 +114,8 @@ export default function IntegrationsPage() {
   });
 
   const rows = txs.data ?? [];
+  const sessionId = useMemo(() => getOrCreateSessionId(slug), [slug]);
+  const aiView = useTenantPageAI(slug, "integrations");
   const activeIntegrations = (integrations.data ?? []).filter(
     (i) => mockOverrides[i.id] ?? i.is_active,
   );
@@ -118,96 +126,128 @@ export default function IntegrationsPage() {
     .filter((t) => t.direction === "debit")
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
+  const pageEntryAction = aiView.data?.entry_actions?.[0];
+
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Entegrasyonlar"
-        subtitle="Banka, POS ve e-belge bağlantılarının son durumunu izleyin."
-      />
+    <TenantAIActionProvider>
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="space-y-8">
+        <PageHeader
+          title="Entegrasyonlar"
+          subtitle="Banka, POS ve e-belge bağlantılarının son durumunu izleyin."
+          actions={pageEntryAction ? <AIActionButton action={pageEntryAction} /> : undefined}
+        />
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <KpiCard label="Aktif Bağlantı" value={String(activeIntegrations.length)} icon={<Plug size={20} />} loading={integrations.isLoading} />
-        <KpiCard label="Banka Girişi" value={formatTRY(monthlyCredits)} icon={<Building2 size={20} />} loading={txs.isLoading} />
-        <KpiCard label="Banka Çıkışı" value={formatTRY(monthlyDebits)} icon={<AlertCircle size={20} />} loading={txs.isLoading} />
-        <KpiCard label="Hareket" value={String(rows.length)} icon={<RefreshCw size={20} />} loading={txs.isLoading} />
-      </section>
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <KpiCard label="Aktif Bağlantı" value={String(activeIntegrations.length)} icon={<Plug size={20} />} loading={integrations.isLoading} />
+          <KpiCard label="Banka Girişi" value={formatTRY(monthlyCredits)} icon={<Building2 size={20} />} loading={txs.isLoading} />
+          <KpiCard label="Banka Çıkışı" value={formatTRY(monthlyDebits)} icon={<AlertCircle size={20} />} loading={txs.isLoading} />
+          <KpiCard label="Hareket" value={String(rows.length)} icon={<RefreshCw size={20} />} loading={txs.isLoading} />
+        </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <Card>
+            <Card.Header
+              title="Bağlı Servisler"
+              subtitle={isMockMode ? "Mock modunda aksiyonlar yerel demo durumunu değiştirir." : "Gerçek v2 API bağlantı durumu."}
+            />
+            <Card.Body>
+              {integrations.isLoading ? (
+                <div className="grid gap-3 md:grid-cols-3">
+                  {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-32" />)}
+                </div>
+              ) : integrations.data && integrations.data.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-3">
+                  {integrations.data.map((i) => {
+                    const active = mockOverrides[i.id] ?? i.is_active;
+                    return (
+                      <IntegrationCard
+                        key={i.id}
+                        integration={i}
+                        active={active}
+                        onToggle={() => setMockOverrides((prev) => ({ ...prev, [i.id]: !active }))}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={<Plug size={32} />}
+                  title="Entegrasyon yok"
+                  message="Bu tenant için henüz bağlantı kaydı görünmüyor."
+                />
+              )}
+            </Card.Body>
+          </Card>
+
+          <Card>
+            <Card.Header
+              title="Ekstre Yükleme"
+              subtitle="PDF banka ekstresi içe aktarımı"
+              action={
+                <AIActionButton
+                  action={{
+                    id: "upload-what-next",
+                    label: "Ne Analiz Edilecek?",
+                    variant: "explain",
+                    prompt: buildUploadAnalysisPrompt({
+                      importedCount: rows.length,
+                      duplicateCount: 0,
+                      periodStart: rows[rows.length - 1]?.transacted_at.slice(0, 10),
+                      periodEnd: rows[0]?.transacted_at.slice(0, 10),
+                    }),
+                  }}
+                />
+              }
+            />
+            <Card.Body>
+              <div
+                {...getRootProps()}
+                className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition ${
+                  isDragActive ? "border-navy-700 bg-navy-50" : "border-neutral-300 bg-surface"
+                } ${upload.isPending ? "opacity-60" : ""}`}
+              >
+                <input {...getInputProps()} />
+                <p className="text-sm">
+                  {upload.isPending
+                    ? "PDF işleniyor… (Gemini Vision parse)"
+                    : "Banka ekstresi PDF'ini buraya sürükle veya tıklayıp seç"}
+                </p>
+                <p className="mt-1 text-xs text-neutral-500">
+                  {isMockMode ? "Mock modunda deterministic demo sonucu döner." : "PDF parse sonucu banka hareketlerine eklenir."}
+                </p>
+              </div>
+
+              {importMsg && <p className="mt-3 text-sm text-emerald-700">{importMsg}</p>}
+              {importErr && <p className="mt-3 text-sm text-red-600">Yükleme hatası: {importErr}</p>}
+            </Card.Body>
+          </Card>
+        </section>
+
         <Card>
-          <Card.Header
-            title="Bağlı Servisler"
-            subtitle={isMockMode ? "Mock modunda aksiyonlar yerel demo durumunu değiştirir." : "Gerçek v2 API bağlantı durumu."}
-          />
+          <Card.Header title="Banka Hareketleri" subtitle="Bu ay içe aktarılan son hareketler" />
           <Card.Body>
-            {integrations.isLoading ? (
-              <div className="grid gap-3 md:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-32" />)}
-              </div>
-            ) : integrations.data && integrations.data.length > 0 ? (
-              <div className="grid gap-3 md:grid-cols-3">
-                {integrations.data.map((i) => {
-                  const active = mockOverrides[i.id] ?? i.is_active;
-                  return (
-                    <IntegrationCard
-                      key={i.id}
-                      integration={i}
-                      active={active}
-                      onToggle={() => setMockOverrides((prev) => ({ ...prev, [i.id]: !active }))}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
+            {txs.isLoading && <div className="skeleton h-48" />}
+            {txs.data && txs.data.length === 0 && (
               <EmptyState
-                icon={<Plug size={32} />}
-                title="Entegrasyon yok"
-                message="Bu tenant için henüz bağlantı kaydı görünmüyor."
+                icon={<Building2 size={32} />}
+                title="Henüz hareket yok"
+                message="Bir ekstre yüklediğinizde banka hareketleri burada listelenir."
               />
             )}
+            {txs.data && txs.data.length > 0 && <TxTable rows={txs.data} />}
           </Card.Body>
         </Card>
+      </div>
 
-        <Card>
-          <Card.Header title="Ekstre Yükleme" subtitle="PDF banka ekstresi içe aktarımı" />
-          <Card.Body>
-        <div
-          {...getRootProps()}
-          className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition ${
-            isDragActive ? "border-navy-700 bg-navy-50" : "border-neutral-300 bg-surface"
-          } ${upload.isPending ? "opacity-60" : ""}`}
-        >
-          <input {...getInputProps()} />
-          <p className="text-sm">
-            {upload.isPending
-              ? "PDF işleniyor… (Gemini Vision parse)"
-              : "Banka ekstresi PDF'ini buraya sürükle veya tıklayıp seç"}
-          </p>
-          <p className="mt-1 text-xs text-neutral-500">
-            {isMockMode ? "Mock modunda deterministic demo sonucu döner." : "PDF parse sonucu banka hareketlerine eklenir."}
-          </p>
-        </div>
-
-        {importMsg && <p className="mt-3 text-sm text-emerald-700">{importMsg}</p>}
-        {importErr && <p className="mt-3 text-sm text-red-600">Yükleme hatası: {importErr}</p>}
-          </Card.Body>
-        </Card>
-      </section>
-
-      <Card>
-        <Card.Header title="Banka Hareketleri" subtitle="Bu ay içe aktarılan son hareketler" />
-        <Card.Body>
-          {txs.isLoading && <div className="skeleton h-48" />}
-          {txs.data && txs.data.length === 0 && (
-            <EmptyState
-              icon={<Building2 size={32} />}
-              title="Henüz hareket yok"
-              message="Bir ekstre yüklediğinizde banka hareketleri burada listelenir."
-            />
-          )}
-          {txs.data && txs.data.length > 0 && <TxTable rows={txs.data} />}
-        </Card.Body>
-      </Card>
+      <TenantCopilotRail
+        slug={slug}
+        sessionId={sessionId}
+        view={aiView.data}
+        loading={aiView.isLoading}
+      />
     </div>
+    </TenantAIActionProvider>
   );
 }
 
@@ -244,6 +284,18 @@ function IntegrationCard({
           {active ? "Veriler düzenli olarak demo çalışma alanına akıyor." : "Bağlantı askıya alınmış durumda."}
         </p>
       )}
+      {integration.last_error ? (
+        <div className="mt-4">
+          <AIActionButton
+            action={{
+              id: `integration-explain-${integration.id}`,
+              label: "Sorunu Yorumla",
+              variant: "explain",
+              prompt: buildIntegrationAIPrompt(integration),
+            }}
+          />
+        </div>
+      ) : null}
       <Button
         type="button"
         variant={active ? "secondary" : "primary"}

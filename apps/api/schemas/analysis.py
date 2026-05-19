@@ -17,6 +17,16 @@ class AgentStep(BaseModel):
     confidence: float = Field(ge=1.0, le=5.0, description="1-5 güven skoru")
 
 
+class RecommendedAction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str
+    detail: str
+    priority: Literal["low", "medium", "high"]
+    due_hint: str
+    source_agent: str
+
+
 class AnalysisResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
     job_id: str
@@ -26,6 +36,10 @@ class AnalysisResult(BaseModel):
     risk_score: int = Field(ge=1, le=5)
     risk_label: Literal["green", "yellow", "red"]
     risk_explanation: str
+    risk_key_drivers: list[str] = Field(default_factory=list)
+    risk_recommended_actions: list[RecommendedAction] = Field(default_factory=list)
+    risk_priority: Literal["low", "medium", "high"] = "medium"
+    risk_time_horizon: Literal["immediate", "this_week", "this_month"] = "this_week"
     tax_recommendations: list[dict[str, Any]] = Field(default_factory=list)
     kosgeb_suggestions: list[dict[str, Any]] = Field(default_factory=list)
     agent_trace: list[AgentStep] = Field(default_factory=list)

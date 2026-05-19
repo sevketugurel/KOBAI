@@ -35,21 +35,34 @@ import {
   PageHeader,
   StatusBadge,
 } from "../components/ui";
+import AIActionButton from "../components/copilot/AIActionButton";
+import { TenantAIActionProvider } from "../components/copilot/TenantAIActionContext";
 import ChatPanelV2 from "../components/chat/ChatPanelV2";
 import AgentTrace from "../components/dashboard/AgentTrace";
 import { useTenantDashboard } from "../hooks/useTenantDashboard";
+import { useTenantPageAI } from "../hooks/useTenantPageAI";
 import { useAgentSnapshots, getSnapshot } from "../hooks/useAgentSnapshots";
+import { getOrCreateSessionId } from "../lib/chatSession";
 import type { AgentSnapshot } from "../api/v2";
 import { cn, formatDate, formatDateTime, formatRelative, formatTRY } from "../lib/utils";
 import { isMockMode, v2 } from "../api/v2";
 import type {
   AnalysisResult,
+  AIContextAction,
+  RecommendedAction,
   DashboardActivity,
   DashboardSummary,
   InvoiceUploadOut,
   RiskLabel,
+  RiskPriority,
+  RiskTimeHorizon,
   TaxCalendarItem,
 } from "../api/v2";
+import {
+  buildCashFlowScenarioPrompt,
+  buildDashboardActionPrompt,
+  buildDashboardRiskPrompt,
+} from "../lib/aiPrompts";
 
 function toNumber(s: string | null | undefined): number {
   if (s == null) return 0;
@@ -67,17 +80,6 @@ function activityIcon(type: DashboardActivity["type"]) {
   if (type === "bank") return <Building2 size={16} />;
   if (type === "pos") return <CreditCard size={16} />;
   return <Calendar size={16} />;
-}
-
-function getOrCreateSessionId(slug: string): string {
-  if (typeof window === "undefined" || !slug) return "default";
-  const key = `kobai.chat.session.${slug}`;
-  let id = window.localStorage.getItem(key);
-  if (!id) {
-    id = (window.crypto?.randomUUID?.() ?? `s-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    window.localStorage.setItem(key, id);
-  }
-  return id;
 }
 
 function getStoredJobId(slug: string): string | null {
@@ -100,6 +102,27 @@ function riskCopy(label?: RiskLabel) {
 
 function confidenceLabel(value: number) {
   return `${Math.round(value * 20)}% güven`;
+}
+
+function priorityCopy(priority?: RiskPriority) {
+  if (priority === "high") return { label: "Yüksek", className: "bg-red-50 text-red-700 border-red-200" };
+  if (priority === "low") return { label: "Düşük", className: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  return { label: "Orta", className: "bg-amber-50 text-amber-700 border-amber-200" };
+}
+
+function horizonCopy(horizon?: RiskTimeHorizon) {
+  if (horizon === "immediate") return "Hemen";
+  if (horizon === "this_month") return "Bu ay";
+  return "Bu hafta";
+}
+
+function sourceAgentLabel(sourceAgent: string) {
+  if (sourceAgent === "tax_calendar") return "Vergi Takvimi";
+  if (sourceAgent === "collections_agent") return "Tahsilat Ajanı";
+  if (sourceAgent === "supplier_dependency_agent") return "Tedarikçi Ajanı";
+  if (sourceAgent === "margin_agent") return "Marj Ajanı";
+  if (sourceAgent === "risk") return "Risk Ajanı";
+  return sourceAgent;
 }
 
 function AnalysisBadge({ analysis }: { analysis?: AnalysisResult }) {
@@ -241,9 +264,11 @@ function AgentMissingCTA({ snapshot }: { snapshot?: AgentSnapshot }) {
 function CashFlowPanel({
   analysis,
   snapshot,
+  action,
 }: {
   analysis?: AnalysisResult;
   snapshot?: AgentSnapshot;
+  action?: AIContextAction;
 }) {
   const snapshotRows =
     snapshot?.status === "completed" && Array.isArray((snapshot.output as { forecast?: unknown })?.forecast)
@@ -256,6 +281,7 @@ function CashFlowPanel({
       <Card.Header
         title="Nakit Akışı Projeksiyonu"
         subtitle="LangGraph nakit akışı ajanından 3 aylık görünüm"
+        action={action ? <AIActionButton action={action} /> : undefined}
       />
       <Card.Body className="h-80">
         {rows.length === 0 ? (
@@ -293,44 +319,175 @@ function CashFlowPanel({
 function RiskPanel({
   analysis,
   snapshot,
+  snapshotLoading,
+  action,
 }: {
   analysis?: AnalysisResult;
   snapshot?: AgentSnapshot;
+  snapshotLoading: boolean;
+  action?: AIContextAction;
 }) {
   const snapshotOutput =
     snapshot?.status === "completed" && snapshot.output
       ? (snapshot.output as {
           label?: RiskLabel;
           score?: number;
+          risk_label?: RiskLabel;
+          risk_score?: number;
           explanation?: string;
+          risk_key_drivers?: string[];
+          risk_recommended_actions?: RecommendedAction[];
+          risk_priority?: RiskPriority;
+          risk_time_horizon?: RiskTimeHorizon;
         })
       : null;
-  const label = snapshotOutput?.label ?? analysis?.risk_label;
-  const score = snapshotOutput?.score ?? analysis?.risk_score;
+  const label = snapshotOutput?.risk_label ?? snapshotOutput?.label ?? analysis?.risk_label;
+  const score = snapshotOutput?.risk_score ?? snapshotOutput?.score ?? analysis?.risk_score;
   const explanation = snapshotOutput?.explanation ?? analysis?.risk_explanation;
+  const keyDrivers = snapshotOutput?.risk_key_drivers ?? analysis?.risk_key_drivers ?? [];
+  const actions = snapshotOutput?.risk_recommended_actions ?? analysis?.risk_recommended_actions ?? [];
+  const priority = snapshotOutput?.risk_priority ?? analysis?.risk_priority;
+  const timeHorizon = snapshotOutput?.risk_time_horizon ?? analysis?.risk_time_horizon;
   const risk = riskCopy(label);
   const hasData = label != null || score != null || explanation;
   const missingCta = !hasData ? <AgentMissingCTA snapshot={snapshot} /> : null;
   return (
     <Card>
-      <Card.Header title="Risk Değerlendirmesi" subtitle="Risk ajanı skoru ve açıklaması" />
+      <Card.Header
+        title="Risk Değerlendirmesi"
+        subtitle="Risk ajanı skoru ve açıklaması"
+        action={action ? <AIActionButton action={action} /> : undefined}
+      />
       <Card.Body className="space-y-4">
-        {missingCta ?? (
-          <>
-            <div className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-2", risk.className)}>
-              {label === "green" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
-              <span className="text-sm font-semibold">{risk.label} Risk</span>
-            </div>
-            <div>
-              <p className="font-mono text-4xl font-semibold text-navy-900">
-                {score ?? "-"}
-                <span className="text-base text-navy-400">/5</span>
-              </p>
-              <p className="mt-2 text-sm leading-6 text-navy-600">
-                {explanation ?? "Analiz tamamlandığında dönem risk açıklaması burada gösterilir."}
-              </p>
-            </div>
-          </>
+        {snapshotLoading ? (
+          <div className="space-y-3">
+            <div className="skeleton h-10 w-28" />
+            <div className="skeleton h-12 w-24" />
+            <div className="skeleton h-20" />
+          </div>
+        ) : null}
+        {!snapshotLoading
+          ? (
+              missingCta ?? (
+                <>
+                  <div className={cn("inline-flex items-center gap-2 rounded-lg border px-3 py-2", risk.className)}>
+                    {label === "green" ? <ShieldCheck size={18} /> : <AlertTriangle size={18} />}
+                    <span className="text-sm font-semibold">{risk.label} Risk</span>
+                  </div>
+                  <div>
+                    <p className="font-mono text-4xl font-semibold text-navy-900">
+                      {score ?? "-"}
+                      <span className="text-base text-navy-400">/5</span>
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-navy-600">
+                      {explanation ?? "Analiz tamamlandığında dönem risk açıklaması burada gösterilir."}
+                    </p>
+                  </div>
+                  {(priority || timeHorizon) ? (
+                    <div className="flex flex-wrap gap-2">
+                      {priority ? (
+                        <span className={cn("badge border", priorityCopy(priority).className)}>
+                          Öncelik: {priorityCopy(priority).label}
+                        </span>
+                      ) : null}
+                      {timeHorizon ? (
+                        <span className="badge bg-navy-50 text-navy-700">
+                          Zaman: {horizonCopy(timeHorizon)}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {keyDrivers.length > 0 ? (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-navy-500">
+                        Ana Sürücüler
+                      </p>
+                      <ul className="mt-2 space-y-2">
+                        {keyDrivers.slice(0, 3).map((driver) => (
+                          <li key={driver} className="rounded-lg bg-surface-muted px-3 py-2 text-sm text-navy-700">
+                            {driver}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {actions.length > 0 ? (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-navy-500">
+                        Önerilen Aksiyonlar
+                      </p>
+                      <ul className="mt-2 space-y-2">
+                        {actions.slice(0, 2).map((action) => (
+                          <li key={action.title} className="rounded-lg border border-border px-3 py-2">
+                            <p className="text-sm font-medium text-navy-900">{action.title}</p>
+                            <p className="mt-1 text-xs leading-5 text-navy-600">{action.detail}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </>
+              )
+            )
+          : null}
+      </Card.Body>
+    </Card>
+  );
+}
+
+function RecommendedActionsPanel({
+  actions,
+  isLoading,
+  buildActions,
+}: {
+  actions: RecommendedAction[];
+  isLoading: boolean;
+  buildActions?: (action: RecommendedAction, index: number) => AIContextAction[];
+}) {
+  return (
+    <Card>
+      <Card.Header
+        title="AI'nin Bugün Dikkat Çektiği Konular"
+        subtitle="Risk ve operasyon sinyallerinden türetilen ilk aksiyonlar"
+      />
+      <Card.Body>
+        {isLoading ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="skeleton h-20" />
+            ))}
+          </div>
+        ) : actions.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-surface-muted/70 px-4 py-4 text-sm text-navy-600">
+            Copilot bugün için yeni bir aksiyon önermedi. Dashboard ve ajan snapshot verileri geldikçe burası güncellenir.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {actions.map((action, index) => {
+              const priority = priorityCopy(action.priority);
+              const aiActions = buildActions?.(action, index) ?? [];
+              return (
+                <article key={`${action.source_agent}-${action.title}`} className="rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-sm font-semibold text-navy-900">{action.title}</h3>
+                    <span className={cn("badge border", priority.className)}>{priority.label}</span>
+                    <span className="badge bg-navy-50 text-navy-700">{action.due_hint}</span>
+                    <span className="badge bg-surface-muted text-navy-700">
+                      {sourceAgentLabel(action.source_agent)}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-navy-600">{action.detail}</p>
+                  {aiActions.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {aiActions.map((item) => (
+                        <AIActionButton key={item.id} action={item} />
+                      ))}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
         )}
       </Card.Body>
     </Card>
@@ -533,7 +690,10 @@ export default function TenantDashboard() {
   const qc = useQueryClient();
   const { data, isLoading, isError } = useTenantDashboard(slug);
   const summary = data as DashboardSummary | undefined;
-  const { data: agentSnapshots } = useAgentSnapshots(slug);
+  const {
+    data: agentSnapshots,
+    isLoading: snapshotsLoading,
+  } = useAgentSnapshots(slug);
   const cashSnapshot = getSnapshot(agentSnapshots, "nakit_akisi");
   const riskSnapshot = getSnapshot(agentSnapshots, "risk");
   const taxSnapshot = getSnapshot(agentSnapshots, "mevzuat_rag");
@@ -550,9 +710,11 @@ export default function TenantDashboard() {
     0,
   );
   const sessionId = useMemo(() => getOrCreateSessionId(slug), [slug]);
+  const dashboardAI = useTenantPageAI(slug, "dashboard");
   const filteredActivities = (summary?.recent_activities ?? []).filter(
     (a) => activityFilter === "all" || a.type === activityFilter,
   );
+  const recommendedActions = summary?.recommended_actions ?? [];
 
   const analysis = useQuery({
     queryKey: ["tenant-analysis", slug, activeJobId],
@@ -644,7 +806,30 @@ export default function TenantDashboard() {
   const cashFlowNext =
     snapshotForecast?.[0]?.net ?? analysisData?.cash_flow_forecast?.[0]?.net ?? null;
 
+  const dashboardEntryAction = dashboardAI.data?.entry_actions?.[0];
+  const riskAction: AIContextAction = {
+    id: "dashboard-risk-deepen",
+    label: "Riski Derinleştir",
+    variant: "analyze",
+    prompt: buildDashboardRiskPrompt({
+      riskLabel: analysisData?.risk_label ?? null,
+      riskScore: analysisData?.risk_score ?? null,
+      explanation: analysisData?.risk_explanation ?? summary?.recommended_actions?.[0]?.detail ?? null,
+    }),
+  };
+  const cashScenarioAction: AIContextAction = {
+    id: "dashboard-cash-scenario",
+    label: "Senaryo Sor",
+    variant: "recommend",
+    prompt: buildCashFlowScenarioPrompt({
+      nextNet: cashFlowNext,
+      upcomingTaxTotal,
+      posSales,
+    }),
+  };
+
   return (
+    <TenantAIActionProvider>
     <div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-fade-in">
       <PageHeader
         title={`${slug} Dashboard`}
@@ -653,6 +838,7 @@ export default function TenantDashboard() {
             ? `Son güncelleme: ${formatDateTime(summary.updated_at)}`
             : "Veriler yükleniyor..."
         }
+        actions={dashboardEntryAction ? <AIActionButton action={dashboardEntryAction} /> : undefined}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
@@ -692,9 +878,33 @@ export default function TenantDashboard() {
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(380px,1fr)]">
         <main className="min-w-0 space-y-6">
           <section className="grid gap-6 xl:grid-cols-3">
-            <CashFlowPanel analysis={analysisData} snapshot={cashSnapshot} />
-            <RiskPanel analysis={analysisData} snapshot={riskSnapshot} />
+            <CashFlowPanel analysis={analysisData} snapshot={cashSnapshot} action={cashScenarioAction} />
+            <RiskPanel
+              analysis={analysisData}
+              snapshot={riskSnapshot}
+              snapshotLoading={snapshotsLoading}
+              action={riskAction}
+            />
           </section>
+
+          <RecommendedActionsPanel
+            actions={recommendedActions}
+            isLoading={isLoading}
+            buildActions={(action, index) => [
+              {
+                id: `dashboard-action-why-${index}`,
+                label: "Neden?",
+                variant: "explain",
+                prompt: buildDashboardActionPrompt(action),
+              },
+              {
+                id: `dashboard-action-plan-${index}`,
+                label: "Plan Oluştur",
+                variant: "recommend",
+                prompt: buildDashboardActionPrompt(action),
+              },
+            ]}
+          />
 
           <section className="grid gap-6 xl:grid-cols-2">
             <TaxRecommendationsPanel analysis={analysisData} snapshot={taxSnapshot} />
@@ -798,9 +1008,19 @@ export default function TenantDashboard() {
             onApprove={() => approve.mutate()}
             onDownloadReport={() => report.mutate()}
           />
-          {slug ? <ChatPanelV2 slug={slug} sessionId={sessionId} jobId={activeJobId} /> : null}
+          {slug ? (
+            <ChatPanelV2
+              slug={slug}
+              sessionId={sessionId}
+              jobId={activeJobId}
+              introCopy={dashboardAI.data?.summary}
+              samplePrompts={dashboardAI.data?.sample_prompts}
+              quickActions={dashboardAI.data?.quick_actions}
+            />
+          ) : null}
         </aside>
       </div>
     </div>
+    </TenantAIActionProvider>
   );
 }

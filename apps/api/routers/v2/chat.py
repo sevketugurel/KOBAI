@@ -11,8 +11,6 @@ Akış:
 
 from __future__ import annotations
 
-import asyncio
-import json
 import logging
 from typing import Annotated
 
@@ -20,13 +18,16 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from middleware.tenant import require_tenant
+from repositories.agent_snapshot_repo import AgentSnapshotRepo, get_agent_snapshot_repo
+from repositories.bank_repo import BankRepo, get_bank_repo
 from repositories.chat_repo import ChatRepo, get_chat_repo
-from repositories.job_repo import JobNotFound, JobRepo, get_job_repo
-from rag.collections import global_mevzuat_collection, tenant_docs_collection
-from rag.retriever import RagRetriever
+from repositories.job_repo import JobRepo, get_job_repo
+from repositories.pos_repo import PosRepo, get_pos_repo
+from repositories.tax_repo import TaxRepo, get_tax_repo
 from schemas.chat_v2 import ChatRequestV2
 from schemas.tenant import TenantContext
 from services.gemini import GeminiService
+from services.chat_context_v2 import ChatContextServiceV2
 from services.tenant_context import TenantDataService, get_tenant_data_service
 
 log = logging.getLogger(__name__)
@@ -45,129 +46,6 @@ def _sse_event(payload: str) -> str:
     return f"data: {safe}\n\n"
 
 
-SYSTEM_GUIDANCE = (
-    "Sistem yönergesi: Mevcut tenant verisi yeterliyse kullanıcıdan tekrar veri isteme. "
-    "Eksikse hangi tablo/veri eksik olduğunu açıkça söyle. KDV sorularında öncelik sırası: "
-    "tax_calendar_items pending/overdue tutarları, sonra fatura KDV toplamları, sonra POS/banka açıklayıcı sinyalleri. "
-    "Yanıtı yalnızca bu tenant bağlamıyla sınırla."
-)
-
-
-async def _build_context(
-    *,
-    tenant_id: str,
-    session_id: str,
-    message: str,
-    job_id: str | None,
-    repo: ChatRepo,
-    job_repo: JobRepo,
-    tenant_data: TenantDataService,
-) -> str:
-    parts: list[str] = [SYSTEM_GUIDANCE]
-    try:
-        if job_id:
-            job = await job_repo.get_job(tenant_id=tenant_id, job_id=job_id)
-            parts.append(
-                f"Şirket nakit akışı (3 ay): {job.cash_flow_forecast}\n"
-                f"Risk: {job.risk_label} — {job.risk_explanation}\n"
-                f"Vergi önerileri sayısı: {len(job.tax_recommendations)}"
-            )
-        else:
-            job = await job_repo.get_latest_completed(tenant_id=tenant_id)
-            if job is not None:
-                parts.append(
-                    f"Son tamamlanan analiz: job={job.job_id}, risk={job.risk_label}, "
-                    f"nakit akışı={job.cash_flow_forecast}, açıklama={job.risk_explanation}"
-                )
-    except JobNotFound:
-        parts.append(f"(job {job_id} bulunamadı — güncel tenant bağlamı kullanılıyor)")
-    except Exception as e:  # noqa: BLE001
-        log.warning("analiz bağlamı okunamadı tenant=%s job=%s: %s", tenant_id, job_id, e)
-    try:
-        tenant_context = await tenant_data.build_context(tenant_id=tenant_id)
-        parts.append("Güncel structured tenant bağlamı:\n" + tenant_context.summary_text())
-        kdv_items = [
-            item for item in tenant_context.tax_calendar_items
-            if item.tax_type == "kdv" and item.status in ("pending", "overdue")
-        ]
-        if kdv_items:
-            parts.append(
-                "KDV öncelikli bağlam:\n"
-                + json.dumps(
-                    [
-                        {
-                            "title": item.title,
-                            "period": item.period,
-                            "status": item.status,
-                            "due_date": str(item.due_date),
-                            "amount": str(item.amount) if item.amount is not None else None,
-                            "currency": item.currency,
-                        }
-                        for item in kdv_items
-                    ],
-                    ensure_ascii=False,
-                )
-            )
-    except Exception as e:  # noqa: BLE001
-        log.warning("tenant structured context okunamadı tenant=%s: %s", tenant_id, e)
-    # Global mevzuat + tenant-private aynı anda — mevzuat_rag.py deseni.
-    try:
-        private_query = f"{message} tenant finans özeti vergi banka pos fatura gider gelir"
-        global_query = f"{message} Türk vergi mevzuatı KDV GVK SGK kanun yönetmelik"
-        private_hits, global_hits = await asyncio.gather(
-            RagRetriever(
-                collection_name=tenant_docs_collection(tenant_id), scope="private"
-            ).search(private_query, n_results=5),
-            RagRetriever(
-                collection_name=global_mevzuat_collection(), scope="global"
-            ).search(global_query, n_results=5),
-        )
-        if private_hits:
-            parts.append(
-                "Tenant private RAG kaynakları:\n"
-                + json.dumps(
-                    [
-                        {
-                            "text": h["text"],
-                            "metadata": h["metadata"],
-                            "confidence": h["confidence"],
-                            "scope": "private",
-                        }
-                        for h in private_hits
-                    ],
-                    ensure_ascii=False,
-                )
-            )
-        if global_hits:
-            parts.append(
-                "Global mevzuat RAG kaynakları:\n"
-                + json.dumps(
-                    [
-                        {
-                            "text": h["text"],
-                            "metadata": h["metadata"],
-                            "confidence": h["confidence"],
-                            "scope": "global",
-                        }
-                        for h in global_hits
-                    ],
-                    ensure_ascii=False,
-                )
-            )
-    except Exception as e:  # noqa: BLE001
-        log.warning("RAG okunamadı tenant=%s: %s", tenant_id, e)
-    history = await repo.list_recent(tenant_id=tenant_id, session_id=session_id, limit=10)
-    if history:
-        parts.append(
-            "Önceki sohbet:\n"
-            + json.dumps(
-                [{"role": m.role, "content": m.content} for m in history],
-                ensure_ascii=False,
-            )
-        )
-    return "\n\n".join(parts) if parts else "Bağlam yok."
-
-
 @router.post("/chat")
 async def chat_v2(
     req: ChatRequestV2,
@@ -175,6 +53,10 @@ async def chat_v2(
     repo: Annotated[ChatRepo, Depends(get_chat_repo)],
     job_repo: Annotated[JobRepo, Depends(get_job_repo)],
     tenant_data: Annotated[TenantDataService, Depends(get_tenant_data_service)],
+    bank_repo: Annotated[BankRepo, Depends(get_bank_repo)],
+    pos_repo: Annotated[PosRepo, Depends(get_pos_repo)],
+    tax_repo: Annotated[TaxRepo, Depends(get_tax_repo)],
+    snapshot_repo: Annotated[AgentSnapshotRepo, Depends(get_agent_snapshot_repo)],
 ) -> StreamingResponse:
     # Kullanıcı mesajını hemen persist et (sızıntı izolasyonu repo katmanında)
     await repo.save_message(
@@ -183,14 +65,20 @@ async def chat_v2(
         role="user",
         content=req.message,
     )
-    context = await _build_context(
+    context_builder = ChatContextServiceV2(
+        chat_repo=repo,
+        job_repo=job_repo,
+        tenant_data=tenant_data,
+        bank_repo=bank_repo,
+        pos_repo=pos_repo,
+        tax_repo=tax_repo,
+        snapshot_repo=snapshot_repo,
+    )
+    context = await context_builder.build(
         tenant_id=ctx.tenant_id,
         session_id=req.session_id,
         message=req.message,
         job_id=req.job_id,
-        repo=repo,
-        job_repo=job_repo,
-        tenant_data=tenant_data,
     )
 
     async def event_stream():

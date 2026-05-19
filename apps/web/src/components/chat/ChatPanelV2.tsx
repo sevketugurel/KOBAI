@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Send, Sparkles } from "lucide-react";
 import { useV2Chat } from "../../hooks/useV2Chat";
-import { isMockMode } from "../../api/v2";
+import { isMockMode, type AIQuickAction } from "../../api/v2";
 import { cn } from "../../lib/utils";
+import { useTenantAIActionEvent } from "../copilot/TenantAIActionContext";
 
 const SAMPLES = [
-  "Bu ay ne kadar KDV ödeyeceğim?",
-  "KOSGEB'e başvurabilir miyim?",
-  "En büyük gider kalemim ne?",
+  "Bugün en kritik finansal riskim ne?",
+  "Bu hafta hangi ödemeleri öne almalıyım?",
+  "Tahsilat ve POS tarafında nerede sorun görüyor musun?",
 ];
 
 function MessageContent({ content }: { content: string }) {
@@ -29,9 +30,21 @@ interface ChatPanelV2Props {
   slug: string;
   sessionId: string;
   jobId?: string | null;
+  title?: string;
+  introCopy?: string;
+  samplePrompts?: string[];
+  quickActions?: AIQuickAction[];
 }
 
-export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanelV2Props) {
+export default function ChatPanelV2({
+  slug,
+  sessionId,
+  jobId = null,
+  title = "AI Danışman",
+  introCopy,
+  samplePrompts = SAMPLES,
+  quickActions = [],
+}: ChatPanelV2Props) {
   const { messages, sendMessage, isStreaming, isLoadingHistory, error } = useV2Chat({
     slug,
     sessionId,
@@ -39,10 +52,19 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
   });
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const externalAction = useTenantAIActionEvent();
+  const handledExternalNonceRef = useRef<number>(0);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView?.({ behavior: "smooth" });
   }, [messages.length, isStreaming]);
+
+  useEffect(() => {
+    if (!externalAction) return;
+    if (externalAction.nonce === handledExternalNonceRef.current) return;
+    handledExternalNonceRef.current = externalAction.nonce;
+    sendMessage(externalAction.action.prompt);
+  }, [externalAction, sendMessage]);
 
   const submit = () => {
     const text = input.trim();
@@ -64,7 +86,7 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
           </div>
           <div>
             <div className="font-display font-semibold text-navy-900 text-sm">
-              AI Danışman
+              {title}
             </div>
             <div className="flex items-center gap-1.5 text-2xs text-emerald-600">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />{" "}
@@ -84,12 +106,26 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
         ) : messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm text-navy-600">
-              {isMockMode
-                ? "Mock demo verileriyle örnek sorulardan başlayabilirsiniz."
-                : "Doküman yüklenmediyse yanıtlar sınırlı olabilir; örnek sorulardan başlayabilirsiniz."}
+              {introCopy ?? (isMockMode
+                ? "Mock copilot verisiyle risk, tahsilat ve vergi önceliklerinden başlayabilirsiniz."
+                : "Copilot dashboard, vergi, banka, POS ve ajan snapshot verilerini okuyarak yanıt verir; örnek sorularla başlayabilirsiniz.")}
             </p>
+            {quickActions.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {quickActions.map((action) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={() => sendMessage(action.prompt)}
+                    className="rounded-full border border-border bg-background px-3 py-1.5 text-xs text-navy-700 transition-colors hover:bg-navy-50"
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
-              {SAMPLES.map((s) => (
+              {samplePrompts.map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -168,7 +204,7 @@ export default function ChatPanelV2({ slug, sessionId, jobId = null }: ChatPanel
               submit();
             }
           }}
-          placeholder="Bir şey sorun..."
+          placeholder="Bugünün finansal önceliğini sorun..."
           className="flex-1 resize-none rounded-2xl px-4 py-2 border border-border bg-background text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-500 max-h-32"
         />
         <button

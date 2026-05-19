@@ -176,3 +176,14 @@ async def test_tenant_isolation():
     snap_b = await repo.get(tenant_id="tenant-B", agent_name="nakit_akisi")
     assert snap_a is not None
     assert snap_b is None
+
+
+@pytest.mark.asyncio
+async def test_analysis_requested_includes_phase1_agents():
+    ctx = _ctx_with_invoices(3)
+    svc, repo, bus = _make_service(ctx)
+    await bus.emit_and_wait(AgentEvent(tenant_id="tenant-1", event_type="analysis.requested"))
+    await asyncio.sleep(0.2)
+    assert await repo.get(tenant_id="tenant-1", agent_name="collections_agent") is not None
+    assert await repo.get(tenant_id="tenant-1", agent_name="supplier_dependency_agent") is not None
+    assert await repo.get(tenant_id="tenant-1", agent_name="margin_agent") is not None

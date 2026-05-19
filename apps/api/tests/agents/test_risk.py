@@ -28,6 +28,8 @@ async def test_not_red_when_stable(six_month_invoices):
     out = await agent.assess(six_month_invoices, forecast)
     assert out["risk_label"] != "red"
     assert 1 <= out["risk_score"] <= 5
+    assert "risk_key_drivers" in out
+    assert "risk_recommended_actions" in out
 
 
 @pytest.mark.asyncio
@@ -41,6 +43,9 @@ async def test_red_when_two_negative_months(six_month_invoices):
     out = await agent.assess(six_month_invoices, forecast)
     assert out["risk_label"] == "red"
     assert "negatif" in out["explanation"].lower()
+    assert out["risk_priority"] == "high"
+    assert out["risk_time_horizon"] == "immediate"
+    assert out["risk_recommended_actions"]
 
 
 @pytest.mark.asyncio
@@ -72,3 +77,14 @@ async def test_zero_prior_expense_does_not_raise() -> None:
     ]
     out = await RiskAgent().assess(invoices, forecast=[])
     assert out["risk_label"] in {"green", "yellow", "red"}
+
+
+@pytest.mark.asyncio
+async def test_actions_are_standardized_when_tax_risk_detected(six_month_invoices) -> None:
+    forecast = [
+        {"month": "2026-04", "income": 1000, "expense": 5000, "net": -4000, "kdv_payment": 0, "sgk_payment": 0, "cumulative": -4000},
+        {"month": "2026-05", "income": 1000, "expense": 5000, "net": -4000, "kdv_payment": 0, "sgk_payment": 0, "cumulative": -8000},
+    ]
+    out = await RiskAgent().assess(six_month_invoices, forecast=forecast)
+    action = out["risk_recommended_actions"][0]
+    assert set(action) == {"title", "detail", "priority", "due_hint", "source_agent"}

@@ -176,4 +176,12 @@ def test_unknown_agent_raises():
 
 def test_all_agents_covered():
     # Defensive: ensure module exposes every agent we expect downstream.
-    assert set(AGENT_NAMES) == {"nakit_akisi", "risk", "mevzuat_rag", "kosgeb"}
+    assert set(AGENT_NAMES) == {
+        "nakit_akisi",
+        "risk",
+        "mevzuat_rag",
+        "kosgeb",
+        "collections_agent",
+        "supplier_dependency_agent",
+        "margin_agent",
+    }

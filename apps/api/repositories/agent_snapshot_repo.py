@@ -16,7 +16,15 @@ from pydantic import BaseModel, Field
 log = logging.getLogger(__name__)
 
 
-AgentName = Literal["nakit_akisi", "risk", "mevzuat_rag", "kosgeb"]
+AgentName = Literal[
+    "nakit_akisi",
+    "risk",
+    "mevzuat_rag",
+    "kosgeb",
+    "collections_agent",
+    "supplier_dependency_agent",
+    "margin_agent",
+]
 SnapshotStatus = Literal[
     "idle", "pending", "running", "completed", "failed", "stale"
 ]

@@ -91,6 +91,15 @@ const mocks = vi.hoisted(() => {
     upcoming_tax_count: taxes.length,
     integration_count: integrations.length,
     upcoming_taxes: taxes,
+    recommended_actions: [
+      {
+        title: "KDV çıkışını öne alın",
+        detail: "Bu hafta KDV ve SGK ödemelerini tahsilat planına bağlayın.",
+        priority: "high",
+        due_hint: "Bu hafta",
+        source_agent: "risk",
+      },
+    ],
     recent_activities: [
       {
         id: "act-1",
@@ -130,6 +139,18 @@ const mocks = vi.hoisted(() => {
     risk_score: 2,
     risk_label: "yellow",
     risk_explanation: "Tahsilat akışı iyi, vergi çıkışı izlenmeli.",
+    risk_key_drivers: ["Vergi çıkışları bu hafta nakit tamponunu daraltıyor."],
+    risk_recommended_actions: [
+      {
+        title: "Vergi çıkışını planlayın",
+        detail: "KDV ve SGK kalemleri için bu hafta nakit sıralaması yapın.",
+        priority: "high",
+        due_hint: "Bu hafta",
+        source_agent: "risk",
+      },
+    ],
+    risk_priority: "high",
+    risk_time_horizon: "this_week",
     tax_recommendations: [
       {
         recommendation: "KDV beyanı öncesi POS ve banka hareketlerini mutabık hale getirin.",
@@ -160,7 +181,161 @@ const mocks = vi.hoisted(() => {
     completed_at: "2026-05-16T09:00:00Z",
     error: null,
   };
-  return { tenantId, taxes, posTransactions, integrations, bankTransactions, dashboard, posSummary, analysis };
+  const pageAI = {
+    dashboard: {
+      page: "dashboard",
+      title: "AI Dashboard Özeti",
+      subtitle: "Risk, aksiyon ve operasyon sinyalleri",
+      summary: "Bu hafta KDV ve SGK ödemelerini tahsilat planına bağlayın.",
+      entry_actions: [
+        {
+          id: "dashboard-priority",
+          label: "Bugünün Önceliğini Aç",
+          prompt: "Bugünün önceliğini açıkla.",
+          variant: "prioritize",
+        },
+      ],
+      insights: [
+        {
+          id: "dashboard-1",
+          title: "KDV çıkışını öne alın",
+          detail: "Bu hafta KDV ve SGK ödemelerini tahsilat planına bağlayın.",
+          tone: "danger",
+          actions: [
+            {
+              id: "dashboard-why",
+              label: "Neden?",
+              prompt: "Neden öne alayım?",
+              variant: "explain",
+            },
+          ],
+        },
+      ],
+      quick_actions: [
+        {
+          id: "dashboard-risk",
+          label: "Riski Derinleştir",
+          prompt: "Riski derinleştir.",
+        },
+      ],
+      sample_prompts: ["Bugün en kritik finansal riskim ne?"],
+    },
+    integrations: {
+      page: "integrations",
+      title: "AI Entegrasyon Özeti",
+      subtitle: "Bağlantı sağlığı ve veri akışı sinyalleri",
+      summary: "Bağlantılar çalışıyor; veri tazeliği ve hata sinyalleri normal aralıkta.",
+      entry_actions: [
+        {
+          id: "integration-entry",
+          label: "Bağlantı Sağlığını Analiz Et",
+          prompt: "Bağlantı sağlığını analiz et.",
+          variant: "analyze",
+        },
+      ],
+      insights: [
+        {
+          id: "integration-health",
+          title: "Bağlantı Sağlığı",
+          detail: "2 aktif servis düzenli veri akışı sağlıyor.",
+          tone: "success",
+          actions: [
+            {
+              id: "integration-insight",
+              label: "Sorunu Yorumla",
+              prompt: "Sorunu yorumla.",
+              variant: "explain",
+            },
+          ],
+        },
+      ],
+      quick_actions: [
+        {
+          id: "integration-priority",
+          label: "Kontrol sırası",
+          prompt: "Bu entegrasyonları bugün hangi sırayla kontrol etmeliyim?",
+        },
+      ],
+      sample_prompts: ["Bugün hangi entegrasyon daha fazla risk taşıyor?"],
+    },
+    "tax-calendar": {
+      page: "tax-calendar",
+      title: "AI Vergi Öncelikleri",
+      subtitle: "Ödeme sırası ve ceza baskısı",
+      summary: "KDV Beyannamesi yakın vade baskısı nedeniyle ilk sıraya alınmalı.",
+      entry_actions: [
+        {
+          id: "tax-entry",
+          label: "Ödeme Sırası Oluştur",
+          prompt: "Ödeme sırası oluştur.",
+          variant: "prioritize",
+        },
+      ],
+      insights: [
+        {
+          id: "tax-next",
+          title: "Sıradaki Kritik Kalem",
+          detail: "KDV Beyannamesi için 2026-05-26 vadeli ödeme bekleniyor.",
+          tone: "warning",
+          actions: [
+            {
+              id: "tax-insight",
+              label: "Neden Öncelikli?",
+              prompt: "Neden öncelikli?",
+              variant: "explain",
+            },
+          ],
+        },
+      ],
+      quick_actions: [
+        {
+          id: "tax-order",
+          label: "Ödeme sırası",
+          prompt: "Vergi kalemlerini nakit etkisine göre hangi sırayla ödemeliyim?",
+        },
+      ],
+      sample_prompts: ["Bu hafta hangi vergi ödemesini önce kapatmalıyım?"],
+    },
+    pos: {
+      page: "pos",
+      title: "AI POS Analizi",
+      subtitle: "Tahsilat kalitesi ve işlem performansı",
+      summary: "POS akışı pozitif; yine de bekleyen ve iade paternleri izlenmeli.",
+      entry_actions: [
+        {
+          id: "pos-entry",
+          label: "Bugünkü POS Riskini Analiz Et",
+          prompt: "POS riskini analiz et.",
+          variant: "analyze",
+        },
+      ],
+      insights: [
+        {
+          id: "pos-net",
+          title: "Net Tahsilat",
+          detail: "Bugünkü net POS akışı 750.00 TRY seviyesinde.",
+          tone: "success",
+          actions: [
+            {
+              id: "pos-insight",
+              label: "Terminal Performansını Yorumla",
+              prompt: "Terminal performansını yorumla.",
+              variant: "explain",
+            },
+          ],
+        },
+      ],
+      quick_actions: [
+        {
+          id: "pos-risk",
+          label: "Riski özetle",
+          prompt: "POS tarafında bugün en kritik tahsilat riski nedir?",
+        },
+      ],
+      sample_prompts: ["POS işlemlerinde kayıp tahsilat sinyali var mı?"],
+    },
+  };
+  return { tenantId, taxes, posTransactions, integrations, bankTransactions, dashboard, posSummary, analysis, pageAI };
 });
 
 vi.mock("../../auth/AuthContext", () => ({
@@ -176,12 +351,17 @@ vi.mock("../../api/v2", () => ({
   V2ApiError: class V2ApiError extends Error {},
   v2: {
     getDashboardSummary: vi.fn().mockResolvedValue(mocks.dashboard),
+    getAgentSnapshots: vi.fn().mockResolvedValue([]),
     uploadInvoice: vi.fn(),
     startAnalysis: vi.fn().mockResolvedValue({ job_id: "mock-job-acme-co", status: "pending" }),
     getAnalysis: vi.fn().mockResolvedValue(mocks.analysis),
     downloadAnalysisReport: vi.fn().mockResolvedValue(new Blob(["pdf"], { type: "application/pdf" })),
     getChatHistory: vi.fn().mockResolvedValue([]),
     streamChatV2: vi.fn(),
+    getTenantPageAIView: vi.fn().mockImplementation(
+      (_slug: string, page: "dashboard" | "integrations" | "tax-calendar" | "pos") =>
+        Promise.resolve(mocks.pageAI[page]),
+    ),
     listIntegrations: vi.fn().mockResolvedValue(mocks.integrations),
     listBankTransactions: vi.fn().mockResolvedValue(mocks.bankTransactions),
     uploadBankStatement: vi.fn(),
@@ -234,9 +414,11 @@ describe("tenant v2 pages", () => {
     expect(screen.getByText("Tahsilat")).toBeInTheDocument();
     expect(await screen.findByText("Nakit Akışı Projeksiyonu")).toBeInTheDocument();
     expect(screen.getByText("Risk Değerlendirmesi")).toBeInTheDocument();
+    expect(screen.getByText("AI'nin Bugün Dikkat Çektiği Konular")).toBeInTheDocument();
     expect(screen.getByText("RAG Vergi Önerileri")).toBeInTheDocument();
     expect(screen.getByText("Ajan Akışı")).toBeInTheDocument();
     expect(screen.getByText("Belge ve Analiz")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Bugünün Önceliğini Aç" })).toBeInTheDocument();
   });
 
   it("renders integrations with provider cards and bank transactions", async () => {
@@ -244,6 +426,8 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByRole("heading", { name: "Entegrasyonlar" })).toBeInTheDocument();
     expect(await screen.findByText("iyzico Checkout")).toBeInTheDocument();
     expect(await screen.findByText("Tahsilat")).toBeInTheDocument();
+    expect(await screen.findByText("AI Entegrasyon Özeti")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Bağlantı Sağlığını Analiz Et" }).length).toBeGreaterThan(0);
   });
 
   it("renders tax calendar with pending rows", async () => {
@@ -251,6 +435,8 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByRole("heading", { name: "Vergi Takvimi" })).toBeInTheDocument();
     expect(await screen.findAllByText("KDV Beyannamesi")).not.toHaveLength(0);
     expect(screen.getByText("SGK Prim Ödemesi")).toBeInTheDocument();
+    expect(await screen.findByText("AI Vergi Öncelikleri")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Ödeme Sırası Oluştur" }).length).toBeGreaterThan(0);
   });
 
   it("renders POS with summary and transactions", async () => {
@@ -258,6 +444,8 @@ describe("tenant v2 pages", () => {
     expect(await screen.findByRole("heading", { name: "Sanal POS" })).toBeInTheDocument();
     expect(await screen.findByText("Web Checkout")).toBeInTheDocument();
     expect(await screen.findByText("Satış")).toBeInTheDocument();
+    expect(await screen.findByText("AI POS Analizi")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Bugünkü POS Riskini Analiz Et" }).length).toBeGreaterThan(0);
   });
 
   it("keeps dashboard POS and tax numbers consistent with source page data", () => {

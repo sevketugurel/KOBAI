@@ -47,14 +47,14 @@ log = logging.getLogger(__name__)
 
 
 EVENT_TO_AGENTS: dict[str, list[AgentName]] = {
-    "invoice.created":         ["nakit_akisi", "risk", "mevzuat_rag"],
-    "bank.imported":           ["nakit_akisi", "risk"],
-    "pos.transaction.created": ["nakit_akisi", "risk"],
+    "invoice.created":         ["nakit_akisi", "risk", "mevzuat_rag", "supplier_dependency_agent", "margin_agent"],
+    "bank.imported":           ["nakit_akisi", "risk", "collections_agent"],
+    "pos.transaction.created": ["nakit_akisi", "risk", "collections_agent", "margin_agent"],
     "tenant_rag.indexed":      ["mevzuat_rag"],
     "tax_calendar.updated":    ["risk", "mevzuat_rag"],
     "tenant.profile.updated":  ["kosgeb"],
-    "forecast.updated":        ["risk", "kosgeb"],
-    "risk.updated":            ["kosgeb"],
+    "forecast.updated":        ["risk", "kosgeb", "margin_agent"],
+    "risk.updated":            ["kosgeb", "collections_agent", "supplier_dependency_agent"],
     "analysis.requested": list(AGENT_NAMES),
 }
 
@@ -259,6 +259,37 @@ class AgentOrchestrationService:
                 tenant_context=ctx,
             )
             return {"kosgeb_suggestions": recs}, "KOSGEB destekleri inceleniyor"
+        if agent_name == "collections_agent":
+            credit_count = sum(1 for tx in ctx.bank_transactions if tx.direction == "credit")
+            pos_failed = sum(1 for tx in ctx.pos_transactions if tx.status == "failed")
+            return {
+                "summary": "Tahsilat sinyalleri güncellendi",
+                "bank_credit_count": credit_count,
+                "failed_pos_count": pos_failed,
+            }, "Tahsilat ve koleksiyon sinyalleri taranıyor"
+        if agent_name == "supplier_dependency_agent":
+            expense_rows = [inv for inv in ctx.invoices if inv.category != "gelir"]
+            totals: dict[str, float] = {}
+            for inv in expense_rows:
+                totals[inv.vendor_name] = totals.get(inv.vendor_name, 0.0) + float(inv.total_amount)
+            total_expense = sum(totals.values())
+            top_supplier, top_amount = max(totals.items(), key=lambda item: item[1], default=("", 0.0))
+            share = round((top_amount / total_expense) * 100, 1) if total_expense > 0 else 0.0
+            return {
+                "summary": "Tedarikçi yoğunluğu güncellendi",
+                "top_supplier": top_supplier or None,
+                "top_supplier_share_pct": share,
+            }, "Tedarikçi bağımlılığı sinyalleri hesaplanıyor"
+        if agent_name == "margin_agent":
+            income = sum(float(inv.total_amount) for inv in ctx.invoices if inv.category == "gelir")
+            expense = sum(float(inv.total_amount) for inv in ctx.invoices if inv.category != "gelir")
+            margin = round(((income - expense) / income) * 100, 1) if income > 0 else None
+            return {
+                "summary": "Marj görünümü güncellendi",
+                "gross_margin_pct": margin,
+                "invoice_income_total": income,
+                "invoice_expense_total": expense,
+            }, "Marj görünümü hesaplanıyor"
         raise ValueError(f"Bilinmeyen ajan: {agent_name}")
 
     async def _read_forecast(self, tenant_id: str) -> list[dict[str, Any]]:

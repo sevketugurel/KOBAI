@@ -13,6 +13,8 @@ def test_analysis_result_minimal():
     r = AnalysisResult(
         job_id="job-1", status="pending", invoices=[], cash_flow_forecast=[],
         risk_score=1, risk_label="green", risk_explanation="Risk yok.",
+        risk_key_drivers=[], risk_recommended_actions=[], risk_priority="low",
+        risk_time_horizon="this_month",
         tax_recommendations=[], kosgeb_suggestions=[], agent_trace=[],
         created_at=datetime.now(), completed_at=None,
     )
