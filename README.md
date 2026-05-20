@@ -48,7 +48,7 @@
 
 ### Proje özeti
 
-- **Proje adı:** KOBİ Advisor
+- **Proje adı:** KOBİ Advisor - KOBAI
 - **Amaç:** Fatura PDF'lerini saniyeler içinde yapısal veriye dönüştürmek; Türk vergi mevzuatına (GVK, KDV, SGK, VUK) dayalı RAG ile vergi yükümlülüklerini açıklamak; nakit akışını tahmin etmek; risk sinyalleri üretmek ve kaynak atıflı önerilerle indirilebilir PDF raporu sunmak.
 - **Çözdüğü sorun:** Türkiye'de yaklaşık **3,5 milyon KOBİ**'nin büyük çoğunluğu profesyonel mali müşavire düzenli erişemiyor. Nakit, vergi (KDV/SGK/gelir vergisi) ve teşvik takibi manuel veya reaktif kalıyor. KOBİ Advisor bu süreci **agentic** ve **şeffaf** bir mimaride otomatikleştirir.
 - **Hedef kitle:** Şahıs şirketi sahipleri, küçük işletme yöneticileri, esnaflar, mali müşavirlerine ek bir "second-opinion" katmanı isteyen serbest meslek erbabı.
@@ -56,6 +56,10 @@
 ### Hackathon bağlamı
 
 [BTK Hackathon'26 · Finans](BTK-2026.pdf) kapsamında **9–19 Mayıs 2026** arasında geliştirilmiştir. Jüri kriterleri: kullanıcı değeri, agentic yapılar, teknik mimari, UX ve çalışan demo. Büyük dil modeli olarak **Gemini** kullanımı hackathon şartıdır.
+
+
+https://github.com/user-attachments/assets/4083461d-6fcf-4525-b19f-a2017fc95762
+
 
 ---
 
